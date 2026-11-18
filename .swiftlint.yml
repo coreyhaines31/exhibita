@@ -1,0 +1,16 @@
+included:
+  - Packages/ExhibitCore/Sources
+  - Packages/ExhibitCore/Tests
+excluded:
+  - Packages/ExhibitCore/.build
+opt_in_rules:
+  - empty_count
+  - first_where
+  - sorted_imports
+identifier_name:
+  excluded: [x, y, id, i, n, at, on, v, f, go, to, dx, dy, r, g, b, a, u]
+nesting:
+  type_level: 3
+line_length:
+  warning: 125
+  error: 160
