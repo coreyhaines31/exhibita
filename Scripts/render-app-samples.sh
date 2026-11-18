@@ -1,5 +1,5 @@
 #!/bin/bash
-# Renders the panel and Settings on fixture data to docs/samples/app/*.png. Offscreen only: the unhosted
+# Renders the panel, Settings and the editor on fixture data to docs/samples/app/*.png. Offscreen only: the unhosted
 # ExhibitAViewTests bundle draws the views with ImageRenderer or an unattached hosting view. Exhibit A is
 # never launched and no window is shown. Look at every changed image before committing it.
 set -euo pipefail
@@ -14,5 +14,6 @@ TEST_RUNNER_EXHIBIT_RENDER_DIR="$out" xcodebuild -project ExhibitA.xcodeproj -sc
   -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO \
   -only-testing:ExhibitAViewTests/PanelRenderTests/testRendersThePanel \
   -only-testing:ExhibitAViewTests/PanelRenderTests/testRendersSettings \
+  -only-testing:ExhibitAViewTests/EditorRenderTests/testRendersTheEditor \
   test -quiet
 ls -1 "$out"
