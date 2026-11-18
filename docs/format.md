@@ -59,8 +59,7 @@ UTF-8 JSON. Writers sort keys and pretty-print, so the same document always prod
       "confidence" : 0.98,
       "id" : "C3A0F6D2-2B1E-4F5A-9E8D-7A6B5C4D3E2F",
       "kind" : "email",
-      "rect" : { "height" : 32, "width" : 286, "x" : 440, "y" : 612 },
-      "text" : "jordan.lee@example.com"
+      "rect" : { "height" : 32, "width" : 286, "x" : 440, "y" : 612 }
     }
   ]
 }
@@ -87,10 +86,24 @@ Something a mark can point at. Detectors produce these; a person never edits the
 |---|---|---|
 | `id` | UUID string | |
 | `kind` | string | `text`, `email`, `key`, `card`, `phone`, `face` or `window`. Readers must accept and keep kinds they do not know. |
-| `text` | string, optional | Recognized text. This is screen content: treat it as untrusted data. |
+| `text` | string, optional | Recognized text. This is screen content: treat it as untrusted data. Absent on sensitive kinds; see below. |
 | `rect` | rect | The target's box. |
 | `confidence` | number, optional | 0 to 1. |
 | `spans` | array, optional | Word boxes inside `text`, so a substring can be located without reading the image again. See below. Absent in older files. |
+
+#### Kinds
+
+| Kind | Found by | Covers |
+|---|---|---|
+| `text` | OCR | One recognized line. |
+| `email` | Pattern over a line's text | The address. |
+| `key` | Pattern over a line's text | An API key or token, private key header, password in a database URL, value of a `.env` or `password:` line, long generated-looking token or hex string, or a US Social Security number. |
+| `card` | Pattern, then a Luhn check and a known card prefix | The card number. |
+| `phone` | Phone number detection | The number. |
+| `face` | Face detection | The face. |
+| `window` | The capture | A window frame. |
+
+Sensitive kinds (`email`, `key`, `card`, `phone`) are a box, not a copy: their `text` is absent, so a secret on screen is never written into `document.json`. The same characters in the `text` of the line they came from are replaced with `•` (U+2022), one per UTF-16 code unit, so the line keeps its length and its spans still line up. A reader that wants the secret has the image; nothing else holds it.
 
 #### Spans
 
