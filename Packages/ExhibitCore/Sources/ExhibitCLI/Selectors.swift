@@ -12,6 +12,8 @@ enum Selector: Equatable {
     case kind(TargetKind)
     /// Explicit pixels, top-left origin.
     case rect(PixelRect)
+    /// One target by id. Only from `say`, whose interpreters name targets; there is no flag for it.
+    case target(UUID)
 
     /// The selector as it would be typed, for reports and errors.
     var description: String {
@@ -21,6 +23,7 @@ enum Selector: Equatable {
         case .kind(let kind): "--kind \(kind.rawValue)"
         case .rect(let rect): "--rect \(Self.number(rect.x)),\(Self.number(rect.y)),\(Self.number(rect.width)),"
             + Self.number(rect.height)
+        case .target(let id): "target \(id.uuidString)"
         }
     }
 
@@ -70,6 +73,10 @@ enum SelectorMatcher {
         switch selector {
         case .rect(let rect):
             return [Candidate(rect: rect.standardized)]
+        case .target(let id):
+            return targets.filter { $0.id == id }.map {
+                Candidate(rect: $0.rect.standardized, targetID: $0.id, text: $0.text, kind: $0.kind)
+            }
         case .kind(let kind):
             return targets.filter { $0.kind == kind }.map {
                 Candidate(rect: $0.rect.standardized, targetID: $0.id, text: $0.text, kind: $0.kind)
@@ -109,7 +116,7 @@ enum SelectorMatcher {
                 + "Sensitive values are masked there and are selected with --kind."
         case .kind:
             return "Run `exhibit targets <input>` to see the kinds that were found."
-        case .rect:
+        case .rect, .target:
             return nil
         }
     }

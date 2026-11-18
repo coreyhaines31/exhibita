@@ -1,5 +1,6 @@
 import ArgumentParser
 import ExhibitCore
+import ExhibitInterpret
 import Foundation
 
 /// What a command produced: the exit status and what goes to stdout and stderr.
@@ -11,6 +12,14 @@ public struct CLIResult: Sendable {
 
 public enum CLI {
     public static let version = "0.1.0"
+
+    /// Runs one command line with the given environment and model transport, for tests.
+    static func run(arguments: [String], environment: [String: String],
+                    transport: any ModelTransport = URLSessionModelTransport()) -> CLIResult {
+        CLIContext.$current.withValue(CLIContext(environment: environment, transport: transport)) {
+            run(arguments: arguments)
+        }
+    }
 
     /// Runs one command line (without the program name). Never exits the process and never prints.
     public static func run(arguments: [String]) -> CLIResult {
@@ -52,12 +61,13 @@ struct Exhibit: ParsableCommand {
         discussion: """
             Every command reads a PNG or JPEG file (or a .exhibit capture bundle), writes a new PNG, and prints one \
             JSON object on stdout. Errors print a JSON object with a stable "code" on stderr and exit non-zero: \
-            1 file or other failure, 2 usage, 3 no match, 4 ambiguous. Everything runs on this Mac; nothing is \
-            sent anywhere. Full reference: docs/cli.md.
+            1 file or other failure, 2 usage, 3 no match, 4 ambiguous, 5 say needs a model, 6 the model failed. \
+            Everything runs on this Mac; nothing is sent anywhere except, for say, to a model endpoint on this \
+            Mac that you configure. Full reference: docs/cli.md.
             """,
         version: CLI.version,
         subcommands: [Targets.self, Blur.self, Highlight.self, Circle.self, Box.self, Arrow.self, Text.self, Step.self,
-                      Apply.self]
+                      Apply.self, Say.self]
     )
 }
 
@@ -131,10 +141,10 @@ enum Parse {
         return PixelRect(x: x, y: y, width: width, height: height)
     }
 
-    static func point(_ text: String) throws -> PixelPoint {
+    static func point(_ text: String, option: String = "--from") throws -> PixelPoint {
         let numbers = text.split(separator: ",").map { Double($0.trimmingCharacters(in: .whitespaces)) }
         guard numbers.count == 2, let x = numbers[0], let y = numbers[1], x.isFinite, y.isFinite else {
-            throw CLIError.usage("--from takes x,y in pixels, like 40,300.")
+            throw CLIError.usage("\(option) takes x,y in pixels, like 40,300.")
         }
         return PixelPoint(x: x, y: y)
     }
@@ -262,7 +272,7 @@ struct Arrow: MarkCommand {
 
     func spec() throws -> MarkSpec {
         var spec = try baseSpec(color: color)
-        spec.from = try from.map(Parse.point)
+        spec.from = try from.map { try Parse.point($0) }
         spec.label = label
         return spec
     }

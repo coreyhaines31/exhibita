@@ -20,7 +20,8 @@ let package = Package(
         .target(name: "ExhibitTargets", dependencies: ["ExhibitCore"]),
         // Every command's logic, so tests can drive it in process. The executable is a thin shell over it.
         .target(name: "ExhibitCLI", dependencies: [
-            "ExhibitCore", "ExhibitTargets", .product(name: "ArgumentParser", package: "swift-argument-parser")
+            "ExhibitCore", "ExhibitTargets", "ExhibitInterpret",
+            .product(name: "ArgumentParser", package: "swift-argument-parser")
         ]),
         .executableTarget(name: "exhibit", dependencies: ["ExhibitCLI"]),
         // Instructions to operations: the interpreter contract, the grammar and the loopback model client. Text in,
