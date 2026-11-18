@@ -47,9 +47,16 @@ Every capture is one document: the original image, a list of targets found in it
 
 ## Keys
 
-One global hotkey starts a capture. Default ⌥⇧4 (assumed), remappable. Onboarding offers to take over ⌘⇧4: macOS's own screenshot shortcut has to be turned off in System Settings → Keyboard → Keyboard Shortcuts → Screenshots first, and the app links straight to that pane. Whether the app can flip that setting itself is to be verified in unit 4.
+Two global hotkeys, matching the two things Corey does most. Both are remappable.
 
-After the hotkey: drag for a region, Space to pick a window, ↩ for the whole screen. The editor opens in place.
+| Hotkey | After takeover | Before takeover (assumed) | What happens |
+|---|---|---|---|
+| Capture and edit | ⌘⇧4 | ⌥⇧4 | Select, then the editor opens in place |
+| Capture to clipboard | ⌃⌘⇧4 | ⌃⌥⇧4 | Select, and the image is on the clipboard. No window opens |
+
+Onboarding offers to take over the system shortcuts: macOS's own screenshot shortcuts have to be turned off in System Settings → Keyboard → Keyboard Shortcuts → Screenshots first, and the app links straight to that pane. Whether the app can flip those settings itself is to be verified in unit 4.
+
+After either hotkey: drag for a region, Space to pick a window, ↩ for the whole screen. A clipboard capture still lands in history, so it can be opened and marked up afterwards.
 
 | Key | Action |
 |---|---|
