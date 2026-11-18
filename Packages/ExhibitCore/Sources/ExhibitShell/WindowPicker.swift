@@ -11,15 +11,17 @@ public struct WindowCandidate: Equatable, Sendable {
     public var ownerPID: Int32
     public var ownerName: String?
     public var title: String?
+    public var bundleIdentifier: String?
 
     public init(id: UInt32, frame: CGRect, layer: Int, ownerPID: Int32, ownerName: String? = nil,
-                title: String? = nil) {
+                title: String? = nil, bundleIdentifier: String? = nil) {
         self.id = id
         self.frame = frame
         self.layer = layer
         self.ownerPID = ownerPID
         self.ownerName = ownerName
         self.title = title
+        self.bundleIdentifier = bundleIdentifier
     }
 }
 
