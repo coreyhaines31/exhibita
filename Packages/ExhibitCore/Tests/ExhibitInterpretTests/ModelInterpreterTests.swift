@@ -144,6 +144,44 @@ struct ModelInterpreterTests {
         }
     }
 
+    @Test func readsTheServersTimings() throws {
+        let ollama = FakeTransport { _, _ in
+            let reply: [String: Any] = [
+                "message": ["role": "assistant", "content": #"{"parts":[]}"#, "thinking": "hmm"],
+                "total_duration": 3_000_000_000, "load_duration": 10_000_000, "prompt_eval_count": 1265,
+                "prompt_eval_duration": 2_500_000_000, "eval_count": 29, "eval_duration": 400_000_000
+            ]
+            return ModelHTTPResponse(status: 200, body: try JSONSerialization.data(withJSONObject: reply))
+        }
+        let request = InterpretRequest(instruction: "box the cheapest plan", targets: Screen.targets)
+        let native = try ModelInterpreter(endpoint: try Self.endpoint(), transport: ollama).interpretTimed(request)
+        var expected = ModelTimings()
+        expected.totalSeconds = 3
+        expected.loadSeconds = 0.01
+        expected.promptTokens = 1265
+        expected.promptSeconds = 2.5
+        expected.outputTokens = 29
+        expected.outputSeconds = 0.4
+        expected.thinkingCharacters = 3
+        #expect(native.timings == expected)
+
+        let openAI = FakeTransport { _, _ in
+            let reply: [String: Any] = [
+                "choices": [["message": ["role": "assistant", "content": #"{"parts":[]}"#]]],
+                "usage": ["prompt_tokens": 757, "prompt_tokens_details": ["cached_tokens": 467], "completion_tokens": 45]
+            ]
+            return ModelHTTPResponse(status: 200, body: try JSONSerialization.data(withJSONObject: reply))
+        }
+        let compatible = try ModelInterpreter(endpoint: try Self.endpoint("http://localhost:1234/v1"),
+                                              transport: openAI).interpretTimed(request)
+        #expect(compatible.timings?.promptTokens == 757)
+        #expect(compatible.timings?.cachedPromptTokens == 467)
+        #expect(compatible.timings?.outputTokens == 45)
+        #expect(compatible.timings?.promptSeconds == nil)
+        #expect(try ModelInterpreter(endpoint: try Self.endpoint(), transport: FakeTransport.ollama(#"{"parts":[]}"#))
+            .interpretTimed(request).timings == nil)
+    }
+
     @Test func timesOutAgainstASilentLoopbackServer() throws {
         let server = try SilentServer()
         defer { server.stop() }

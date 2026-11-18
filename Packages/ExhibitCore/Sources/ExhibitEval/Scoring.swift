@@ -24,6 +24,8 @@ struct Scored: Codable {
     var answeredBy: String?
     /// The model call alone, when the model was asked.
     var modelMilliseconds: Double?
+    /// What the model server reported about that call: load, prompt and output times and token counts.
+    var modelTimings: ModelTimings?
     /// Instructions whose answer is "not on the screen": reported as not found, with nothing marked in its place.
     var notFoundCorrect: Bool?
 }

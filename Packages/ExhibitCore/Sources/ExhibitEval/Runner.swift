@@ -50,8 +50,11 @@ struct Runner {
             let clock = ContinuousClock()
             let start = clock.now
             let outcome: Result<InterpretOutcome, Error>
+            var timings: ModelTimings?
             do {
-                outcome = .success(try await model.interpret(request))
+                let answer = try await model.interpretWithTimings(request)
+                outcome = .success(answer.outcome)
+                timings = answer.timings
             } catch {
                 outcome = .failure(error)
             }
@@ -60,8 +63,10 @@ struct Runner {
                                        milliseconds: first.milliseconds + milliseconds)
             scored.answeredBy = scored.answered ? "model" : nil
             scored.modelMilliseconds = milliseconds
+            scored.modelTimings = timings
             log("grammar then model \(asked)/\(declined) \(instruction.id) "
-                + "\(scored.exact ? "ok" : scored.answered ? "WRONG" : "failed") \(Int(milliseconds)) ms: \(scored.output)")
+                + "\(scored.exact ? "ok" : scored.answered ? "WRONG" : "failed") \(Int(milliseconds)) ms"
+                + "\(timings.map { " (\(Report.timings($0)))" } ?? ""): \(scored.output)")
             results.append(scored)
         }
         return results
@@ -136,6 +141,45 @@ enum Report {
                 + "\(modelSteps.isEmpty ? "n/a" : format(percentile(modelSteps, 0.9))) |")
         }
         return lines.joined(separator: "\n")
+    }
+
+    /// One call's server timings in a short form: "load 0.0 s, prompt 1265 tokens 14.2 s, output 29 tokens 1.6 s".
+    static func timings(_ timings: ModelTimings) -> String {
+        func seconds(_ value: Double?) -> String { value.map { String(format: "%.1f s", $0) } ?? "?" }
+        var parts: [String] = []
+        if let load = timings.loadSeconds { parts.append("load \(seconds(load))") }
+        if let tokens = timings.promptTokens {
+            let cached = timings.cachedPromptTokens.map { ", \($0) cached" } ?? ""
+            parts.append("prompt \(tokens) tokens\(cached)" + (timings.promptSeconds.map { " \(seconds($0))" } ?? ""))
+        }
+        if let tokens = timings.outputTokens {
+            parts.append("output \(tokens) tokens" + (timings.outputSeconds.map { " \(seconds($0))" } ?? ""))
+        }
+        if let thinking = timings.thinkingCharacters, thinking > 0 { parts.append("reasoned \(thinking) characters") }
+        return parts.joined(separator: ", ")
+    }
+
+    /// One paragraph per run whose model calls reported timings.
+    static func breakdowns(_ runs: [(name: String, results: [Scored])], split: String) -> [String] {
+        runs.flatMap { run -> [String] in
+            let rows = split == "all" ? run.results : run.results.filter { $0.split == split }
+            return modelBreakdown(rows).map { ["\(run.name): \($0)", ""] } ?? []
+        }
+    }
+
+    /// Where the model step's time went, as medians over the calls that reported timings; nil when none did.
+    static func modelBreakdown(_ rows: [Scored]) -> String? {
+        let timings = rows.compactMap(\.modelTimings)
+        guard !timings.isEmpty else { return nil }
+        func median(_ values: [Double]) -> String {
+            values.isEmpty ? "n/a" : String(format: "%.2f", percentile(values.sorted(), 0.5))
+        }
+        let reasoned = timings.filter { ($0.thinkingCharacters ?? 0) > 0 }.count
+        return "\(timings.count) model calls, medians: load \(median(timings.compactMap(\.loadSeconds))) s, "
+            + "prompt \(median(timings.compactMap(\.promptTokens).map(Double.init))) tokens in "
+            + "\(median(timings.compactMap(\.promptSeconds))) s, output "
+            + "\(median(timings.compactMap(\.outputTokens).map(Double.init))) tokens in "
+            + "\(median(timings.compactMap(\.outputSeconds))) s; \(reasoned) reasoned."
     }
 
     /// Missed targets over the answered instructions, and how many such instructions there were.

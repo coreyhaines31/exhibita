@@ -105,9 +105,56 @@ public struct ModelEndpoint: Sendable, Equatable {
         return content
     }
 
+    /// What the server reported about the call, or nil when it reported nothing. Ollama's own API reports times
+    /// and token counts; an OpenAI-compatible server reports token counts only.
+    func timings(of data: Data) -> ModelTimings? {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        func seconds(_ key: String) -> Double? { (object[key] as? NSNumber).map { $0.doubleValue / 1e9 } }
+        func count(_ value: Any?) -> Int? { (value as? NSNumber)?.intValue }
+        var timings = ModelTimings()
+        switch api {
+        case .ollama:
+            timings.totalSeconds = seconds("total_duration")
+            timings.loadSeconds = seconds("load_duration")
+            timings.promptTokens = count(object["prompt_eval_count"])
+            timings.promptSeconds = seconds("prompt_eval_duration")
+            timings.outputTokens = count(object["eval_count"])
+            timings.outputSeconds = seconds("eval_duration")
+            timings.thinkingCharacters = ((object["message"] as? [String: Any])?["thinking"] as? String)?.count
+        case .openai:
+            let usage = object["usage"] as? [String: Any]
+            timings.promptTokens = count(usage?["prompt_tokens"])
+            timings.cachedPromptTokens = count((usage?["prompt_tokens_details"] as? [String: Any])?["cached_tokens"])
+            timings.outputTokens = count(usage?["completion_tokens"])
+            let message = (object["choices"] as? [[String: Any]])?.first?["message"] as? [String: Any]
+            timings.thinkingCharacters = ((message?["reasoning"] ?? message?["reasoning_content"]) as? String)?.count
+        }
+        return timings == ModelTimings() ? nil : timings
+    }
+
     static func preview(_ data: Data) -> String {
         String(bytes: data.prefix(300), encoding: .utf8) ?? "\(data.count) bytes"
     }
+}
+
+/// What a model server reports about one call: where the time went and how many tokens it read and wrote.
+/// Fields the server does not report are nil.
+public struct ModelTimings: Sendable, Equatable, Codable {
+    public var totalSeconds: Double?
+    /// Loading the model into memory, when it was not loaded.
+    public var loadSeconds: Double?
+    /// The prompt read, counting tokens taken from the server's cache.
+    public var promptTokens: Int?
+    public var promptSeconds: Double?
+    /// Prompt tokens the server reused from its cache, when it says (OpenAI-compatible servers).
+    public var cachedPromptTokens: Int?
+    /// Tokens written, reasoning included.
+    public var outputTokens: Int?
+    public var outputSeconds: Double?
+    /// Characters of reasoning the server returned apart from the answer; nonzero means it reasoned.
+    public var thinkingCharacters: Int?
+
+    public init() {}
 }
 
 /// Why a model could not interpret an instruction. Never a decline: the model was asked and failed.
