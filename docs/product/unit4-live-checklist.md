@@ -33,7 +33,7 @@ Mark each line pass or fail with the macOS version.
 |---|---|
 | Press ⌥⇧4 | Every display dims within about 100 ms; crosshair cursor; hint strip at the bottom of each display. The app you were in stays frontmost (its menu bar does not change). |
 | Drag a region | Clear cutout with a white border and a point size label (for example `400 × 250`). |
-| Release | Overlay closes. The panel opens with the new capture selected at the top: today's time, the point size, Copy, Show in Finder, Delete. |
+| Release | Overlay closes. Since unit 5 the editor opens with the capture (`docs/product/unit5-live-checklist.md`); press Esc, then open the panel: the new capture is at the top with today's time and the point size. Select it: Open, Copy, Show in Finder, Delete. |
 | Show in Finder | `<uuid>.exhibit` holding `original.png` and `document.json`. On a Retina display `original.png` is twice the point size in pixels and `document.json` has `"scale" : 2`. |
 | Wait a few seconds, `cat document.json` | `targets` lists the text in the region (OCR ran in the background). |
 | Press ⌥⇧4 then Esc | Overlay closes, nothing saved. |

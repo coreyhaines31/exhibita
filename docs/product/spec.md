@@ -1,6 +1,6 @@
 # Exhibit A — v1 spec
 
-Draft, 2026-11-18. Verdict: **unproven**. Units 0 to 3 are built (core, targets, CLI on files, interpreter spike). Unit 4 (the app shell) is built and unit tested but not yet checked live (`docs/product/unit4-live-checklist.md`).
+Draft, 2026-11-18. Verdict: **unproven**. Units 0 to 3 are built (core, targets, CLI on files, interpreter spike). Unit 4 (the app shell) and unit 5 (the editor) are built and unit tested but not yet checked live (`docs/product/unit4-live-checklist.md`, `docs/product/unit5-live-checklist.md`).
 
 A Mac menu bar screenshot tool where marking up takes single keystrokes, a spoken sentence, or one CLI command from an agent. Tenth app in the Brushed family. Local, free, no account. CLI binary: `exhibit`.
 
@@ -218,7 +218,7 @@ Targets (assumed), not measurements. Baselines are taken once units 4 and 5 exis
 
 | Requirement | Status | Limitation |
 |---|---|---|
-| Core journeys | not assessed | Nothing built |
+| Core journeys | not assessed | Hand markup is built (units 4 and 5) and unit tested; no live run yet |
 | Redaction not recoverable | not assessed, blocking | Test defined in unit 1 |
 | Originals handling and purge | not assessed, blocking | Unit 4 |
 | Agent capture rules | not assessed | Unit 6 |
@@ -234,5 +234,6 @@ Targets (assumed), not measurements. Baselines are taken once units 4 and 5 exis
 - How often macOS 15+ re-prompts for Screen Recording.
 - Hotkey takeover: decided in unit 4 to read and link, not write (`docs/product/hotkey-takeover.md`). Still unverified on a real Mac: the deep link's landing pane, and whether ⌘⇧4 is free for the app at once after the person turns the system shortcut off.
 - Everything in unit 4 that needs a live Mac (overlay, capture, permission flow, hotkeys): `docs/product/unit4-live-checklist.md`.
+- Everything in unit 5 that needs a live Mac (the seven-keystroke time, snapping on real pages, force quit, pasting, displays): `docs/product/unit5-live-checklist.md`. The editor opens centred on the capture's display, not exactly in place.
 - Competitor facts (Shotcrisp, Lasso, Shotmark, Snapperon, CleanShot X) come from product pages read on 2026-11-18, not hands-on use.
 - Name screening for "Exhibit A" covered a web search and the first USPTO hits only.
