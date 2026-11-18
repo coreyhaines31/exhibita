@@ -1,0 +1,851 @@
+[
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "billing-01",
+    "instruction" : "Blur the emails",
+    "milliseconds" : 2834.450834,
+    "missedRedactions" : 0,
+    "output" : "blur [\"Dana Whitfield\", email]; blur [email]",
+    "overRedactions" : 1,
+    "split" : "dev",
+    "tags" : [
+      "kind",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "billing-02",
+    "instruction" : "circle the plan price",
+    "milliseconds" : 2315.9401669999997,
+    "output" : "circle [\"Billing contact\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "billing-03",
+    "instruction" : "hide anything that identifies the customer",
+    "milliseconds" : 4372.6215,
+    "missedRedactions" : 4,
+    "output" : "blur [\"Northwind\", \"Billing\", \"Overview\", \"Current plan\", \"Payment method\", \"Projects\", card, \"Pro plan $49/mo\", \"Billing\", \"Expires 08/28\", \"Renews on December 3, 2026\", \"Team\"]; arrow [\"Change card\", \"Integrations\", \"Update plan\", \"Cancel plan\", \"Settings\", \"Billing contact\", \"Dana Whitfield\", email, phone, \"Customer ID cus_8841207\", \"Invoices\", \"Date\"]",
+    "overRedactions" : 11,
+    "split" : "dev",
+    "tags" : [
+      "semantic",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : true,
+    "id" : "billing-04",
+    "instruction" : "Point at Update plan and circle Cancel plan.",
+    "milliseconds" : 2634.026958,
+    "output" : "arrow [\"Update plan\"]; circle [\"Cancel plan\"]",
+    "split" : "heldout",
+    "tags" : [
+      "multi",
+      "text",
+      "arrow",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : true,
+    "id" : "billing-05",
+    "instruction" : "highlight the total",
+    "milliseconds" : 2277.616792,
+    "output" : "highlight [\"Total paid this year: $412.00\"]",
+    "split" : "dev",
+    "tags" : [
+      "semantic",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : true,
+    "id" : "billing-06",
+    "instruction" : "blur this",
+    "milliseconds" : 2804.592916,
+    "missedRedactions" : 0,
+    "output" : "blur [\"Customer ID cus_8841207\"]",
+    "overRedactions" : 0,
+    "split" : "heldout",
+    "tags" : [
+      "deictic",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "billing-07",
+    "instruction" : "highlight the discount code",
+    "milliseconds" : 2885.6522919999998,
+    "output" : "highlight [\"Billing\"]",
+    "split" : "heldout",
+    "tags" : [
+      "notfound",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : true,
+    "id" : "billing-08",
+    "instruction" : "put an arrow here",
+    "milliseconds" : 3015.875041,
+    "output" : "arrow [\"Change card\"]",
+    "split" : "heldout",
+    "tags" : [
+      "deictic",
+      "arrow"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "billing-09",
+    "instruction" : "highlight the in voices heading",
+    "milliseconds" : 2332.677583,
+    "output" : "highlight [\"Billing contact\"]",
+    "split" : "dev",
+    "tags" : [
+      "speech",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "inbox-01",
+    "instruction" : "blur all the email addresses",
+    "milliseconds" : 4247.442291,
+    "missedRedactions" : 0,
+    "output" : "blur [\"Contract renewal for Q1\", email, \"To: •••••••••••••••\", email, \"Priya Raman\"]; step [\"Priya Raman\", \"Mail\", \"Contract renewal for Q1\", \"Contract renewal for Q1\", \"Hi, attached is the updated contract...\", \"Inbox\", \"From: Priya Raman <•••••••••••••••••••••••>\", email, \"To: •••••••••••••••\", email, \"Tomas Lindqvist\", \"Starred\"]",
+    "overRedactions" : 2,
+    "split" : "dev",
+    "tags" : [
+      "kind",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "inbox-02",
+    "instruction" : "Circle the new annual price",
+    "milliseconds" : 3554.470708,
+    "output" : "circle [\"Attached is the updated contract for Q1. The new annual price is $18,400, down from\"]; text [\"Attached is the updated contract for Q1. The new annual price is $18,400, down from\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : true,
+    "id" : "inbox-03",
+    "instruction" : "box the reply button",
+    "milliseconds" : 2469.489,
+    "output" : "box [\"Reply\"]",
+    "split" : "dev",
+    "tags" : [
+      "text",
+      "box"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "inbox-04",
+    "instruction" : "blur the e mails",
+    "milliseconds" : 3727.85775,
+    "missedRedactions" : 0,
+    "output" : "blur [\"Contract renewal for Q1\", email, \"To: •••••••••••••••\", email]; blur [\"Contract renewal for Q1\", email, \"To: •••••••••••••••\", email]",
+    "overRedactions" : 1,
+    "split" : "heldout",
+    "tags" : [
+      "speech",
+      "kind",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "inbox-05",
+    "instruction" : "number reply forward and archive",
+    "milliseconds" : 5932.162416,
+    "output" : "step [\"Priya Raman\", \"Mail\", \"Contract renewal for Q1\", \"Contract renewal for Q1\", \"Hi, attached is the updated contract...\", \"Inbox\", \"From: Priya Raman <•••••••••••••••••••••••>\", email, \"To: •••••••••••••••\", email, \"Tomas Lindqvist\", \"Starred\"]; arrow [\"Re: Design review notes\", \"Sent\", \"Thanks, I moved the header up...\", \"Hi team,\", \"Drafts\", \"Attached is the updated contract for Q1. The new annual price is $18,400, down from\", \"Billing Team\", \"$21,000.\", \"Your invoice INV-2041 is ready\", \"Archive\", \"Amount due: $49.00\", \"Please sign by November 30 so we can keep the discount.\"]; arrow [\"Forward\", \"Archive\", \"Merged #482 into main\", \"Marco Ferri\", \"Quick question about the API\", \"Do you support webhooks for refunds?\"]; arrow [\"Reply\", \"Merged #482 into main\", \"Marco Ferri\", \"Quick question about the API\", \"Do you support webhooks for refunds?\"]",
+    "split" : "dev",
+    "tags" : [
+      "text",
+      "step"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "inbox-06",
+    "instruction" : "highlight the deadline",
+    "milliseconds" : 3128.343542,
+    "output" : "highlight [\"Nov 17,2026, 9:42 AM\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : true,
+    "id" : "chat-01",
+    "instruction" : "blur the token",
+    "milliseconds" : 1850.410625,
+    "missedRedactions" : 0,
+    "output" : "blur [key]",
+    "overRedactions" : 0,
+    "split" : "dev",
+    "tags" : [
+      "kind",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "chat-02",
+    "instruction" : "Redact the API key and the phone number.",
+    "milliseconds" : 3106.657042,
+    "missedRedactions" : 2,
+    "output" : "text [key, phone]; arrow [key]; arrow [phone]",
+    "overRedactions" : 0,
+    "split" : "heldout",
+    "tags" : [
+      "kind",
+      "multi",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "chat-03",
+    "instruction" : "circle the message about the failing job",
+    "milliseconds" : 1845.343417,
+    "output" : "circle [\"Message #eng-deploys\"]",
+    "split" : "dev",
+    "tags" : [
+      "semantic",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "chat-04",
+    "instruction" : "highlight kenji's first message",
+    "milliseconds" : 2383.574458,
+    "output" : "highlight [\"Acme Corp\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : true,
+    "id" : "chat-05",
+    "instruction" : "put an arrow on the deploy window",
+    "milliseconds" : 2773.635916,
+    "output" : "arrow [\"Fixed in #4821. Deploy window is 2:00 PM today.\"]; arrow [\"Fixed in #4821. Deploy window is 2:00 PM today.\"]",
+    "split" : "dev",
+    "tags" : [
+      "text",
+      "arrow"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "chat-06",
+    "instruction" : "blur kenji watanabe",
+    "milliseconds" : 2414.995667,
+    "missedRedactions" : 2,
+    "output" : "blur [\"Kenji Watanabe 10:05 AM\", \"KW\", \"Kenji Watanabe\"]; blur [\"Kenji Watanabe 10:05 AM\", \"KW\", \"Kenji Watanabe\"]",
+    "overRedactions" : 1,
+    "split" : "heldout",
+    "tags" : [
+      "text",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : true,
+    "id" : "chat-07",
+    "instruction" : "highlight that",
+    "milliseconds" : 1853.497375,
+    "output" : "highlight [\"Fixed in #4821. Deploy window is 2:00 PM today.\"]",
+    "split" : "dev",
+    "tags" : [
+      "deictic",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "table-01",
+    "instruction" : "blur the email column",
+    "milliseconds" : 3661.1285,
+    "missedRedactions" : 5,
+    "output" : "blur [email]; text [email]",
+    "overRedactions" : 0,
+    "split" : "dev",
+    "tags" : [
+      "kind",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "table-02",
+    "instruction" : "highlight the customer that is past due",
+    "milliseconds" : 2876.461166,
+    "output" : "highlight [\"Customer\"]; arrow [\"Past due\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "table-03",
+    "instruction" : "circle the total",
+    "milliseconds" : 3501.665834,
+    "output" : "circle [\"Total\"]; text [\"Total\"]",
+    "split" : "dev",
+    "tags" : [
+      "semantic",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : true,
+    "id" : "table-04",
+    "instruction" : "blur grace holloway and her email",
+    "milliseconds" : 3018.445458,
+    "missedRedactions" : 0,
+    "output" : "blur [\"Grace Holloway\"]; blur [email]",
+    "overRedactions" : 0,
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "multi",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "table-05",
+    "instruction" : "box the cancelled account",
+    "milliseconds" : 2558.285583,
+    "output" : "box [\"Cedar & Pine\"]",
+    "split" : "dev",
+    "tags" : [
+      "semantic",
+      "box"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "table-06",
+    "instruction" : "label the past due customer call them today",
+    "milliseconds" : 3671.829334,
+    "output" : "text [email]; text [email]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "text"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "editor-01",
+    "instruction" : "blur all the secrets",
+    "milliseconds" : 2294.44475,
+    "missedRedactions" : 0,
+    "output" : "blur [key, \"README.md\", key, key]",
+    "overRedactions" : 1,
+    "split" : "heldout",
+    "tags" : [
+      "kind",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : true,
+    "id" : "editor-02",
+    "instruction" : "highlight the database url",
+    "milliseconds" : 2101.762875,
+    "output" : "highlight [\"DATABASE_URL=postgres://app:••••••••••@db.example.com:5432/orders\"]",
+    "split" : "dev",
+    "tags" : [
+      "text",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "editor-03",
+    "instruction" : "circle line 5",
+    "milliseconds" : 2528.278042,
+    "output" : "arrow [\"server.ts\"]; step [\"server.ts\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "editor-04",
+    "instruction" : "add a label saying rotate this next to the payments key",
+    "milliseconds" : 2578.354167,
+    "output" : "text [key]; arrow [key]",
+    "split" : "dev",
+    "tags" : [
+      "semantic",
+      "text"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "editor-05",
+    "instruction" : "Point to the SMTP password.",
+    "milliseconds" : 2219.339542,
+    "output" : "arrow [\"SMTP_PASSWORD=•••••••••••••••\"]; not found: Point to the SMTP password.",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "arrow"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : true,
+    "id" : "pricing-01",
+    "instruction" : "Circle Pricing",
+    "milliseconds" : 1731.6442080000002,
+    "output" : "circle [\"Pricing\"]",
+    "split" : "dev",
+    "tags" : [
+      "text",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : true,
+    "id" : "pricing-02",
+    "instruction" : "circle prising and point at sign up",
+    "milliseconds" : 2541.439542,
+    "output" : "circle [\"Pricing\"]; arrow [\"Sign up\"]",
+    "split" : "heldout",
+    "tags" : [
+      "speech",
+      "multi",
+      "circle",
+      "arrow"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "pricing-03",
+    "instruction" : "highlight the most popular plan's price",
+    "milliseconds" : 1788.6041249999998,
+    "output" : "highlight [\"Most popular\"]",
+    "split" : "dev",
+    "tags" : [
+      "semantic",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "pricing-04",
+    "instruction" : "number the three plans",
+    "milliseconds" : 2343.797875,
+    "output" : "step [\"Starter\", \"Enterprise\", \"Most popular\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "step"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "pricing-05",
+    "instruction" : "box the start free trial buttons",
+    "milliseconds" : 2626.265458,
+    "output" : "arrow [\"Start free trial\"]; arrow [\"Start free trial\"]",
+    "split" : "dev",
+    "tags" : [
+      "text",
+      "box"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "pricing-06",
+    "instruction" : "circle the free trial button on the pro plan",
+    "milliseconds" : 1872.147458,
+    "output" : "circle [\"3 projects\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "pricing-07",
+    "instruction" : "circle this",
+    "milliseconds" : 2489.926833,
+    "output" : "circle [\"Contact sales\"]; arrow [\"Contact sales\"]",
+    "split" : "dev",
+    "tags" : [
+      "deictic",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "pricing-08",
+    "instruction" : "circle sign op",
+    "milliseconds" : 2629.168125,
+    "output" : "circle [\"Sign in\"]; arrow [\"Sign in\"]",
+    "split" : "heldout",
+    "tags" : [
+      "speech",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "dashboard-01",
+    "instruction" : "circle the churn rate",
+    "milliseconds" : 2653.462917,
+    "output" : "circle [\"3,912\"]",
+    "split" : "dev",
+    "tags" : [
+      "semantic",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "dashboard-02",
+    "instruction" : "highlight the biggest customer",
+    "milliseconds" : 2196.331042,
+    "output" : "highlight [\"Reports\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "dashboard-03",
+    "instruction" : "point at open tickets and label it needs triage",
+    "milliseconds" : 2830.4237080000003,
+    "output" : "arrow [\"Open tickets\"] label \"at\"; arrow [\"Open tickets\"] label \"at\"; text [\"Open tickets\"] label \"needs triage\"",
+    "split" : "dev",
+    "tags" : [
+      "text",
+      "arrow"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : true,
+    "id" : "dashboard-04",
+    "instruction" : "highlight november",
+    "milliseconds" : 2587.613375,
+    "output" : "highlight [\"Nov\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "dashboard-05",
+    "instruction" : "circle the export button",
+    "milliseconds" : 2975.773833,
+    "output" : "circle [\"Orbit\"]; arrow [\"Orbit\"]",
+    "split" : "dev",
+    "tags" : [
+      "notfound",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : true,
+    "id" : "login-01",
+    "instruction" : "blur the e mail",
+    "milliseconds" : 1293.274334,
+    "missedRedactions" : 0,
+    "output" : "blur [email]",
+    "overRedactions" : 0,
+    "split" : "dev",
+    "tags" : [
+      "speech",
+      "kind",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : true,
+    "id" : "login-02",
+    "instruction" : "arrow to forgot password",
+    "milliseconds" : 1305.780125,
+    "output" : "arrow [\"Forgot password?\"]",
+    "split" : "heldout",
+    "tags" : [
+      "text",
+      "arrow"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : true,
+    "id" : "login-03",
+    "instruction" : "Box Sign in",
+    "milliseconds" : 1315.5085,
+    "output" : "box [\"Sign in\"]",
+    "split" : "dev",
+    "tags" : [
+      "text",
+      "box"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : true,
+    "id" : "login-04",
+    "instruction" : "step one email step two password step three sign in",
+    "milliseconds" : 1658.947375,
+    "output" : "step [email]; step [\"Password\"]; step [\"Sign in\"]",
+    "split" : "heldout",
+    "tags" : [
+      "speech",
+      "step"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "login-05",
+    "instruction" : "box create account and circle the logout link",
+    "milliseconds" : 1569.452042,
+    "output" : "box [\"New here? Create account\"]; circle [\"Sign in\"]",
+    "split" : "dev",
+    "tags" : [
+      "notfound",
+      "multi",
+      "box",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : true,
+    "id" : "terminal-01",
+    "instruction" : "highlight the error",
+    "milliseconds" : 1690.1724159999999,
+    "output" : "highlight [\"Error: connect ECONNREFUSED 127.0.0.1:5432\"]",
+    "split" : "dev",
+    "tags" : [
+      "semantic",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "terminal-02",
+    "instruction" : "highlight the failed migration",
+    "milliseconds" : 1517.630917,
+    "output" : "highlight [\"Error: connect ECONNREFUSED 127.0.0.1:5432\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : true,
+    "id" : "terminal-03",
+    "instruction" : "box the commit that fixed the retry backoff",
+    "milliseconds" : 1563.6204579999999,
+    "output" : "box [\"a91f3c2 Fix retry backoff in payments job\"]",
+    "split" : "dev",
+    "tags" : [
+      "semantic",
+      "box"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : true,
+    "id" : "terminal-04",
+    "instruction" : "blur this",
+    "milliseconds" : 1834.720084,
+    "missedRedactions" : 0,
+    "output" : "blur [key]",
+    "overRedactions" : 0,
+    "split" : "heldout",
+    "tags" : [
+      "deictic",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "team-01",
+    "instruction" : "blur the faces",
+    "milliseconds" : 5483.610333,
+    "output" : "blur [\"Settings\", \"Team members\", \"Invite member\", \"Profile\", \"5 of 10 seats used on the Team plan\", \"Notifications\", \"Name\", \"Email\", \"Role\", \"Team\", \"Security\", email]; blur [\"Owner\", \"EV\", \"Elena Vasquez\", \"Billing\", email, \"JP\", \"Jonah Price\", \"Admin\", \"Remove\", \"API\", email, \"MK\"]; blur [\"Mei Kobayashi\", \"Member\", \"Remove\", \"SA\", \"Samir Aziz\", email, \"Member\", \"Remove\", \"Pending invite\", email, \"Member\", \"Resend\"]",
+    "split" : "dev",
+    "tags" : [
+      "notfound",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "team-02",
+    "instruction" : "circle the remove button for mei",
+    "milliseconds" : 2955.1938330000003,
+    "output" : "circle [\"Remove\"]; step [\"Remove\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : true,
+    "id" : "team-03",
+    "instruction" : "highlight the owner",
+    "milliseconds" : 2164.5547500000002,
+    "output" : "highlight [\"Owner\"]",
+    "split" : "dev",
+    "tags" : [
+      "semantic",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "team-04",
+    "instruction" : "blur everybody's emails except the pending invite",
+    "milliseconds" : 3864.6634169999998,
+    "missedRedactions" : 3,
+    "output" : "blur [\"Settings\", \"Team members\", \"Invite member\", \"Profile\", \"5 of 10 seats used on the Team plan\", \"Notifications\", \"Name\", \"Email\", \"Role\", \"Team\", \"Security\", email]; blur [\"Owner\"]",
+    "overRedactions" : 12,
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "team-05",
+    "instruction" : "point at invite member",
+    "milliseconds" : 2429.331875,
+    "output" : "arrow [email]; not found: point",
+    "split" : "dev",
+    "tags" : [
+      "text",
+      "arrow"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "team-06",
+    "instruction" : "blur the credit card",
+    "milliseconds" : 2626.491666,
+    "output" : "blur [email]",
+    "split" : "heldout",
+    "tags" : [
+      "notfound",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "exact" : false,
+    "id" : "team-07",
+    "instruction" : "blur the emails and circle the log out button",
+    "milliseconds" : 3419.785416,
+    "missedRedactions" : 1,
+    "output" : "blur [\"Settings\", \"Team members\", \"Invite member\", email, email, email, email]; circle [\"Remove\"]",
+    "overRedactions" : 3,
+    "split" : "heldout",
+    "tags" : [
+      "notfound",
+      "multi",
+      "kind",
+      "blur",
+      "circle"
+    ]
+  }
+]
