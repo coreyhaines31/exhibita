@@ -223,6 +223,11 @@ struct GrammarMatcher {
         return targets.filter { ids.contains($0.id) }
     }
 
+    /// Lines that read exactly `words`.
+    func wholeLines(_ words: [String]) -> [Target] {
+        lines.filter { Words.equal($0.words, words) }.map(\.target)
+    }
+
     /// Whole lines that equal a run of words, longest first: "reply forward" as "Reply", then "Forward".
     /// Every word must be used, or nil.
     func segment(_ words: [String]) -> [[String]]? {

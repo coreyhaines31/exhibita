@@ -123,6 +123,24 @@ struct GrammarTests {
             notFound: ["card numbers"]))
     }
 
+    @Test func aSplitHighlightTakesTheLinesThatReadEachPieceOnly() {
+        let header = Screen.line("Status", 10, 10), column = Screen.line("Owner", 100, 10)
+        let row = Screen.line("Status changed by owner", 10, 40, width: 200)
+        let note = Screen.line("Owner on leave", 10, 70, width: 200)
+        let outcome = GrammarInterpreter.interpret(InterpretRequest(instruction: "highlight status owner",
+                                                                    targets: [header, column, row, note]))
+        #expect(outcome.interpretation?.operations.flatMap(\.picks) == [.id(header.id), .id(column.id)])
+    }
+
+    @Test func aSplitBlurStillTakesEveryLineWithAPiece() {
+        let header = Screen.line("Status", 10, 10), column = Screen.line("Owner", 100, 10)
+        let note = Screen.line("Owner on leave", 10, 70, width: 200)
+        let outcome = GrammarInterpreter.interpret(InterpretRequest(instruction: "blur status owner",
+                                                                    targets: [header, column, note]))
+        let ids = Set(outcome.interpretation?.operations.flatMap(\.picks) ?? [])
+        #expect(ids == [.id(header.id), .id(column.id), .id(note.id)])
+    }
+
     @Test func chainFallsThroughDeclines() async throws {
         struct Fixed: Interpreter {
             var name: String { "fixed" }

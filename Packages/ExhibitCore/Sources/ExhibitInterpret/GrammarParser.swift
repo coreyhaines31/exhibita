@@ -150,14 +150,19 @@ extension GrammarParser {
         let whole = matcher.resolve(words, for: mark)
         if Self.resolved(whole) { return [whole] }
         let chunks = words.split(separator: "and").map(Array.init).filter { !$0.isEmpty }
-        let parts = chunks.flatMap { chunk -> [[String]] in
-            if chunks.count > 1, Self.resolved(matcher.resolve(chunk, for: mark)) { return [chunk] }
+        let parts = chunks.flatMap { chunk -> [(words: [String], segment: Bool)] in
+            if chunks.count > 1, Self.resolved(matcher.resolve(chunk, for: mark)) { return [(chunk, false)] }
             let bare = Array(chunk.drop { GrammarLexicon.determiners.contains($0) })
-            if let segments = matcher.segment(bare), segments.count > 1 { return segments }
-            return [chunk]
+            if let segments = matcher.segment(bare), segments.count > 1 { return segments.map { ($0, true) } }
+            return [(chunk, false)]
         }
         guard parts.count > 1 else { return [whole] }
-        return parts.map { matcher.resolve($0, for: mark) }
+        return parts.map { part in
+            // No line holds the whole phrase, so it was split into lines that each read one piece. A highlight
+            // takes those lines, not every line where one word of the phrase turns up.
+            if part.segment, mark == .highlight { return .targets(matcher.wholeLines(part.words)) }
+            return matcher.resolve(part.words, for: mark)
+        }
     }
 
     private static func resolved(_ result: ItemResult) -> Bool {
