@@ -4,13 +4,15 @@ Draft, 2026-11-18. Verdict: **unproven** (nothing built or measured).
 
 A Mac menu bar screenshot tool where marking up takes single keystrokes, a spoken sentence, or one CLI command from an agent. Tenth app in the Brushed family. Local, free, no account. CLI binary: `exhibit`.
 
-## Open decisions
+## Decisions
 
-1. **Whether originals are kept.** Recommended (assumed until confirmed): keep unredacted originals for 30 days so marks stay editable, outside Time Machine, with a one-click purge. Alternative: discard the original on copy or export.
-2. **Which licence.** The app is open and free; a paid tier is planned (see Free and paid). Recommended: FSL-1.1-MIT with a separately licensed `ee/` directory, as Midnight Oil does, so the paid parts cannot be resold. Alternative: plain MIT like On Hand. The repo is private until release.
-3. **Whether free users may point the interpreter at a cloud model with their own key.** Assumed no for v1: free means on-device or a local model the user runs. Hosted interpretation is a paid cloud feature.
+Decided 2026-11-18. Corey set the first and delegated the rest ("I trust your judgment").
 
-Decided 2026-11-18: spoken instructions are interpreted on the Mac. A fixed grammar handles common commands with no model, and free-form sentences go to Apple's on-device model or a local model the user runs. Unit 0 measures which of these is good enough.
+1. **Spoken instructions are interpreted on the Mac.** A fixed grammar handles common commands with no model; free-form sentences go to Apple's on-device model or a local model the user runs. Unit 0 measures which is good enough.
+2. **Originals are kept for 30 days** so marks stay editable, outside Time Machine, with a one-click purge. The retention period is a setting, and "discard on export" is one of its values.
+3. **Licence: FSL-1.1-MIT** with a separately licensed `ee/` directory for paid code, as Midnight Oil does. Site and README say "free, source available", not "open source". The repo is private until release.
+4. **No own-key cloud models in v1.** Free means on-device or a local model the user runs; hosted interpretation is a paid cloud feature.
+5. **Name screening** (a web search and the first USPTO hits) is treated as enough for a free app. No filing planned.
 
 ## Free and paid
 
