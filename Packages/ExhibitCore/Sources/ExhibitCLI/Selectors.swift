@@ -76,8 +76,10 @@ enum SelectorMatcher {
             }
         case .text(let needle):
             guard !needle.isEmpty else { throw CLIError.usage("--text needs a non-empty string.") }
+            // Both sides folded, so "Acme" matches a line OCR read as "Астe". Folding keeps offsets.
+            let folded = Confusables.fold(needle)
             return textTargets(targets).flatMap { target, text in
-                occurrences(of: needle, in: text).compactMap { candidate(target, text: text, range: $0) }
+                occurrences(of: folded, in: Confusables.fold(text)).compactMap { candidate(target, text: text, range: $0) }
             }
         case .regex(let pattern):
             let expression: NSRegularExpression
@@ -87,7 +89,7 @@ enum SelectorMatcher {
                 throw CLIError.usage("--regex \"\(pattern)\" is not a valid regular expression.")
             }
             return textTargets(targets).flatMap { target, text in
-                expression.matches(in: text, range: NSRange(location: 0, length: text.utf16.count))
+                expression.matches(in: Confusables.fold(text), range: NSRange(location: 0, length: text.utf16.count))
                     .map(\.range).filter { $0.length > 0 }
                     .compactMap { candidate(target, text: text, range: $0) }
             }
