@@ -1,6 +1,6 @@
 # Exhibit A — v1 spec
 
-Draft, 2026-11-18. Verdict: **unproven**. Units 0 to 3 are built (core, targets, CLI on files, interpreter spike); the app is not.
+Draft, 2026-11-18. Verdict: **unproven**. Units 0 to 3 are built (core, targets, CLI on files, interpreter spike). Unit 4 (the app shell) is built and unit tested but not yet checked live (`docs/product/unit4-live-checklist.md`).
 
 A Mac menu bar screenshot tool where marking up takes single keystrokes, a spoken sentence, or one CLI command from an agent. Tenth app in the Brushed family. Local, free, no account. CLI binary: `exhibit`.
 
@@ -79,7 +79,7 @@ Two global hotkeys, matching the two things Corey does most. Both are remappable
 | Capture and edit | ⌘⇧4 | ⌥⇧4 | Select, then the editor opens in place |
 | Capture to clipboard | ⌃⌘⇧4 | ⌃⌥⇧4 | Select, and the image is on the clipboard. No window opens |
 
-Onboarding offers to take over the system shortcuts: macOS's own screenshot shortcuts have to be turned off in System Settings → Keyboard → Keyboard Shortcuts → Screenshots first, and the app links straight to that pane. Whether the app can flip those settings itself is to be verified in unit 4.
+Onboarding offers to take over the system shortcuts: macOS's own screenshot shortcuts have to be turned off in System Settings → Keyboard → Keyboard Shortcuts → Screenshots first, and the app links straight to that pane. The app reads those settings and links to the pane; it does not change them itself (`docs/product/hotkey-takeover.md`). Once they are off, its defaults move to ⌘⇧4 and ⌃⌘⇧4 by themselves.
 
 After either hotkey: drag for a region, Space to pick a window, ↩ for the whole screen. A clipboard capture still lands in history, so it can be opened and marked up afterwards.
 
@@ -232,6 +232,7 @@ Targets (assumed), not measurements. Baselines are taken once units 4 and 5 exis
 - How smaller local models (3B to 8B) do as the free-form interpreter; only one 27B model was measured, at 90% exact with the grammar first.
 - Speech on macOS 14 and 15. macOS 26 uses the system `SpeechTranscriber` (fast in the spike, no prompt for files); WhisperKit for older systems is still an unverified assumption.
 - How often macOS 15+ re-prompts for Screen Recording.
-- Whether the app can turn off the system ⌘⇧4 shortcut itself, or can only link to the setting.
+- Hotkey takeover: decided in unit 4 to read and link, not write (`docs/product/hotkey-takeover.md`). Still unverified on a real Mac: the deep link's landing pane, and whether ⌘⇧4 is free for the app at once after the person turns the system shortcut off.
+- Everything in unit 4 that needs a live Mac (overlay, capture, permission flow, hotkeys): `docs/product/unit4-live-checklist.md`.
 - Competitor facts (Shotcrisp, Lasso, Shotmark, Snapperon, CleanShot X) come from product pages read on 2026-11-18, not hands-on use.
 - Name screening for "Exhibit A" covered a web search and the first USPTO hits only.
