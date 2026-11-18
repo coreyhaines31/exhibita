@@ -56,7 +56,8 @@ struct Exhibit: ParsableCommand {
             sent anywhere. Full reference: docs/cli.md.
             """,
         version: CLI.version,
-        subcommands: [Targets.self, Blur.self, Highlight.self, Circle.self, Box.self, Arrow.self, Text.self, Step.self]
+        subcommands: [Targets.self, Blur.self, Highlight.self, Circle.self, Box.self, Arrow.self, Text.self, Step.self,
+                      Apply.self]
     )
 }
 
@@ -305,5 +306,29 @@ struct Step: MarkCommand {
         var spec = try baseSpec(color: color)
         spec.number = number
         return spec
+    }
+}
+
+struct Apply: ExhibitCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Apply a batch of marks from a JSON file in one render.",
+        discussion: """
+            The file is an array of entries, or {"marks": [...]}. Each entry has a "kind" and either selectors \
+            ("text", "to", "regex", "kinds", "rect") or explicit geometry, plus optional "label", "color", \
+            "number", "all", "nth" and "allowMissing", with the same meaning as the flags. If any entry fails, \
+            nothing is written. Format: docs/cli.md.
+            Example: [{"kind": "blur", "kinds": ["email", "key"]}, {"kind": "arrow", "to": "Pricing", "label": "Here"}]
+            """
+    )
+
+    @Argument(help: ArgumentHelp("A PNG or JPEG file, or a .exhibit bundle.", valueName: "input")) var input: String
+    @Argument(help: ArgumentHelp("The marks file.", valueName: "marks.json")) var marks: String
+    @OptionGroup(title: "Output") var outputOptions: OutputOptions
+
+    func execute() throws -> String {
+        let url = URL(fileURLWithPath: marks)
+        guard let data = try? Data(contentsOf: url) else { throw CLIError.io("Could not read \(url.path).") }
+        return try MarkRun.run(input: input, specs: try ApplyFile.specs(from: data), indexed: true,
+                               output: outputOptions)
     }
 }
