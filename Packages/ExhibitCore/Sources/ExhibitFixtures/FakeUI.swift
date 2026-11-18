@@ -66,9 +66,11 @@ public struct FakeUI {
                                               height: radius * 2)))
     }
 
-    /// Draws one line of text with its top-left at `at` and records its pixel box under `name`.
+    /// Draws one line of text with its top-left at `at` and records its pixel box under `name`, and the box of
+    /// each substring in `parts` under its key.
     public mutating func text(_ string: String, at: CGPoint, size: Double, bold: Bool = false,
-                              _ color: Ink = Ink(0.11, 0.11, 0.12), name: String? = nil) {
+                              _ color: Ink = Ink(0.11, 0.11, 0.12), name: String? = nil,
+                              parts: [String: String] = [:]) {
         let line = Self.line(string, size: size * scale, bold: bold, color: color)
         let bounds = TypographicBounds(line)
         let origin = CGPoint(x: at.x * scale, y: at.y * scale)
@@ -81,6 +83,14 @@ public struct FakeUI {
         context.restoreGState()
         if let name {
             rects[name] = PixelRect(x: origin.x, y: origin.y, width: bounds.width, height: bounds.ascent + bounds.descent)
+        }
+        for (partName, part) in parts {
+            guard let range = string.range(of: part) else { continue }
+            let utf16 = NSRange(range, in: string)
+            let start = CTLineGetOffsetForStringIndex(line, utf16.location, nil)
+            let end = CTLineGetOffsetForStringIndex(line, utf16.location + utf16.length, nil)
+            rects[partName] = PixelRect(x: origin.x + start, y: origin.y, width: end - start,
+                                        height: bounds.ascent + bounds.descent)
         }
     }
 
