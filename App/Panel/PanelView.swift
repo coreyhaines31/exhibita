@@ -9,6 +9,8 @@ struct PanelActions {
     var allowScreenRecording: () -> Void = {}
     var checkPermissionAgain: () -> Void = {}
     var openKeyboardSettings: () -> Void = {}
+    /// Opens the capture in the editor.
+    var open: (UUID) -> Void = { _ in }
     var copy: (UUID) -> Void = { _ in }
     var reveal: (UUID) -> Void = { _ in }
     var delete: (UUID) -> Void = { _ in }

@@ -1,4 +1,5 @@
 import AppKit
+import ExhibitEditor
 import ExhibitStore
 import os
 import PanelKit
@@ -12,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindow: SettingsWindow?
     private var hotkeys: HotkeyCenter?
     private var capture: CaptureController?
+    private var editors: EditorWindows?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         PanelFont.register()
@@ -30,7 +32,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.onLaunchAtLoginChanged = { LaunchAtLogin.set($0) }
         self.model = model
 
-        let capture = CaptureController(model: model)
+        // Every document write for a capture the editor may have open goes through `OpenCaptures`.
+        let editors = EditorWindows(model: model, captures: OpenCaptures(store: store))
+        self.editors = editors
+        let capture = CaptureController(model: model, editors: editors)
         self.capture = capture
         let hotkeys = HotkeyCenter { [weak self] action in
             self?.refreshSystemState()
@@ -52,8 +57,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.statusItem = statusItem
         capture.showPanel = { [weak statusItem] in statusItem?.show() }
+        editors.willOpen = { [weak statusItem] in statusItem?.close() }
 
         Task { await model.reload() }
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        // Marks are saved within 100 ms of every change anyway; this writes the last few.
+        editors?.flushAll()
     }
 
     /// Permission and the system shortcuts can change in System Settings at any time. They are read again when
@@ -71,6 +82,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             allowScreenRecording: { ScreenRecording.request() },
             checkPermissionAgain: { [weak self] in self?.refreshSystemState() },
             openKeyboardSettings: { SystemShortcuts.openKeyboardSettings() },
+            open: { [weak self] in self?.editors?.open($0) },
             copy: { [weak self] in self?.capture?.copyCapture($0) },
             reveal: { id in NSWorkspace.shared.activateFileViewerSelecting([model.store.url(for: id)]) },
             delete: { id in Task { await model.delete(id) } }

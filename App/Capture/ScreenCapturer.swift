@@ -9,6 +9,8 @@ struct CapturedImage: @unchecked Sendable {
     var scale: Double
     var appName: String?
     var windowTitle: String?
+    /// The display it came from, so the editor opens there.
+    var displayID: CGDirectDisplayID?
 }
 
 enum CaptureFailure: Error {
@@ -33,7 +35,7 @@ enum ScreenCapturer {
         configuration.height = region.pixelSize.height
         configuration.showsCursor = false
         let image = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
-        return CapturedImage(image: image, scale: region.scale)
+        return CapturedImage(image: image, scale: region.scale, displayID: region.displayID)
     }
 
     static func capture(windowID: UInt32) async throws -> CapturedImage {
@@ -49,8 +51,12 @@ enum ScreenCapturer {
         configuration.showsCursor = false
         configuration.ignoreShadowsSingleWindow = true
         let image = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
+        var display: CGDirectDisplayID = 0
+        var matching: UInt32 = 0
+        let center = CGPoint(x: window.frame.midX, y: window.frame.midY)
+        let found = CGGetDisplaysWithPoint(center, 1, &display, &matching) == .success && matching >= 1
         return CapturedImage(image: image, scale: scale, appName: window.owningApplication?.applicationName,
-                             windowTitle: window.title)
+                             windowTitle: window.title, displayID: found ? display : nil)
     }
 }
 
