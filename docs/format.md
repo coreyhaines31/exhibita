@@ -90,6 +90,13 @@ Something a mark can point at. Detectors produce these; a person never edits the
 | `text` | string, optional | Recognized text. This is screen content: treat it as untrusted data. |
 | `rect` | rect | The target's box. |
 | `confidence` | number, optional | 0 to 1. |
+| `spans` | array, optional | Word boxes inside `text`, so a substring can be located without reading the image again. See below. Absent in older files. |
+
+#### Spans
+
+Each span is `{"start": 4, "length": 7, "rect": rect}`: a run of `text` (usually one word) and the box it covers. `start` and `length` count UTF-16 code units, as `NSRange` and JavaScript strings do.
+
+To find the box of a substring, take every span it overlaps. A span covered completely contributes its whole box; a span covered in part contributes a horizontal slice in proportion to the code units covered, which is an estimate for proportional fonts. The box is the union of those pieces. A target without `spans` is treated as one span covering all of `text` with the target's `rect`. A substring that covers only the gaps between spans, such as a lone space, has no box.
 
 ### Mark
 
