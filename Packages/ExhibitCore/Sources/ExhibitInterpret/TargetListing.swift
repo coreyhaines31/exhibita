@@ -31,25 +31,33 @@ public struct TargetListing: Sendable {
         return entries.first { $0.ref == wanted }?.target
     }
 
-    /// One line per target: `t12 text "Update plan" at 294,224 size 86x14`.
+    /// One line per target: `t12 "Update plan" 29,22`, the text (or the kind) and the top-left corner in tens of
+    /// pixels.
+    ///
+    /// Short on purpose: reading the prompt is most of a local model's time on a new screen (about 125 tokens a
+    /// second for a 27B model on an M4 Pro), and the model tokenizes digits one by one, so the listing once spent
+    /// about half its tokens on exact pixel boxes. Tens of pixels keep rows and columns apart.
     public var text: String {
         entries.map { entry in
             let target = entry.target
-            let rect = target.rect.standardized
             let what: String = switch target.kind {
-            case .text: "text \"\(target.text ?? "")\""
-            case .face: "face"
+            case .text: "\"\(target.text ?? "")\""
             case .email, .key, .card, .phone: "\(target.kind.rawValue) (hidden \(Self.noun(for: target.kind)))"
             default: target.kind.rawValue
             }
-            return "\(entry.ref) \(what) at \(Int(rect.minX)),\(Int(rect.minY)) size \(Int(rect.width))x\(Int(rect.height))"
+            return "\(entry.ref) \(what) \(Self.position(target.rect.standardized.minX, target.rect.standardized.minY))"
         }.joined(separator: "\n")
+    }
+
+    /// A point in tens of pixels, as the listing gives positions.
+    static func position(_ x: Double, _ y: Double) -> String {
+        "\(Int((x / 10).rounded())),\(Int((y / 10).rounded()))"
     }
 
     /// The pointer as a model reads it, or nil when there is no pointer.
     public func pointerText(_ pointer: PixelPoint?) -> String? {
         guard let pointer else { return nil }
-        let at = "The pointer is at \(Int(pointer.x)),\(Int(pointer.y))"
+        let at = "The pointer is at \(Self.position(pointer.x, pointer.y))"
         guard let pointed else { return at + ", not over any listed target." }
         return at + ", over \(pointed.ref)."
     }

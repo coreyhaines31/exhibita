@@ -7,7 +7,7 @@ struct ContractTests {
     @Test func listingUsesShortRefsAndHidesSecrets() {
         let listing = TargetListing(InterpretRequest(instruction: "", targets: Screen.targets))
         #expect(listing.entries.first?.ref == "t1")
-        #expect(listing.text.contains("t1 text \"Pricing\" at 200,20 size 80x14"))
+        #expect(listing.text.contains("t1 \"Pricing\" 20,2\n"))
         #expect(listing.text.contains("email (hidden email address)"))
         #expect(listing.target(ref: "T1")?.id == Screen.pricing.id)
         #expect(listing.target(ref: "t999") == nil)
@@ -25,7 +25,7 @@ struct ContractTests {
     @Test func listingNamesTheTargetUnderThePointer() {
         let request = InterpretRequest(instruction: "", targets: Screen.targets, pointer: PixelPoint(x: 205, y: 25))
         let listing = TargetListing(request)
-        #expect(listing.pointerText(request.pointer) == "The pointer is at 205,25, over t1.")
+        #expect(listing.pointerText(request.pointer) == "The pointer is at 21,3, over t1.")
         #expect(listing.pointerText(nil) == nil)
     }
 
