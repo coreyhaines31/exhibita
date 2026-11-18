@@ -52,10 +52,13 @@ func runInterpreters(_ options: Options) async throws {
         }
     }
     if options.only.contains("ollama") {
-        let ollama = OllamaInterpreter(model: options.ollamaModel, think: options.think)
+        var ollama = OllamaInterpreter(model: options.ollamaModel, think: options.think)
         try await ollama.warmUp()
         let results = await runner.run(ollama)
-        runs.append(("C \(ollama.name)\(options.think ? " (thinking)" : "")", results))
+        runs.append(("C \(ollama.name)\(options.think ? " thinking" : "")", results))
+        if !ollama.constrained {
+            notes.append("C: Ollama has no structured output for \(ollama.model), so its JSON was not constrained.")
+        }
         if let grammar { runs.append(("A then C", Runner.chain(grammar: grammar, model: results))) }
     }
     for run in runs { try Runner.write(run.results, name: run.name.replacingOccurrences(of: " ", with: "_"),
