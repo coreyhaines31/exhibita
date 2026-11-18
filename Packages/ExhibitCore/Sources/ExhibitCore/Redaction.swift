@@ -5,28 +5,46 @@
 /// a blur can be recovered from the output.
 ///
 /// How a patch is made:
-/// 1. Sample a ring a few pixels wide around the region, skipping any pixel inside any blur region.
-/// 2. Average the ring per column (top and bottom edges) and per row (left and right edges), fill gaps, and smooth.
-/// 3. Blend the four edges across the region (a Coons patch), so it continues the surrounding colours.
-/// 4. Pull toward the ring's mean colour, lighten slightly, and add grain seeded only by the region's geometry.
+/// 1. Grow the region by a small padding (glyphs overhang their text boxes) and snap it outward to whole pixels.
+/// 2. Sample a ring a few pixels wide around it, skipping any pixel inside any blur region.
+/// 3. Average the ring per column (top and bottom edges) and per row (left and right edges), fill gaps, and smooth.
+/// 4. Blend the four edges across the region (a Coons patch), so the patch continues the surrounding colours.
+/// 5. Frost it: pull toward the ring's mean, tint toward a mid grey, and add soft smudges and fine grain, both
+///    seeded only by the region's geometry. The frosting fades out over a rounded border so the patch sits softly.
 enum Redaction {
-    static let frost = 0.3
-    static let lighten = 0.18
-    static let grain = 0.03
-
     static func fill(_ buffer: PixelBuffer, rects: [PixelRect], unit: Double) {
-        let areas = rects.compactMap { PixelArea($0, width: buffer.width, height: buffer.height) }
+        let padding = 2 * unit
+        let areas = rects.compactMap { PixelArea($0, padding: padding, width: buffer.width, height: buffer.height) }
         guard !areas.isEmpty else { return }
         let ringWidth = max(3, Int((6 * unit).rounded()))
         let mask = BlurMask(areas, width: buffer.width, height: buffer.height)
         // Sample every ring before writing any patch, so one patch never feeds another's ring.
         let patches = areas.map { area in
-            Patch(area: area, edges: EdgeProfiles(buffer: buffer, area: area, ringWidth: ringWidth, mask: mask))
+            Patch(area: area, edges: EdgeProfiles(buffer: buffer, area: area, ringWidth: ringWidth, mask: mask),
+                  frosting: Frosting(unit: unit))
         }
-        let grainCell = max(1, Int(unit.rounded()))
         for patch in patches {
-            patch.write(into: buffer, grainCell: grainCell)
+            patch.write(into: buffer)
         }
+    }
+}
+
+/// How strongly a patch is frosted. All sizes in pixels.
+struct Frosting {
+    /// Share of the ring's mean colour mixed in, flattening the patch.
+    let flatten = 0.35
+    /// Share of the tint mixed in: darker over light surroundings, lighter over dark ones.
+    let tint = 0.16
+    let smudgeAmplitude = 0.07
+    let grainAmplitude = 0.035
+    let grainCell: Int
+    let cornerRadius: Double
+    let feather: Double
+
+    init(unit: Double) {
+        grainCell = max(1, Int(unit.rounded()))
+        cornerRadius = 4 * unit
+        feather = 1.5 * unit
     }
 }
 
@@ -140,8 +158,9 @@ struct EdgeProfiles {
 struct Patch {
     let area: PixelArea
     let edges: EdgeProfiles
+    let frosting: Frosting
 
-    func write(into buffer: PixelBuffer, grainCell: Int) {
+    func write(into buffer: PixelBuffer) {
         let width = Double(area.width)
         let height = Double(area.height)
         let topLeft = (edges.top[0] + edges.left[0]) / 2
@@ -149,32 +168,77 @@ struct Patch {
         let bottomLeft = (edges.bottom[0] + edges.left[area.height - 1]) / 2
         let bottomRight = (edges.bottom[area.width - 1] + edges.right[area.height - 1]) / 2
         let seed = Self.seed(for: area)
+        let meanAlpha = max(edges.mean.w, 1e-6)
+        let meanLuminance = (0.2126 * edges.mean.x + 0.7152 * edges.mean.y + 0.0722 * edges.mean.z) / meanAlpha
+        let tintGray = meanLuminance > 0.5 ? 0.55 : 0.75
+        let radius = min(frosting.cornerRadius, width / 2, height / 2)
+        // Smudges are soft blobs about the size of a word, so the patch reads like frosted text.
+        let smudgeCell = SIMD2(max(4, height * 0.9), max(3, height * 0.5))
 
         for row in 0..<area.height {
-            let v = (Double(row) + 0.5) / height
+            let y = Double(row) + 0.5
+            let v = y / height
             for column in 0..<area.width {
-                let u = (Double(column) + 0.5) / width
+                let x = Double(column) + 0.5
+                let u = x / width
                 let vertical: Color4 = (1 - v) * edges.top[column] + v * edges.bottom[column]
                 let horizontal: Color4 = (1 - u) * edges.left[row] + u * edges.right[row]
                 let upper: Color4 = (1 - u) * topLeft + u * topRight
                 let lower: Color4 = (1 - u) * bottomLeft + u * bottomRight
                 let corners: Color4 = (1 - v) * upper + v * lower
-                let coons: Color4 = vertical + horizontal - corners
-                let color: Color4 = coons * (1 - Redaction.frost) + edges.mean * Redaction.frost
+                var base: Color4 = vertical + horizontal - corners
+                base.w = min(1, max(0, base.w))
 
-                let alpha = min(1, max(0, color.w))
-                var rgb = SIMD3(color.x, color.y, color.z)
-                rgb += (SIMD3(repeating: alpha) - rgb) * Redaction.lighten
-                let noise = Self.noise(seed: seed, x: column / grainCell, y: row / grainCell)
-                rgb += SIMD3(repeating: noise * Redaction.grain * alpha)
+                var frosted: Color4 = base * (1 - frosting.flatten) + edges.mean * frosting.flatten
+                let alpha = min(1, max(0, frosted.w))
+                let tintTarget = SIMD3(repeating: tintGray * alpha)
+                var rgb = SIMD3(frosted.x, frosted.y, frosted.z)
+                rgb += (tintTarget - rgb) * frosting.tint
+                let smudge = Self.smoothNoise(seed: seed, x: x / smudgeCell.x, y: y / smudgeCell.y)
+                let grain = Self.noise(seed: seed ^ 0xA5A5, x: column / frosting.grainCell, y: row / frosting.grainCell)
+                rgb += SIMD3(repeating: (smudge * frosting.smudgeAmplitude + grain * frosting.grainAmplitude) * alpha)
+                frosted = Color4(rgb.x, rgb.y, rgb.z, alpha)
+
+                // Fade the frosting in from the border, with rounded corners. The border shows `base`, which
+                // also comes only from the ring.
+                let inside = Self.distanceInside(x: x, y: y, width: width, height: height, radius: radius)
+                let weight = Self.smoothstep(inside / frosting.feather)
+                let color: Color4 = base + (frosted - base) * weight
 
                 let offset = buffer.offset(x: area.minX + column, y: area.minY + row)
-                buffer.bytes[offset] = Self.byte(rgb.x, limit: alpha)
-                buffer.bytes[offset + 1] = Self.byte(rgb.y, limit: alpha)
-                buffer.bytes[offset + 2] = Self.byte(rgb.z, limit: alpha)
-                buffer.bytes[offset + 3] = Self.byte(alpha, limit: 1)
+                let pixelAlpha = min(1, max(0, color.w))
+                buffer.bytes[offset] = Self.byte(color.x, limit: pixelAlpha)
+                buffer.bytes[offset + 1] = Self.byte(color.y, limit: pixelAlpha)
+                buffer.bytes[offset + 2] = Self.byte(color.z, limit: pixelAlpha)
+                buffer.bytes[offset + 3] = Self.byte(pixelAlpha, limit: 1)
             }
         }
+    }
+
+    /// Distance from (x, y) to the edge of a rounded rectangle at the origin; positive inside.
+    static func distanceInside(x: Double, y: Double, width: Double, height: Double, radius: Double) -> Double {
+        let cornerX = abs(x - width / 2) - (width / 2 - radius)
+        let cornerY = abs(y - height / 2) - (height / 2 - radius)
+        let outside = (max(cornerX, 0) * max(cornerX, 0) + max(cornerY, 0) * max(cornerY, 0)).squareRoot()
+        let insideCorner = min(max(cornerX, cornerY), 0)
+        return -(outside + insideCorner - radius)
+    }
+
+    static func smoothstep(_ value: Double) -> Double {
+        let clamped = min(1, max(0, value))
+        return clamped * clamped * (3 - 2 * clamped)
+    }
+
+    /// Value noise in -1...1, smoothly interpolated between integer lattice points.
+    static func smoothNoise(seed: UInt64, x: Double, y: Double) -> Double {
+        let cellX = Int(x.rounded(.down))
+        let cellY = Int(y.rounded(.down))
+        let blendX = smoothstep(x - Double(cellX))
+        let blendY = smoothstep(y - Double(cellY))
+        let top = noise(seed: seed, x: cellX, y: cellY) * (1 - blendX) + noise(seed: seed, x: cellX + 1, y: cellY) * blendX
+        let bottom = noise(seed: seed, x: cellX, y: cellY + 1) * (1 - blendX)
+            + noise(seed: seed, x: cellX + 1, y: cellY + 1) * blendX
+        return top * (1 - blendY) + bottom * blendY
     }
 
     static func byte(_ value: Double, limit: Double) -> UInt8 {
@@ -203,14 +267,15 @@ struct Patch {
     }
 }
 
-/// A blur rectangle widened to whole pixels (so a partly covered pixel is covered) and clipped to the image.
+/// A blur rectangle grown by `padding`, widened to whole pixels (so a partly covered pixel is covered),
+/// and clipped to the image.
 struct PixelArea: Equatable {
     let minX: Int
     let minY: Int
     let maxX: Int
     let maxY: Int
 
-    init?(_ rect: PixelRect, width: Int, height: Int) {
+    init?(_ rect: PixelRect, padding: Double = 0, width: Int, height: Int) {
         // A blur must never be skipped for bad numbers: NaN anywhere covers the whole image, and infinities
         // clamp to the edges. Clamping happens in floating point so huge values never overflow Int.
         guard ![rect.x, rect.y, rect.x + rect.width, rect.y + rect.height].contains(where: \.isNaN) else {
@@ -223,10 +288,10 @@ struct PixelArea: Equatable {
         }
         let standard = rect.standardized
         func clamp(_ value: Double, _ limit: Int) -> Int { Int(min(Double(limit), max(0, value))) }
-        minX = clamp(standard.minX.rounded(.down), width)
-        minY = clamp(standard.minY.rounded(.down), height)
-        maxX = clamp(standard.maxX.rounded(.up), width)
-        maxY = clamp(standard.maxY.rounded(.up), height)
+        minX = clamp((standard.minX - padding).rounded(.down), width)
+        minY = clamp((standard.minY - padding).rounded(.down), height)
+        maxX = clamp((standard.maxX + padding).rounded(.up), width)
+        maxY = clamp((standard.maxY + padding).rounded(.up), height)
         guard maxX > minX, maxY > minY else { return nil }
     }
 

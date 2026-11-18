@@ -118,6 +118,19 @@ import Testing
         #expect(darkest > 200, "no dark text pixel survives under the blur")
     }
 
+    @Test func coversGlyphsThatOverhangTheirBox() throws {
+        // A descender one pixel left of the text box, as a "j" has.
+        let original = makeImage(width: 100, height: 60) { context in
+            context.setFillColor(CGColor(gray: 1, alpha: 1))
+            context.fill(CGRect(x: 0, y: 0, width: 100, height: 60))
+            context.setFillColor(CGColor(gray: 0, alpha: 1))
+            context.fill(CGRect(x: 19, y: 30, width: 1, height: 4))
+        }
+        let output = Pixels(try Renderer.render(original: original,
+                                                marks: [.blur(PixelRect(x: 20, y: 20, width: 40, height: 12))], scale: 1))
+        #expect(output.pixel(x: 19, y: 31)[0] > 200)
+    }
+
     @Test func exportedPNGHoldsOneFlatImageAndNoExtraData() throws {
         let rect = PixelRect(x: 170, y: 100, width: 90, height: 22)
         let png = try Renderer.renderPNG(original: capture(secret: 5, area: rect.cgRect),
