@@ -9,6 +9,8 @@ let package = Package(
         .library(name: "ExhibitTargets", targets: ["ExhibitTargets"]),
         .library(name: "ExhibitCLI", targets: ["ExhibitCLI"]),
         .library(name: "ExhibitInterpret", targets: ["ExhibitInterpret"]),
+        .library(name: "ExhibitStore", targets: ["ExhibitStore"]),
+        .library(name: "ExhibitShell", targets: ["ExhibitShell"]),
         .executable(name: "exhibit", targets: ["exhibit"])
     ],
     dependencies: [
@@ -30,10 +32,17 @@ let package = Package(
         // The interpreter and speech spike (issue 3): `swift run exhibit-eval`. Not shipped. Uses FoundationModels
         // and SpeechAnalyzer behind macOS 26 availability checks.
         .executableTarget(name: "exhibit-eval", dependencies: ["ExhibitInterpret", "ExhibitCore"], path: "Sources/ExhibitEval"),
+        // History for the app: captures under Application Support, retention and purge. No AppKit.
+        .target(name: "ExhibitStore", dependencies: ["ExhibitCore"]),
+        // The app shell's decisions as plain logic: hotkeys and their conflicts, selection geometry, window
+        // picking, history rows, permission state, the capture policy hook. No AppKit, so all of it is tested here.
+        .target(name: "ExhibitShell", dependencies: ["ExhibitCore", "ExhibitStore"]),
         // Synthetic screenshots shared by the test targets. Not a product.
         .target(name: "ExhibitFixtures", dependencies: ["ExhibitCore"]),
         // Goldens are read and written through #filePath, so they are not bundled as resources.
         .testTarget(name: "ExhibitCoreTests", dependencies: ["ExhibitCore", "ExhibitFixtures"], exclude: ["Goldens"]),
+        .testTarget(name: "ExhibitStoreTests", dependencies: ["ExhibitStore", "ExhibitCore", "ExhibitFixtures"]),
+        .testTarget(name: "ExhibitShellTests", dependencies: ["ExhibitShell", "ExhibitStore", "ExhibitCore"]),
         .testTarget(name: "ExhibitInterpretTests", dependencies: ["ExhibitInterpret", "ExhibitCore"]),
         .testTarget(name: "ExhibitTargetsTests", dependencies: ["ExhibitTargets", "ExhibitCore", "ExhibitFixtures"]),
         // Depends on the executable so `swift test` builds the real binary for the end-to-end tests.

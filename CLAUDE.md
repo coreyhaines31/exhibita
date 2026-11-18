@@ -14,6 +14,19 @@ swiftlint --strict                     # from the repo root
 swift build -c release                 # .build/release/exhibit, the CLI
 ```
 
+App (XcodeGen; `ExhibitA.xcodeproj` is generated, never committed):
+
+```sh
+xcodegen generate
+xcodebuild -project ExhibitA.xcodeproj -scheme ExhibitA -configuration Debug -derivedDataPath build/DerivedData \
+  CODE_SIGNING_ALLOWED=NO build                     # the app, "Exhibit A.app"
+xcodebuild -project ExhibitA.xcodeproj -scheme ExhibitA -derivedDataPath build/DerivedData \
+  CODE_SIGNING_ALLOWED=NO test                      # ExhibitAViewTests: view models and offscreen renders
+Scripts/render-app-samples.sh                       # rewrite docs/samples/app/*.png; look at every changed image
+```
+
+`xcodebuild` may rewrite `Packages/ExhibitCore/Package.resolved` with the app's packages; restore it before committing. What only a live Mac can check is in `docs/product/unit4-live-checklist.md`.
+
 `swift test` builds the `exhibit` binary too; `ExhibitCLITests/EndToEndTests` run it as a subprocess. `EXHIBIT_RECORD_GOLDENS=1` also regenerates `docs/samples/cli-demo.png` with the real binary.
 
 Judge build, test and lint by exit code, never by grepping output.
@@ -49,6 +62,15 @@ Judge build, test and lint by exit code, never by grepping output.
   - `GrammarInterpreter` (`Grammar*.swift`, `Words.swift`): verbs, kinds, pointer words, whole-line and close (mis-heard) text matches. Declines anything needing judgement, any unknown phrase, any tie and any qualified kind ("her email", "the payments key"); reports a kind with no targets as not found. Blur and highlight take every line holding the phrase (blur also substrings, wrapped lines and every close mis-hearing): an ambiguous redaction declines or over-covers, never under-covers (`GrammarRedactionTests`).
   - `ModelPrompt.swift`, `ModelEndpoint.swift`, `ModelInterpreter.swift`: the local model tier. Ollama (`/api/chat`) or OpenAI-compatible (`/v1/chat/completions`) on loopback only (`ModelEndpoint.isLoopback`; the transport checks again and refuses redirects). No structured output; refs not in the listing are dropped. `ModelTransport` is blocking so the CLI stays synchronous; tests inject a fake one. This is the only network code, and it never leaves the Mac.
 - `Packages/ExhibitCore/Sources/ExhibitEval` (executable `exhibit-eval`, not shipped): the interpreter eval. `swift run exhibit-eval interpret [--file instructions.json] [--split dev|heldout|all|<split>] [--only grammar,model,model-alone,apple] [--model qwen3.8:27b]` scores the shipping grammar and the shipping chain (grammar, then `ModelInterpreter` only where it declined) on `eval/interpreter`; `swift run exhibit-eval speech` times on-device transcription of `say` audio. Apple's model (FoundationModels) and SpeechAnalyzer sit behind macOS 26 checks and are not shipped. Findings: `docs/product/spike-interpreter.md`, `docs/product/heldout2-results.md`. Tune on `instructions.json` only. `instructions-heldout2.json`, `HELDOUT2.md` and the `calendar`, `crm` and `ticket` fixtures are held out: do not read them while changing the interpreter, and do not tune on them.
+- `Packages/ExhibitCore/Sources/ExhibitStore` (library, ExhibitCore only, no AppKit): history. `CaptureStore` keeps captures as bundles in `~/Library/Application Support/Exhibit A/Captures` (injectable directory; excluded from Time Machine, `.metadata_never_index` for Spotlight), lists them newest first from `document.json` alone (`HistoryItem`; newer format versions and half-written bundles are skipped), saves documents atomically, deletes, purges, sweeps by `RetentionPolicy` (30 days by default; "until exported" deletes on export and sweeps the rest after 30 days) and makes ImageIO thumbnails.
+- `Packages/ExhibitCore/Sources/ExhibitShell` (library, no AppKit): the app shell's decisions as tested logic. `KeyCombo`/`KeyModifiers` (bits equal `NSEvent.ModifierFlags`), `HotkeyAction` and `HotkeyBindings` (defaults ⌥⇧4 and ⌃⌥⇧4 until macOS's selection shortcuts are off, then ⇧⌘4 and ⌃⇧⌘4; custom keys stored, defaults not; refuses keys without ⌘/⌥/⌃, the other hotkey's key and keys an enabled system shortcut holds), `SystemScreenshotShortcuts` (parses `AppleSymbolicHotKeys` ids 28 to 31 and 184), `SelectionGeometry` (a drag in global Cocoa points to a display-local, top-left `sourceRect` grown outward to whole pixels; selections stay on the display where they started), `WindowPicker`, `HistoryPresentation` (rows, empty state, summary), `ScreenRecordingState`/`PanelContent`, and `CapturePolicy` (the never-capture hook, allows everything until unit 6).
+- `App/` (the app target, a thin shell; bundle id `com.exhibitaformac.ExhibitA`, LSUIElement, PanelKit 0.2.1, KeyboardShortcuts 2.4.0 as in Midnight Oil and On Hand; no network code):
+  - `Shell/`: `AppDelegate` wires everything; `AppModel` (`@Observable`: history, thumbnails, permission, bindings, retention; file work off the main thread); `StatusItemController` (glyph and popover); `Glyph` (placeholder template drawing; mac-app-kit's glyph replaces `Glyph.image`); `Preferences`; `LaunchAtLogin` (`SMAppService`, registered once by default in release builds only).
+  - `Hotkeys/`: `HotkeyCenter` writes the keys in effect into KeyboardShortcuts (Carbon `RegisterEventHotKey`, no Accessibility) whenever bindings change.
+  - `Capture/`: `SystemLinks` (`CGPreflightScreenCaptureAccess` only; `CGRequestScreenCaptureAccess` only from a button; reading the symbolic hot keys; System Settings links), `SelectionOverlay` (a non-activating panel per display: drag, Space for a window, ↩ for the display, Esc), `ScreenCapturer` (`SCScreenshotManager`, Exhibit A's own windows excluded), `CaptureController` (overlay to capture to history, clipboard PNG for capture to clipboard, `TargetFinder` in the background into the bundle). The editor is unit 5: capture and edit opens the panel with the capture selected.
+  - `Panel/`, `Settings/`: SwiftUI over `AppModel` with action structs, so renders pass fixture models and no-op actions.
+  - Hotkey takeover is read and link only: `docs/product/hotkey-takeover.md`.
+- `ExhibitAViewTests/` (unhosted XCTest bundle that compiles the views itself): model checks plus renders of the panel (`ImageRenderer`) and Settings (an unattached `NSHostingView`'s display cache) on fixture captures drawn in code. No window, no app launch; preferences go to a throwaway suite and history to a temporary folder.
 - `Packages/ExhibitCore/Sources/ExhibitFixtures` (not a product): synthetic screenshots drawn with CoreText (`FakeUI.swift`, `SampleFixture.swift`), shared by the test targets and sample generators.
 - Tests use Swift Testing. Goldens live in `Tests/ExhibitCoreTests/Goldens`, drawn over the shared fixtures.
 
