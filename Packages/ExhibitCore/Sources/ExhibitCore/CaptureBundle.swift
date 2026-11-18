@@ -22,7 +22,8 @@ public enum CaptureBundle {
     }
 
     /// Writes a complete bundle (original and document) into `directory` and returns the bundle's URL.
-    /// An existing bundle with the same id is updated in place, one file at a time, each atomically.
+    /// The bundle is always assembled beside its destination and swapped in whole, so an existing bundle with
+    /// the same id is replaced by the new pair or left as it was, never half updated.
     @discardableResult
     public static func save(_ document: CaptureDocument, original: CGImage, in directory: URL) throws -> URL {
         let imageSize = PixelSize(width: original.width, height: original.height)
@@ -32,12 +33,6 @@ public enum CaptureBundle {
         let fileManager = FileManager.default
         let destination = url(for: document.id, in: directory)
 
-        if fileManager.fileExists(atPath: destination.path) {
-            try png.write(to: destination.appendingPathComponent(originalFileName), options: .atomic)
-            try json.write(to: destination.appendingPathComponent(documentFileName), options: .atomic)
-            return destination
-        }
-
         try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
         let stagingName = ".\(document.id.uuidString).\(fileExtension).partial"
         let staging = directory.appendingPathComponent(stagingName, isDirectory: true)
@@ -46,7 +41,11 @@ public enum CaptureBundle {
         do {
             try png.write(to: staging.appendingPathComponent(originalFileName), options: .atomic)
             try json.write(to: staging.appendingPathComponent(documentFileName), options: .atomic)
-            try fileManager.moveItem(at: staging, to: destination)
+            if fileManager.fileExists(atPath: destination.path) {
+                _ = try fileManager.replaceItemAt(destination, withItemAt: staging)
+            } else {
+                try fileManager.moveItem(at: staging, to: destination)
+            }
         } catch {
             try? fileManager.removeItem(at: staging)
             throw error

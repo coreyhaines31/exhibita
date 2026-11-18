@@ -15,7 +15,7 @@ A directory named `<uuid>.exhibit/`, where `<uuid>` is the document's `id` in up
 ```
 
 - `original.png` holds no annotations. Marks are never baked into it.
-- Every file is written atomically (written to a temporary file, then renamed). A new bundle is assembled in a hidden `.<uuid>.exhibit.partial` directory beside it and renamed into place once complete, so a reader never sees half a bundle.
+- Every file is written atomically (written to a temporary file, then renamed). A new bundle is assembled in a hidden `.<uuid>.exhibit.partial` directory beside it and renamed into place once complete, so a reader never sees half a bundle. Saving a whole bundle over an existing one assembles it the same way and swaps it in, so the original and document always change together.
 - Saving marks rewrites only `document.json`.
 - Readers ignore files they do not know.
 
