@@ -4,7 +4,7 @@ import Foundation
 import Vision
 
 /// Finds targets in an image: one `.text` target per recognized line, `.email`, `.key`, `.card` and `.phone`
-/// targets for sensitive items in that text.
+/// targets for sensitive items in that text, and a `.face` target per face.
 ///
 /// Everything runs on the Mac with Vision; nothing leaves it. `findTargets(in:)` is synchronous and takes a
 /// fraction of a second to a few seconds depending on image size, so call it off the main thread.
@@ -24,13 +24,19 @@ public struct TargetFinder: Sendable {
         textRequest.recognitionLevel = .accurate
         // Correction "fixes" keys, codes and names into dictionary words.
         textRequest.usesLanguageCorrection = false
-        try VNImageRequestHandler(cgImage: image, options: [:]).perform([textRequest])
+        let faceRequest = VNDetectFaceRectanglesRequest()
+        try VNImageRequestHandler(cgImage: image, options: [:]).perform([textRequest, faceRequest])
 
         let grid = InkGrid(image)
         var targets: [Target] = []
         for observation in textRequest.results ?? [] {
             guard let candidate = observation.topCandidates(1).first, !candidate.string.isEmpty else { continue }
             targets += Self.targets(forLine: candidate, observation: observation, image: image, grid: grid)
+        }
+        for face in faceRequest.results ?? [] {
+            targets.append(Target(kind: .face, rect: VisionGeometry.pixelRect(face.boundingBox, width: image.width,
+                                                                               height: image.height),
+                                  confidence: Double(face.confidence)))
         }
         return Self.ordered(targets)
     }

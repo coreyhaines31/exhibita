@@ -66,6 +66,7 @@ private func line(_ targets: [Target], startingWith prefix: String) -> Target? {
             expectClose(matches.first?.rect, fixture[name], scale: scale, name)
             #expect(matches.first?.text == nil)
         }
+        #expect(!targets.contains { $0.kind == .face })
     }
 
     @Test func sensitiveTextNeverReachesTheDocument() throws {
