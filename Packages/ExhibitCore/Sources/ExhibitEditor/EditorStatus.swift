@@ -41,6 +41,11 @@ public struct EditorDraft: Equatable, Sendable {
         self.init(kind: mark.kind, geometry: mark.geometry, color: mark.style.color, label: mark.style.label,
                   stepNumber: mark.style.stepNumber)
     }
+
+    /// The draft as a mark, for measuring.
+    public var mark: Mark {
+        Mark(kind: kind, geometry: geometry, style: MarkStyle(color: color, label: label, stepNumber: stepNumber))
+    }
 }
 
 /// The result of a key press.

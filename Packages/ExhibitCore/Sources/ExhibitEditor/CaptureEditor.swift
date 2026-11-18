@@ -80,6 +80,16 @@ public final class CaptureEditor {
         selectedMark.map { hitTesting.handles(of: $0).map(\.1) } ?? []
     }
 
+    /// What a person sees of `mark`: a label's backing, a step's disc, a circle's padded box.
+    public func visibleBox(of mark: Mark) -> PixelRect {
+        hitTesting.visibleBox(of: mark)
+    }
+
+    /// The label being typed into, for drawing a caret after it.
+    public var editingMark: Mark? {
+        editingTextID.flatMap { id in marks.first { $0.id == id } }
+    }
+
     /// The box around the selected mark, for drawing a selection outline.
     public var selectionBox: PixelRect? {
         selectedMark.map { hitTesting.visibleBox(of: $0) }
