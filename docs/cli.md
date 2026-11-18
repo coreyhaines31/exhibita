@@ -1,8 +1,8 @@
 # The exhibit CLI
 
-`exhibit` marks up and redacts image files from the command line. It is the interface for agents: one command takes a screenshot (PNG or JPEG) and writes a new marked-up PNG, and every command prints one JSON object. It needs no app, no screen capture and no permissions, and it makes no network calls: text is read with Vision on this Mac.
+`exhibit` marks up and redacts image files from the command line. It is the interface for agents: one command takes a screenshot (PNG or JPEG) and writes a new marked-up PNG, and every command prints one JSON object. It needs no app, no screen capture and no permissions, and it makes no network calls: text is read with Vision on this Mac. The one exception is `say` with a local model you configure, which talks to that model on this Mac only.
 
-Commands for live captures (`capture`, `open`, `say`, `mcp`) come in later versions.
+Commands for live captures (`capture`, `open`, `mcp`) come in later versions.
 
 ```sh
 exhibit targets shot.png                                  # what is on the screen, as JSON
@@ -10,6 +10,7 @@ exhibit blur shot.png --kind email --kind key             # hide every email and
 exhibit circle shot-marked.png --text '$49/mo'            # chain: works on the previous output
 exhibit arrow shot.png --to "Update plan" --label "Click here"
 exhibit apply shot.png marks.json -o out.png              # many marks, one render
+exhibit say shot.png "blur the emails and circle pricing" # plain words, no flags
 ```
 
 Build it from `Packages/ExhibitCore` with `swift build -c release`; the binary is `.build/release/exhibit`.
@@ -36,8 +37,9 @@ Coordinates are pixels of the image, origin top-left, x growing right and y grow
 | `text <input> [selectors] --label s [--color]` | a label beside the match | ambiguous error |
 | `step <input> [selectors] [--number n] [--color]` | a numbered disc beside the match | ambiguous error |
 | `apply <input> <marks.json>` | every entry of the file, in one render | per entry |
+| `say <input> "<instruction>"` | whatever the instruction asks for, in one render | the interpreter decides |
 
-Every mark command also takes `-o/--output`, `--force`, `--all`, `--nth` and `--allow-missing`. `exhibit --version` prints the version; `exhibit help <command>` or `exhibit <command> --help` prints help.
+Every mark command also takes `-o/--output`, `--force`, `--all`, `--nth` and `--allow-missing` (`say` takes only `-o` and `--force` of these). `exhibit --version` prints the version; `exhibit help <command>` or `exhibit <command> --help` prints help.
 
 Colors are `red` (the default), `yellow`, `blue` and `green`.
 
@@ -149,15 +151,20 @@ On failure nothing is written, stdout is empty, and stderr holds one JSON object
 
 | Exit | `code` | Meaning |
 |---|---|---|
-| 0 | | Success. Also `--help` and `--version`. |
+| 0 | | Success. Also `--help` and `--version`, and `say` when some parts were not found (`complete` is false). |
 | 1 | `io` | A file could not be read or written, or the input is not an image or bundle. |
 | 1 | `output_exists` | The output file exists (or is the input); pass `--force`. |
 | 1 | `render`, `targets` | Rendering or reading text failed. |
 | 2 | `usage` | Bad arguments: an unknown option, a malformed `--rect`, a missing `--label`, an `-o` that is not `.png`. |
 | 2 | `invalid_marks` | `marks.json` is not valid; the message says where. |
+| 2 | `endpoint_not_loopback` | `say`: the model endpoint is not on this Mac. Nothing was sent. |
 | 3 | `no_match` | A selector matched nothing; `selectors` names each one. |
 | 3 | `nth_out_of_range` | `--nth` asked for a match that does not exist; `candidates` lists those that do. |
+| 3 | `no_match` | `say`: everything the instruction named is missing from the screen; `notFound` lists it. |
+| 3 | `not_understood` | `say`: the model answered, but with nothing to do. |
 | 4 | `ambiguous` | A selector matched several things for a one-mark command; `candidates` lists them. |
+| 5 | `needs_model` | `say`: the grammar could not read the instruction and no model is configured. |
+| 6 | `model_failed` | `say`: the model could not be reached, timed out, answered an HTTP error or an answer that could not be read. |
 
 `code` strings and exit codes are stable. In `apply`, messages start with the entry, like `marks[2]: No match for ...`.
 
@@ -196,6 +203,52 @@ Unknown fields are an error, so a typo never silently drops a selector. Selector
   { "kind": "step", "text": "Cancel plan" }
 ]
 ```
+
+## say
+
+`exhibit say <input> "<instruction>" [--pointer x,y] [-o out.png] [--force] [model options]` turns plain words into marks, the same way the app's voice key will: "blur the emails and circle pricing", "point at Sign up and label it start here", "step one email step two password".
+
+It reads the image's targets (as `targets` does), then:
+
+1. **The built-in grammar** tries first. It needs no model and answers in about a millisecond. It knows the seven marks and their usual verbs, the kinds (`emails`, `keys`, `card numbers`, `phone numbers`, `faces`), words on the screen (with close mis-hearings like "prising" for "Pricing"), steps, labels, and "this" or "here" with `--pointer`. It declines anything that needs judgement ("hide anything that identifies the customer"), any phrase it cannot find, any tie, and any qualified kind ("her email", "the payments key"), rather than guess. A blur or highlight of a phrase goes on every line that holds it, so a redaction is never narrowed to one line.
+2. **A local model**, only if the grammar declined and one is configured. It is sent the instruction and the target list as text, with sensitive values masked; never the image. It answers with references to listed targets, and any reference not in the list is dropped, so it can only mark targets that were found.
+3. **Neither**: when the grammar declines and no model is configured, `say` exits 5 with `needs_model` and changes nothing. Rephrase with a verb and the words on the screen, or configure a model.
+
+`--pointer x,y` gives the pointer position in image pixels, for "this", "that" and "here".
+
+### Model configuration
+
+| Flag | Environment variable | Default | Meaning |
+|---|---|---|---|
+| `--model <name>` | `EXHIBIT_MODEL` | none: grammar only | The model name, as the server knows it (`qwen3:8b`, `qwen3.8:27b`, ...). Setting it turns the model on. |
+| `--model-endpoint <url>` | `EXHIBIT_MODEL_ENDPOINT` | `http://127.0.0.1:11434` (Ollama) | The server. Only `localhost`, `127.x.x.x` and `::1` are accepted; any other host exits 2 with `endpoint_not_loopback` before anything is sent. |
+| `--model-api ollama\|openai` | `EXHIBIT_MODEL_API` | from the URL: `/v1` in the path means `openai` | `ollama` posts to `/api/chat`; `openai` posts to `/v1/chat/completions` (LM Studio, llama.cpp, Ollama's `/v1`). |
+| `--model-timeout <seconds>` | `EXHIBIT_MODEL_TIMEOUT` | 60 | The longest one answer may take, loading the model included. |
+| `--no-model` | | | Use the grammar only, even when a model is configured. |
+
+Flags win over environment variables. An endpoint without a model name is a usage error. Requests ask for no structured output (some runners refuse it), follow no redirects and use no proxy.
+
+```sh
+exhibit say shot.png "circle pricing and point at sign up"                      # grammar, no model needed
+EXHIBIT_MODEL=qwen3:8b exhibit say shot.png "hide anything that identifies the customer"
+exhibit say shot.png "box the cheapest plan" --model qwen3:8b --model-endpoint http://127.0.0.1:1234/v1
+exhibit say shot.png "blur this" --pointer 420,310
+```
+
+### Output
+
+The same JSON as other mark commands (`output`, `input`, `bundle`, `image`, `targetsReused`, `marks`, `selectors`), plus:
+
+- `instruction`: the instruction as read.
+- `interpreter`: `grammar` or `model`; `model` names the model when it answered.
+- `summary`: what was done, naming each mark, then what was not found: `Blurred 4 emails, circled "Pricing". Couldn't find: logout link.` Text comes from targets, so sensitive values stay masked.
+- `operations`: one entry per mark operation, with `mark`, `summary`, `targetIDs` and `label`.
+- `notFound`: what the instruction named that is not on the screen, in its own words.
+- `complete`: true when `notFound` is empty.
+
+**Partial results:** when some parts are found and some are not, the found marks are applied, the output is written, the exit code is 0, `complete` is false and `notFound` lists the rest, as with `--allow-missing`. Check `complete` (or `notFound`) to tell. When nothing named is on the screen, nothing is written and `say` exits 3 with `no_match` and `notFound`.
+
+Selector strings in `marks` and `selectors` read `target <id>`, `--kind <kind>` or `--text "<string>"`, for the target, kind or text the interpreter chose. Steps are numbered in the order the instruction names them.
 
 ## Examples
 

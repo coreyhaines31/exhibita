@@ -12,6 +12,10 @@ public enum ExitStatus: Int32, Sendable {
     case noMatch = 3
     /// A selector matched several things and the command draws one mark per selector.
     case ambiguous = 4
+    /// `say`: the grammar could not read the instruction and no model is configured.
+    case needsModel = 5
+    /// `say`: the configured model could not be reached, timed out or gave an answer that could not be read.
+    case modelFailed = 6
 }
 
 /// One thing a selector matched, as reported in an ambiguous error.
@@ -31,6 +35,8 @@ struct CLIError: Error, Equatable {
     /// For ambiguous errors: what the selector matched.
     var candidates: [CandidateReport]?
     var hint: String?
+    /// For `say`: what the instruction named that is not on the screen.
+    var notFound: [String]?
 
     static func usage(_ message: String) -> CLIError {
         CLIError(code: "usage", message: message, status: .usage)
@@ -65,11 +71,12 @@ struct CLIError: Error, Equatable {
                 var selectors: [String]?
                 var candidates: [CandidateReport]?
                 var hint: String?
+                var notFound: [String]?
             }
             var error: Body
         }
         let body = Envelope.Body(code: code, message: message, exitCode: status.rawValue, selectors: selectors,
-                                 candidates: candidates, hint: hint)
+                                 candidates: candidates, hint: hint, notFound: notFound)
         return OutputJSON.string(Envelope(error: body))
     }
 }

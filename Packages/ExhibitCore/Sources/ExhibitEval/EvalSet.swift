@@ -12,9 +12,12 @@ struct EvalSet {
         .deletingLastPathComponent().deletingLastPathComponent()
         .appendingPathComponent("eval/interpreter")
 
-    static func load() throws -> EvalSet {
-        let file = try JSONDecoder().decode(InstructionsFile.self,
-                                            from: Data(contentsOf: root.appendingPathComponent("instructions.json")))
+    /// Loads an instructions file: an absolute path, a path from the current directory, or a name in
+    /// `eval/interpreter`. Fixtures always come from `eval/interpreter/fixtures`.
+    static func load(file: String = "instructions.json") throws -> EvalSet {
+        let fromHere = URL(fileURLWithPath: file)
+        let url = FileManager.default.fileExists(atPath: fromHere.path) ? fromHere : root.appendingPathComponent(file)
+        let file = try JSONDecoder().decode(InstructionsFile.self, from: Data(contentsOf: url))
         var fixtures: [String: [Target]] = [:]
         for name in Set(file.instructions.map(\.fixture)) {
             let url = root.appendingPathComponent("fixtures/\(name).targets.json")

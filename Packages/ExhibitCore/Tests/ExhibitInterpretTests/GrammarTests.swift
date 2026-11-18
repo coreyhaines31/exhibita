@@ -89,6 +89,18 @@ struct GrammarTests {
         #expect(ops == [InterpretedOperation(mark: .arrow, picks: [.id(Screen.openTickets.id)], label: "needs triage")])
     }
 
+    @Test(arguments: ["point it open tickets", "appointed open tickets", "pointed at open tickets",
+                      "point it at open tickets"])
+    func readsMisheardPointAt(_ instruction: String) {
+        let ops = Screen.interpret(instruction).interpretation?.operations
+        #expect(ops == [InterpretedOperation(mark: .arrow, picks: [.id(Screen.openTickets.id)])], "\(instruction)")
+    }
+
+    @Test func readsAMisheardPointAtFollowedByALabel() {
+        let ops = Screen.interpret("Point it open tickets and label it needs triage").interpretation?.operations
+        #expect(ops == [InterpretedOperation(mark: .arrow, picks: [.id(Screen.openTickets.id)], label: "needs triage")])
+    }
+
     @Test func readsLabels() {
         let asLabel = Screen.interpret("label total as checked").interpretation?.operations
         #expect(asLabel == [InterpretedOperation(mark: .text, picks: [.id(Screen.total.id)], label: "checked")])

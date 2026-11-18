@@ -7,7 +7,15 @@ enum MarkRun {
         var session = try Session.open(input)
         let outputURL = try session.outputURL(requested: output.output, force: output.force)
         if specs.contains(where: \.needsTargets) { try session.loadTargets() }
+        let (placed, reports) = try plan(specs, in: session, indexed: indexed)
+        try session.write(placed.map(\.mark), to: outputURL)
+        return OutputJSON.string(MarkOutput(session: session, output: outputURL, placed: placed, reports: reports))
+    }
 
+    /// Every spec as placed marks, in one planner so later marks avoid earlier ones. Throws on the first spec that
+    /// fails; nothing is written here.
+    static func plan(_ specs: [MarkSpec], in session: Session, indexed: Bool) throws
+        -> (placed: [PlacedMark], reports: [SelectorReport]) {
         let clutter = specs.contains { [.arrow, .text, .step].contains($0.kind) }
             ? Clutter(image: session.original, cell: 4 * session.layout.unit) : nil
         var planner = Planner(targets: session.targets, imageSize: session.imageSize, layout: session.layout,
@@ -19,8 +27,7 @@ enum MarkRun {
             placed += result.marks
             reports += result.reports
         }
-        try session.write(placed.map(\.mark), to: outputURL)
-        return OutputJSON.string(MarkOutput(session: session, output: outputURL, placed: placed, reports: reports))
+        return (placed, reports)
     }
 }
 

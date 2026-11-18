@@ -11,6 +11,9 @@ enum GrammarLexicon {
             ("circle", .circle), ("ring", .circle), ("draw a circle around", .circle), ("put a circle around", .circle),
             ("box", .box), ("outline", .box), ("frame", .box), ("draw a box around", .box), ("put a box around", .box),
             ("point at", .arrow), ("point to", .arrow), ("point out", .arrow), ("arrow", .arrow),
+            // Dictation mis-hearings of "point at" seen in the spike: "Point it open tickets", "Appointed update plan".
+            ("point it at", .arrow), ("point it to", .arrow), ("point it", .arrow), ("appointed", .arrow),
+            ("pointed at", .arrow), ("pointed to", .arrow),
             ("put an arrow", .arrow), ("add an arrow", .arrow), ("draw an arrow", .arrow),
             ("label", .text), ("add a label", .text), ("write", .text),
             ("number", .step), ("step", .step), ("add steps to", .step)
@@ -29,6 +32,8 @@ enum GrammarLexicon {
 
     static let determiners: Set<String> = ["the", "a", "an", "my", "our", "your", "their", "his", "her", "its", "of",
                                            "both", "these", "those"]
+    /// Determiners that tie a thing to someone: "her email" is one person's, not every email.
+    static let possessives: Set<String> = ["my", "our", "your", "their", "his", "her", "its"]
     static let everyWords: Set<String> = ["all", "every", "each", "any"]
 
     /// UI words after the thing itself: "the reply button". Dropped before matching.

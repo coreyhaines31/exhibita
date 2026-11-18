@@ -20,10 +20,12 @@ let package = Package(
         .target(name: "ExhibitTargets", dependencies: ["ExhibitCore"]),
         // Every command's logic, so tests can drive it in process. The executable is a thin shell over it.
         .target(name: "ExhibitCLI", dependencies: [
-            "ExhibitCore", "ExhibitTargets", .product(name: "ArgumentParser", package: "swift-argument-parser")
+            "ExhibitCore", "ExhibitTargets", "ExhibitInterpret",
+            .product(name: "ArgumentParser", package: "swift-argument-parser")
         ]),
         .executableTarget(name: "exhibit", dependencies: ["ExhibitCLI"]),
-        // Instructions to operations: the interpreter contract and the grammar. Text in, no image, no model.
+        // Instructions to operations: the interpreter contract, the grammar and the loopback model client. Text in,
+        // never the image.
         .target(name: "ExhibitInterpret", dependencies: ["ExhibitCore"]),
         // The interpreter and speech spike (issue 3): `swift run exhibit-eval`. Not shipped. Uses FoundationModels
         // and SpeechAnalyzer behind macOS 26 availability checks.

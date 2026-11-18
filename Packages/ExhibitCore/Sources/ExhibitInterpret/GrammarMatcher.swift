@@ -34,9 +34,11 @@ struct GrammarMatcher {
     func resolve(_ phrase: [String], for mark: MarkKind) -> ItemResult {
         var words = phrase
         var every = false
+        var possessive = false
         while let first = words.first,
               GrammarLexicon.determiners.contains(first) || GrammarLexicon.everyWords.contains(first) {
             every = every || GrammarLexicon.everyWords.contains(first)
+            possessive = possessive || GrammarLexicon.possessives.contains(first)
             words.removeFirst()
         }
         guard !words.isEmpty else { return .decline("nothing named") }
@@ -47,7 +49,26 @@ struct GrammarMatcher {
             every = every || last.hasSuffix("s")
             words.removeLast()
         }
+        if let reason = qualifiedKind(words, possessive: possessive, for: mark) { return .decline(reason) }
         return lookUp(words, for: mark, every: every || isPlural(words))
+    }
+
+    /// A kind with a qualifier ("her email", "the payments key", "the emails on the left") names some targets of
+    /// the kind, and the grammar cannot tell which. Reading it as the bare kind would mark every one, or, for a
+    /// line that happens to match the words, too few; so it declines. One exception: a mark other than blur on a
+    /// visible line that reads exactly the phrase ("arrow to forgot password" for a "Forgot password?" link).
+    /// A line holding a hidden value ("PAYMENTS_KEY=...") is not such a line.
+    func qualifiedKind(_ words: [String], possessive: Bool, for mark: MarkKind) -> String? {
+        let phrase = words.joined(separator: " ")
+        if GrammarLexicon.kinds.contains(where: { Words.equal($0.words, words) }) {
+            return possessive ? "\"\(phrase)\" with a possessive names one of several, which needs judgement" : nil
+        }
+        guard GrammarLexicon.kinds.contains(where: { Words.contains(words, $0.words) }) else { return nil }
+        let visibleLine = lines.contains { line in
+            Words.equal(line.words, words) && !(line.target.text ?? "").contains("\u{2022}")
+        }
+        if mark != .blur, !possessive, visibleLine { return nil }
+        return "\"\(phrase)\" qualifies a kind, which needs judgement"
     }
 
     private func lookUp(_ words: [String], for mark: MarkKind, every: Bool) -> ItemResult {
@@ -58,10 +79,39 @@ struct GrammarMatcher {
             let found = targets.filter { kinds.contains($0.kind) }
             return found.isEmpty ? .notFound(words.joined(separator: " ")) : .kinds(kinds)
         }
+        if mark == .blur || mark == .highlight { return lookUpEvery(words, redacting: mark == .blur) }
         if let result = choose(exact, for: mark, every: every) { return result }
         let containing = lines.filter { Words.contains($0.words, words) }.map(\.target)
         if let result = choose(containing, for: mark, every: every) { return result }
         if let near = closeMatch(words) { return .targets([near]) }
+        return unplaced(words)
+    }
+
+    /// Blur and highlight go on every line holding the phrase, never only the line that equals it: "blur kenji
+    /// watanabe" must hide the message headers that start with the name too. A blur also takes lines where the
+    /// phrase is part of a longer word, and every line with a close mis-hearing of it, because a redaction may
+    /// cover too much but must never cover too little.
+    private func lookUpEvery(_ words: [String], redacting: Bool) -> ItemResult {
+        let phrase = words.joined(separator: " ")
+        let found = lines.filter { line in
+            if Words.contains(line.words, words) { return true }
+            return redacting && phrase.count >= 3 && line.words.joined(separator: " ").contains(phrase)
+        }.map(\.target)
+        let wrapped = wrappedLines(words)
+        if !found.isEmpty || !wrapped.isEmpty { return .targets(inReadingOrder(found + wrapped)) }
+        if redacting {
+            switch closeWindows(words) {
+            case .some(.success(let near)): return .targets(near)
+            case .some(.failure(let decline)): return .decline(decline.message)
+            case nil: break
+            }
+        } else if let near = closeMatch(words) {
+            return .targets([near])
+        }
+        return unplaced(words)
+    }
+
+    private func unplaced(_ words: [String]) -> ItemResult {
         if words.contains(where: GrammarLexicon.kindWords.contains) {
             return .decline("\"\(words.joined(separator: " "))\" describes a sensitive value the grammar cannot place")
         }
@@ -86,6 +136,75 @@ struct GrammarMatcher {
             .sorted { $0.distance < $1.distance }
         guard let best = scored.first else { return nil }
         return scored.filter { $0.distance == best.distance }.count == 1 ? best.target : nil
+    }
+
+    /// For a blur: every line holding a run of words within a mis-hearing of the phrase ("kenji wadanabi" finds
+    /// "Kenji Watanabe" and "Kenji Watanabe 10:02 AM"). Nil when nothing is close; a decline when two different
+    /// texts are equally close, since the grammar cannot tell which was meant.
+    func closeWindows(_ words: [String]) -> Result<[Target], Decline>? {
+        let phrase = words.joined()
+        guard phrase.count >= 5 else { return nil }
+        let allowed = phrase.count >= 9 ? 2 : 1
+        struct Hit {
+            var target: Target
+            var distance: Int
+            var text: String
+        }
+        var hits: [Hit] = []
+        for line in lines {
+            var best: (distance: Int, text: String)?
+            for start in line.words.indices {
+                for length in 1...min(line.words.count - start, words.count + 1) {
+                    let window = line.words[start..<(start + length)].joined()
+                    guard abs(window.count - phrase.count) <= allowed else { continue }
+                    let distance = Words.distance(phrase, window)
+                    if distance <= allowed, distance < (best?.distance ?? .max) { best = (distance, window) }
+                }
+            }
+            if let best { hits.append(Hit(target: line.target, distance: best.distance, text: best.text)) }
+        }
+        guard let closest = hits.map(\.distance).min() else { return nil }
+        let closestTexts = Set(hits.filter { $0.distance == closest }.map(\.text))
+        guard closestTexts.count == 1 else {
+            return .failure(Decline(message: "\"\(words.joined(separator: " "))\" is equally close to several texts"))
+        }
+        return .success(hits.map(\.target))
+    }
+
+    /// Lines where the phrase starts at the end of one line and goes on at the start of the line below it, as a
+    /// name does when it wraps: both lines.
+    func wrappedLines(_ words: [String]) -> [Target] {
+        guard words.count >= 2 else { return [] }
+        var found: [Target] = []
+        for upper in lines {
+            for split in 1..<words.count {
+                let head = Array(words[..<split]), tail = Array(words[split...])
+                guard upper.words.count >= head.count, Words.equal(Array(upper.words.suffix(head.count)), head) else {
+                    continue
+                }
+                for lower in lines where lower.target.id != upper.target.id && lower.words.count >= tail.count
+                    && Words.equal(Array(lower.words.prefix(tail.count)), tail)
+                    && Self.isLineBelow(lower.target.rect, upper.target.rect) {
+                    found += [upper.target, lower.target]
+                }
+            }
+        }
+        return found
+    }
+
+    /// Whether `lower` is the next line of text under `upper`: starting below it, within about one line's height,
+    /// and overlapping it across.
+    static func isLineBelow(_ lower: PixelRect, _ upper: PixelRect) -> Bool {
+        let lower = lower.standardized, upper = upper.standardized
+        let height = max(upper.height, 1)
+        return lower.minY >= upper.minY + height / 2 && lower.minY - upper.maxY <= height
+            && lower.minX < upper.maxX && upper.minX < lower.maxX
+    }
+
+    /// Targets without repeats, in the order of the target list (reading order).
+    private func inReadingOrder(_ found: [Target]) -> [Target] {
+        let ids = Set(found.map(\.id))
+        return targets.filter { ids.contains($0.id) }
     }
 
     /// Whole lines that equal a run of words, longest first: "reply forward" as "Reply", then "Forward".

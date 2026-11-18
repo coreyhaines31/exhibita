@@ -20,6 +20,12 @@ struct Scored: Codable {
     var overRedactions: Int?
     var milliseconds: Double
     var output: String
+    /// Which interpreter answered: "grammar" or "model" in the chain.
+    var answeredBy: String?
+    /// The model call alone, when the model was asked.
+    var modelMilliseconds: Double?
+    /// Instructions whose answer is "not on the screen": reported as not found, with nothing marked in its place.
+    var notFoundCorrect: Bool?
 }
 
 enum Scoring {
@@ -42,14 +48,22 @@ enum Scoring {
     static func score(_ instruction: EvalInstruction, outcome: Result<InterpretOutcome, Error>, targets: [Target],
                       milliseconds: Double) -> Scored {
         let interpretation = (try? outcome.get())?.interpretation
+        let expectations = [instruction.expected] + (instruction.alternatives ?? [])
         var scored = Scored(id: instruction.id, split: instruction.split, tags: instruction.tags,
                             instruction: instruction.instruction, answered: interpretation != nil, exact: false,
                             milliseconds: milliseconds, output: describe(outcome, targets: targets))
+        if instruction.expected.notFound == true { scored.notFoundCorrect = false }
         guard let interpretation else { return scored }
         let predicted = sets(interpretation, in: targets)
-        scored.exact = ([instruction.expected] + (instruction.alternatives ?? [])).contains { expectation in
+        scored.exact = expectations.contains { expectation in
             sets(expectation, in: targets) == predicted
                 && (expectation.notFound ?? false) == !interpretation.notFound.isEmpty
+        }
+        if instruction.expected.notFound == true {
+            scored.notFoundCorrect = !interpretation.notFound.isEmpty && expectations.contains { expectation in
+                let expected = sets(expectation, in: targets)
+                return predicted.allSatisfy { mark, ids in ids.isSubset(of: expected[mark] ?? []) }
+            }
         }
         let expectedBlur = sets(instruction.expected, in: targets)[.blur] ?? []
         if !expectedBlur.isEmpty {
