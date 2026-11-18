@@ -70,8 +70,8 @@ public struct FakeUI {
     /// each substring in `parts` under its key.
     public mutating func text(_ string: String, at: CGPoint, size: Double, bold: Bool = false,
                               _ color: Ink = Ink(0.11, 0.11, 0.12), name: String? = nil,
-                              parts: [String: String] = [:]) {
-        let line = Self.line(string, size: size * scale, bold: bold, color: color)
+                              parts: [String: String] = [:], font: String? = nil) {
+        let line = Self.line(string, size: size * scale, bold: bold, color: color, font: font)
         let bounds = TypographicBounds(line)
         let origin = CGPoint(x: at.x * scale, y: at.y * scale)
         context.saveGState()
@@ -115,11 +115,11 @@ public struct FakeUI {
 
     public func point(_ x: Double, _ y: Double) -> PixelPoint { PixelPoint(x: x * scale, y: y * scale) }
 
-    static func line(_ string: String, size: Double, bold: Bool, color: Ink?) -> CTLine {
-        var attributes: [NSAttributedString.Key: Any] = [
-            NSAttributedString.Key(kCTFontAttributeName as String):
-                CTFontCreateUIFontForLanguage(bold ? .emphasizedSystem : .system, size, nil)!
-        ]
+    /// One line in the system font, or in the PostScript-named `font` when given.
+    static func line(_ string: String, size: Double, bold: Bool, color: Ink?, font: String? = nil) -> CTLine {
+        let ctFont = font.map { CTFontCreateWithName($0 as CFString, size, nil) }
+            ?? CTFontCreateUIFontForLanguage(bold ? .emphasizedSystem : .system, size, nil)!
+        var attributes: [NSAttributedString.Key: Any] = [NSAttributedString.Key(kCTFontAttributeName as String): ctFont]
         if let color {
             attributes[NSAttributedString.Key(kCTForegroundColorAttributeName as String)] = color.cgColor
         }

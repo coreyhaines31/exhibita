@@ -105,6 +105,16 @@ Something a mark can point at. Detectors produce these; a person never edits the
 
 Sensitive kinds (`email`, `key`, `card`, `phone`) are a box, not a copy: their `text` is absent, so a secret on screen is never written into `document.json`. The same characters in the `text` of the line they came from are replaced with `•` (U+2022), one per UTF-16 code unit, so the line keeps its length and its spans still line up. A reader that wants the secret has the image; nothing else holds it.
 
+#### Look-alike letters
+
+OCR sometimes returns letters from another script that look like Latin ones: "Acme" read as Cyrillic "Астe", a `0` read as `Ø`. Exhibit A folds these to the Latin character a person reads (Cyrillic and Greek look-alikes, `Ø`, fullwidth forms, Unicode dashes and spaces). Every fold is one UTF-16 code unit to one, so offsets, spans and masks are unchanged by it.
+
+- **Detection** folds the whole line before looking for emails, keys, cards and phone numbers, so a look-alike never hides a secret.
+- **Stored `text`** is folded only inside words that also contain an ASCII letter or digit, so "Астe Dashboard" is stored as "Acme Dashboard" while a Russian or Greek word stays as written. The raw OCR reading is not kept.
+- **Matching** (CLI `--text` and `--regex`) folds the stored text again, and `--text` folds the search string too, so files written before folding, and words in other scripts, still match.
+
+Restricting Vision's recognition languages does not prevent this: with English as the only language, automatic detection off, and any request revision, the accurate recognizer still returned the Cyrillic forms. So recognition keeps Vision's default languages, and folding does the work.
+
 #### Spans
 
 Each span is `{"start": 4, "length": 7, "rect": rect}`: a run of `text` (usually one word) and the box it covers. `start` and `length` count UTF-16 code units, as `NSRange` and JavaScript strings do.

@@ -68,13 +68,14 @@ Selectors say what a mark goes on. Each is resolved, counted and reported on its
 |---|---|
 | `--text <string>` | Every case-insensitive occurrence of the string inside a line of text, as a tight box built from the word boxes (no second OCR pass). |
 | `--to <string>` | The same as `--text`. Reads naturally with `arrow`. |
-| `--regex <pattern>` | Every match of an ICU regular expression inside a line, boxed the same way. Case-sensitive; start with `(?i)` to ignore case. |
+| `--regex <pattern>` | Every match of an ICU regular expression inside a line, boxed the same way. Case-sensitive; start with `(?i)` to ignore case. Runs on the line with look-alike letters folded to Latin. |
 | `--kind <kind>` | Every target of a kind: `email`, `key`, `card`, `phone`, `face`, or `text` for whole lines. |
 | `--rect x,y,w,h` | Exactly those pixels. |
 
 Matches come in reading order: top to bottom, then left to right.
 
 - **Nothing matched** is never a silent success. The command exits 3 with `no_match` and names every selector that matched nothing. When several selectors are given and only some match, it still fails, unless `--allow-missing` is passed; then it succeeds if at least one matched, and the report shows `"matches": 0` for the rest.
+- **Look-alike letters**: OCR sometimes reads Latin letters as Cyrillic or Greek look-alikes ("Acme" as "Астe"). Matching folds them to Latin on both sides, so `--text Acme` still matches, and secret detection folds them too. See "Look-alike letters" in `format.md`.
 - **Masked text**: sensitive text is masked in targets, so `--text jordan.lee@example.com` cannot match. The error's `hint` says to use `--kind email` instead.
 - **Several matches**: `blur` and `highlight` mark them all. `circle`, `box`, `arrow`, `text` and `step` draw one mark per selector, so they exit 4 with `ambiguous` and list the candidates (`text`, `kind`, `rect`) unless you pass `--all` (mark every match) or `--nth <n>` (only the nth match, counting from 1). `--nth` past the last match exits 3 with `nth_out_of_range`.
 - A box matched by two selectors is marked once.

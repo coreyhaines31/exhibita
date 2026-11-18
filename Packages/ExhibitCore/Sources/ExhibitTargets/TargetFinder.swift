@@ -38,23 +38,45 @@ public struct TargetFinder: Sendable {
 
     /// The same as the `async` form, blocking the caller until the targets are found.
     public func findTargets(in image: CGImage) throws -> [Target] {
-        dispatchPrecondition(condition: .notOnQueue(Self.visionQueue))
+        try Self.onVisionQueue { try Self.performFind(in: image) }
+    }
+
+    /// Runs `work` on the Vision queue and waits for it. Anything that calls Vision, tests included, goes through
+    /// here or the `async` form: a direct `perform` from Swift concurrency can starve the queue's own requests.
+    static func onVisionQueue<Value>(_ work: @escaping @Sendable () throws -> Value) throws -> Value {
+        dispatchPrecondition(condition: .notOnQueue(visionQueue))
         let done = DispatchSemaphore(value: 0)
-        nonisolated(unsafe) var result: Result<[Target], Error>?
-        Self.visionQueue.async {
-            result = Result { try Self.performFind(in: image) }
+        nonisolated(unsafe) var result: Result<Value, Error>?
+        visionQueue.async {
+            result = Result { try work() }
             done.signal()
         }
         done.wait()
-        guard let result else { return [] }
+        guard let result else { throw CancellationError() }
         return try result.get()
     }
 
-    private static func performFind(in image: CGImage) throws -> [Target] {
-        let textRequest = VNRecognizeTextRequest()
-        textRequest.recognitionLevel = .accurate
+    /// Vision's raw reading of each line, before folding and masking. For tests that check what OCR returns.
+    static func rawLines(in image: CGImage) throws -> [String] {
+        try onVisionQueue {
+            let request = recognizeTextRequest()
+            try VNImageRequestHandler(cgImage: image, options: [:]).perform([request])
+            return (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+        }
+    }
+
+    static func recognizeTextRequest() -> VNRecognizeTextRequest {
+        let request = VNRecognizeTextRequest()
+        request.recognitionLevel = .accurate
         // Correction "fixes" keys, codes and names into dictionary words.
-        textRequest.usesLanguageCorrection = false
+        request.usesLanguageCorrection = false
+        // Languages are left at Vision's default: restricting them does not stop look-alike letters from other
+        // scripts (see "Look-alike letters" in docs/format.md), which `Confusables` folds instead.
+        return request
+    }
+
+    private static func performFind(in image: CGImage) throws -> [Target] {
+        let textRequest = recognizeTextRequest()
         let faceRequest = VNDetectFaceRectanglesRequest()
         try VNImageRequestHandler(cgImage: image, options: [:]).perform([textRequest, faceRequest])
 
@@ -91,9 +113,13 @@ public struct TargetFinder: Sendable {
     }
 
     /// The line's `.text` target, with sensitive matches masked, followed by a target for each match.
+    ///
+    /// The stored text has look-alike letters folded to Latin inside words that also hold Latin letters or digits
+    /// (`Confusables.foldMixedWords`), so "Астe" is stored as "Acme" while Russian words stay Russian.
     static func lineTargets(text: String, rect: PixelRect, confidence: Double?, spans: [TextSpan]?) -> [Target] {
         let matches = SensitivePatterns.matches(in: text)
-        let line = Target(kind: .text, text: masked(text, ranges: matches.map(\.range)), rect: rect,
+        let stored = Confusables.foldMixedWords(text)
+        let line = Target(kind: .text, text: masked(stored, ranges: matches.map(\.range)), rect: rect,
                           confidence: confidence, spans: spans)
         let sensitive = matches.map { match in
             Target(kind: match.kind, rect: line.rect(forUTF16Range: match.range) ?? rect, confidence: confidence)

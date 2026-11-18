@@ -9,6 +9,8 @@ public enum FixtureValues {
     public static let card = String(repeating: "4242 ", count: 3) + "4242"
     public static let phone = "(415) 555-0132"
     public static var githubKey: String { "gh" + "p_" + String(repeating: "Rk7m", count: 9) }
+    /// A made-up token that OCR misreads with look-alike letters in `lookalikeFixture`.
+    public static var lookalikeKey: String { "tk_" + "Zx81LmQ02vBn77PqRsT4uVw9" }
 }
 
 /// A plain settings page with one line per kind of target, for detection tests.
@@ -27,5 +29,17 @@ public func targetsFixture(scale: Double) -> Fixture {
         screen.text("Token \(FixtureValues.githubKey)", at: CGPoint(x: 24, y: 180), size: 15, name: "key-line",
                     parts: ["key": FixtureValues.githubKey])
         screen.text("Muted footnote text", at: CGPoint(x: 24, y: 222), size: 12, muted, name: "muted-line")
+    }
+}
+
+/// A heading and an env line in Helvetica Bold that Vision's accurate recognizer (macOS 26) reads with Cyrillic
+/// look-alikes: "Acme" as "Астe" and the key with a Cyrillic х and В. Reproduces issue 20.
+public func lookalikeFixture() -> Fixture {
+    drawFixture(width: 640, height: 130, scale: 1) { screen in
+        let ink = Ink(0.07, 0.07, 0.07)
+        screen.fill(CGRect(x: 0, y: 0, width: 640, height: 130), Ink(1, 1, 1))
+        screen.text("Acme Dashboard", at: CGPoint(x: 40, y: 20), size: 32, ink, name: "heading", font: "Helvetica-Bold")
+        screen.text("ACME_KEY=\(FixtureValues.lookalikeKey)", at: CGPoint(x: 40, y: 80), size: 20, ink, name: "env-line",
+                    parts: ["key": FixtureValues.lookalikeKey], font: "Helvetica-Bold")
     }
 }
