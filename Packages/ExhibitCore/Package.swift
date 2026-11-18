@@ -9,6 +9,7 @@ let package = Package(
     ],
     targets: [
         .target(name: "ExhibitCore"),
-        .testTarget(name: "ExhibitCoreTests", dependencies: ["ExhibitCore"])
+        // Goldens are read and written through #filePath, so they are not bundled as resources.
+        .testTarget(name: "ExhibitCoreTests", dependencies: ["ExhibitCore"], exclude: ["Goldens"])
     ]
 )
