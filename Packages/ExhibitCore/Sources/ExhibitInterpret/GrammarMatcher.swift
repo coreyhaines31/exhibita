@@ -34,9 +34,11 @@ struct GrammarMatcher {
     func resolve(_ phrase: [String], for mark: MarkKind) -> ItemResult {
         var words = phrase
         var every = false
+        var possessive = false
         while let first = words.first,
               GrammarLexicon.determiners.contains(first) || GrammarLexicon.everyWords.contains(first) {
             every = every || GrammarLexicon.everyWords.contains(first)
+            possessive = possessive || GrammarLexicon.possessives.contains(first)
             words.removeFirst()
         }
         guard !words.isEmpty else { return .decline("nothing named") }
@@ -47,7 +49,26 @@ struct GrammarMatcher {
             every = every || last.hasSuffix("s")
             words.removeLast()
         }
+        if let reason = qualifiedKind(words, possessive: possessive, for: mark) { return .decline(reason) }
         return lookUp(words, for: mark, every: every || isPlural(words))
+    }
+
+    /// A kind with a qualifier ("her email", "the payments key", "the emails on the left") names some targets of
+    /// the kind, and the grammar cannot tell which. Reading it as the bare kind would mark every one, or, for a
+    /// line that happens to match the words, too few; so it declines. One exception: a mark other than blur on a
+    /// visible line that reads exactly the phrase ("arrow to forgot password" for a "Forgot password?" link).
+    /// A line holding a hidden value ("PAYMENTS_KEY=...") is not such a line.
+    func qualifiedKind(_ words: [String], possessive: Bool, for mark: MarkKind) -> String? {
+        let phrase = words.joined(separator: " ")
+        if GrammarLexicon.kinds.contains(where: { Words.equal($0.words, words) }) {
+            return possessive ? "\"\(phrase)\" with a possessive names one of several, which needs judgement" : nil
+        }
+        guard GrammarLexicon.kinds.contains(where: { Words.contains(words, $0.words) }) else { return nil }
+        let visibleLine = lines.contains { line in
+            Words.equal(line.words, words) && !(line.target.text ?? "").contains("\u{2022}")
+        }
+        if mark != .blur, !possessive, visibleLine { return nil }
+        return "\"\(phrase)\" qualifies a kind, which needs judgement"
     }
 
     private func lookUp(_ words: [String], for mark: MarkKind, every: Bool) -> ItemResult {

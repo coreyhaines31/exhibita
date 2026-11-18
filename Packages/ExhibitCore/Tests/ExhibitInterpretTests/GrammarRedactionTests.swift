@@ -58,6 +58,45 @@ struct GrammarRedactionTests {
         #expect(picked == [Chat.sidebar.id])
     }
 
+    @Test(arguments: ["blur her email", "blur grace holloway and her email", "blur the payments key",
+                      "blur that phone number on the left", "circle the payments key", "blur the emails on the left",
+                      "hide his phone number", "blur everybody's emails except the pending invite"])
+    func declinesAQualifiedKind(_ instruction: String) {
+        guard case .declined = Screen.interpret(instruction) else {
+            Issue.record("expected \"\(instruction)\" to be declined")
+            return
+        }
+    }
+
+    @Test func declinesAQualifiedKindEvenWhenALineReadsTheSame() {
+        let line = Screen.line("PAYMENTS_KEY=\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}", 10, 10, width: 200)
+        let key = Target(kind: .key, rect: PixelRect(x: 120, y: 10, width: 90, height: 14))
+        let other = Target(kind: .key, rect: PixelRect(x: 120, y: 40, width: 90, height: 14))
+        for instruction in ["blur the payments key", "circle the payments key"] {
+            let outcome = GrammarInterpreter.interpret(InterpretRequest(instruction: instruction,
+                                                                        targets: [line, key, other]))
+            guard case .declined = outcome else { Issue.record("\(instruction): \(outcome)"); continue }
+        }
+    }
+
+    @Test func otherMarksMayNameAVisibleLineThatHoldsAKindWord() {
+        let link = Screen.line("Forgot password?", 10, 10, width: 120)
+        let outcome = GrammarInterpreter.interpret(InterpretRequest(instruction: "arrow to forgot password",
+                                                                    targets: [link, Screen.key]))
+        #expect(outcome.interpretation?.operations == [InterpretedOperation(mark: .arrow, picks: [.id(link.id)])])
+        let blur = GrammarInterpreter.interpret(InterpretRequest(instruction: "blur forgot password",
+                                                                 targets: [link, Screen.key]))
+        guard case .declined = blur else { Issue.record("expected a decline, got \(blur)"); return }
+    }
+
+    @Test(arguments: ["blur the emails", "blur all the email addresses", "blur the email column",
+                      "redact the api key and the phone number", "blur all emails and keys"])
+    func stillReadsAPlainKind(_ instruction: String) {
+        let picks = Screen.interpret(instruction).interpretation?.operations.flatMap(\.picks) ?? []
+        #expect(!picks.isEmpty, "\(instruction)")
+        #expect(picks.allSatisfy { if case .kind = $0 { true } else { false } }, "\(instruction)")
+    }
+
     @Test func declinesTwoEquallyCloseMishearingsForABlur() {
         let screen = [Screen.line("Sign in", 10, 10), Screen.line("Sign on", 10, 40)]
         let outcome = GrammarInterpreter.interpret(InterpretRequest(instruction: "blur sign un", targets: screen))

@@ -29,6 +29,8 @@ enum GrammarLexicon {
 
     static let determiners: Set<String> = ["the", "a", "an", "my", "our", "your", "their", "his", "her", "its", "of",
                                            "both", "these", "those"]
+    /// Determiners that tie a thing to someone: "her email" is one person's, not every email.
+    static let possessives: Set<String> = ["my", "our", "your", "their", "his", "her", "its"]
     static let everyWords: Set<String> = ["all", "every", "each", "any"]
 
     /// UI words after the thing itself: "the reply button". Dropped before matching.
