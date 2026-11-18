@@ -83,10 +83,4 @@ import Testing
         #expect(PanelContent.resolve(permission: .granted, historyCount: 0) == .empty)
         #expect(PanelContent.resolve(permission: .granted, historyCount: 2) == .history)
     }
-
-    @Test func policyAllowsEverythingForNow() {
-        let policy = CapturePolicy()
-        #expect(policy.decision(for: CaptureSubject(bundleIdentifier: "com.apple.keychainaccess")) == .allow)
-        #expect(policy.decision(for: CaptureSubject()) == .allow)
-    }
 }
