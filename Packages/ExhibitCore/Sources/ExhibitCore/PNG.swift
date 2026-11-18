@@ -14,7 +14,30 @@ public enum PNG {
         }
         CGImageDestinationAddImage(destination, image, nil)
         guard CGImageDestinationFinalize(destination) else { throw ExhibitError.imageEncodingFailed }
-        return data as Data
+        return try stripMetadata(data as Data)
+    }
+
+    /// Chunks an exported PNG may keep: image data and colour information. ImageIO adds an `eXIf` chunk
+    /// (pixel dimensions and colour space) that carries nothing useful, so everything else is dropped.
+    static let keptChunks: Set<String> = ["IHDR", "PLTE", "IDAT", "IEND", "sRGB", "iCCP", "gAMA", "cHRM", "pHYs"]
+
+    /// Rewrites a PNG keeping only `keptChunks`, in order. Each chunk's bytes, CRC included, are copied unchanged.
+    static func stripMetadata(_ png: Data) throws -> Data {
+        let bytes = [UInt8](png)
+        let signature: [UInt8] = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]
+        guard bytes.count >= 8, Array(bytes[0..<8]) == signature else { throw ExhibitError.imageEncodingFailed }
+        var output = signature
+        var offset = 8
+        while offset + 12 <= bytes.count {
+            let length = bytes[offset..<offset + 4].reduce(0) { $0 << 8 | Int($1) }
+            let end = offset + 12 + length
+            guard end <= bytes.count else { throw ExhibitError.imageEncodingFailed }
+            let type = String(bytes: bytes[offset + 4..<offset + 8], encoding: .ascii) ?? ""
+            if keptChunks.contains(type) { output.append(contentsOf: bytes[offset..<end]) }
+            offset = end
+        }
+        guard offset == bytes.count else { throw ExhibitError.imageEncodingFailed }
+        return Data(output)
     }
 
     /// Decodes the first image in `data`. Accepts any format ImageIO reads, not only PNG.
