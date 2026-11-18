@@ -6,10 +6,13 @@ import Foundation
 /// without covering it, stay inside the image, and avoid other text where they can.
 ///
 /// Every choice is a short list of candidates scored the same way: candidates that leave the image are dropped,
-/// then the fewest collisions with obstacles wins, then the earlier (preferred) candidate. Deterministic.
+/// then the fewest collisions with obstacles (words and marks) wins, then plain background over busy pixels, then
+/// the earlier (preferred) candidate. Deterministic.
 struct Placement {
     let imageSize: PixelSize
     let layout: MarkLayout
+    /// Busy pixels no target covers, such as a blur from an earlier call on a chained file.
+    var clutter: Clutter?
 
     var unit: Double { layout.unit }
     /// Space kept between a mark and the thing it points at or sits beside.
@@ -60,7 +63,8 @@ struct Placement {
                     continue
                 }
                 let hits = shaftHits(from: tail, to: head, blockers) + (arrow.caption.map { hits($0.cgRect, blockers) } ?? 0)
-                let score = hits * 1000 + rank
+                let busy = isBusy(tail: tail, head: head, caption: arrow.caption)
+                let score = hits * 1000 + (busy ? 300 : 0) + rank
                 if best == nil || score < best!.score { best = (score, arrow) }
             }
         }
@@ -76,6 +80,15 @@ struct Placement {
         let from = PixelPoint(x: tail.x, y: tail.y)
         let to = PixelPoint(x: head.x, y: head.y)
         return Arrow(from: from, to: to, caption: label.flatMap { layout.captionRect(from: from, to: to, label: $0) })
+    }
+
+    /// Whether the shaft (short of the head, which sits by the busy target) or the caption crosses busy pixels.
+    private func isBusy(tail: CGPoint, head: CGPoint, caption: PixelRect?) -> Bool {
+        guard let clutter else { return false }
+        let nearHead = CGPoint(x: tail.x + (head.x - tail.x) * 0.8, y: tail.y + (head.y - tail.y) * 0.8)
+        if clutter.isBusy(from: tail, to: nearHead) { return true }
+        guard let caption else { return false }
+        return clutter.isBusy(caption.cgRect.insetBy(dx: -gap, dy: -gap))
     }
 
     /// Where a ray from `origin` (inside `rect`) along `direction` leaves `rect`.
@@ -150,11 +163,16 @@ struct Placement {
         let blockers = obstacles.filter { !$0.cgRect.intersects(padded) }
         let fitting = spots.filter { inside($0) && !$0.intersects(target) }
         if let best = fitting.enumerated().min(by: { lhs, rhs in
-            (hits(lhs.element, blockers), lhs.offset) < (hits(rhs.element, blockers), rhs.offset)
+            (hits(lhs.element, blockers), busy(lhs.element), lhs.offset)
+                < (hits(rhs.element, blockers), busy(rhs.element), rhs.offset)
         }) {
             return best.element
         }
         return clamped(spots[0])
+    }
+
+    private func busy(_ rect: CGRect) -> Int {
+        clutter?.isBusy(rect.insetBy(dx: -gap, dy: -gap)) == true ? 1 : 0
     }
 
     private func hits(_ rect: CGRect, _ obstacles: [PixelRect]) -> Int {

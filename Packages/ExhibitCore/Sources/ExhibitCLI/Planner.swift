@@ -72,14 +72,16 @@ struct Planner {
     private(set) var obstacles: [PixelRect]
     private var nextStep = 1
 
-    init(targets: [Target], imageSize: PixelSize, layout: MarkLayout) {
+    init(targets: [Target], imageSize: PixelSize, layout: MarkLayout, clutter: Clutter? = nil,
+         existingMarks: [Mark] = []) {
         self.targets = targets
-        placement = Placement(imageSize: imageSize, layout: layout)
+        placement = Placement(imageSize: imageSize, layout: layout, clutter: clutter)
         // Words rather than whole lines, so a mark may sit beside its target on the same line.
         obstacles = targets.flatMap { target -> [PixelRect] in
             if target.kind == .text, let spans = target.spans, !spans.isEmpty { return spans.map(\.rect.standardized) }
             return [target.rect.standardized]
         }
+        obstacles += existingMarks.compactMap(Self.footprint(of:))
     }
 
     mutating func plan(_ spec: MarkSpec, entry: Int? = nil) throws -> (marks: [PlacedMark], reports: [SelectorReport]) {
@@ -135,11 +137,17 @@ struct Planner {
             placed.selector = selector.description
             placed.entry = entry
             if spec.kind == .step { number += 1 }
-            if let box = placed.visibleBox { obstacles.append(box) }
+            if let box = placed.visibleBox ?? Self.footprint(of: placed.mark) { obstacles.append(box) }
             marks.append(placed)
         }
         if spec.kind == .step { nextStep = number }
         return (marks, reports)
+    }
+
+    /// The area a placed mark covers, for later placements to avoid. Arrows without a caption are left out: their
+    /// bounding box is mostly empty.
+    static func footprint(of mark: Mark) -> PixelRect? {
+        mark.kind == .arrow || mark.kind == .text || mark.kind == .step ? nil : mark.bounds
     }
 
     private func pick(from candidates: [Candidate], selector: Selector, spec: MarkSpec) throws -> [Candidate] {

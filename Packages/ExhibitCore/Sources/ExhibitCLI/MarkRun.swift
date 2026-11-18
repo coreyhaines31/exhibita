@@ -8,7 +8,10 @@ enum MarkRun {
         let outputURL = try session.outputURL(requested: output.output, force: output.force)
         if specs.contains(where: \.needsTargets) { try session.loadTargets() }
 
-        var planner = Planner(targets: session.targets, imageSize: session.imageSize, layout: session.layout)
+        let clutter = specs.contains { [.arrow, .text, .step].contains($0.kind) }
+            ? Clutter(image: session.original, cell: 4 * session.layout.unit) : nil
+        var planner = Planner(targets: session.targets, imageSize: session.imageSize, layout: session.layout,
+                              clutter: clutter, existingMarks: session.bundle?.document.marks ?? [])
         var placed: [PlacedMark] = []
         var reports: [SelectorReport] = []
         for (index, spec) in specs.enumerated() {
