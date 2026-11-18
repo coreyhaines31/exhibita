@@ -81,7 +81,7 @@ func runInterpreters(_ options: Options) async throws {
                    + "\(runner.selected.count) instructions.", ""]
     let splits = options.split == "all" ? Array(Set(runner.selected.map(\.split))).sorted() + ["all"] : [options.split]
     for split in splits {
-        summary += ["### \(split)", "", Report.table(runs, split: split), ""]
+        summary += ["### \(split)", "", Report.table(runs, split: split), ""] + Report.breakdowns(runs, split: split)
     }
     summary += Report.legend + notes
     let text = summary.joined(separator: "\n")

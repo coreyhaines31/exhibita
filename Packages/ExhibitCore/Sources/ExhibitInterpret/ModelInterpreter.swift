@@ -108,25 +108,44 @@ public struct ModelInterpreter: Interpreter {
     public var name: String { "model" }
 
     public func interpret(_ request: InterpretRequest) async throws -> InterpretOutcome {
-        // The transport blocks, so it runs off Swift concurrency's cooperative pool.
-        try await withCheckedThrowingContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                continuation.resume(with: Result { try interpretNow(request) })
-            }
-        }
+        try await interpretWithTimings(request).outcome
     }
 
     /// Interprets on the calling thread, blocking until the model answers or the timeout passes.
     public func interpretNow(_ request: InterpretRequest) throws -> InterpretOutcome {
+        try interpretTimed(request).outcome
+    }
+
+    /// `interpret`, plus what the server reported about the call, for the eval.
+    public func interpretWithTimings(_ request: InterpretRequest) async throws
+        -> (outcome: InterpretOutcome, timings: ModelTimings?) {
+        // The transport blocks, so it runs off Swift concurrency's cooperative pool.
+        try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                continuation.resume(with: Result { try interpretTimed(request) })
+            }
+        }
+    }
+
+    /// `interpretNow`, plus what the server reported about the call.
+    public func interpretTimed(_ request: InterpretRequest) throws
+        -> (outcome: InterpretOutcome, timings: ModelTimings?) {
         let listing = TargetListing(request)
         let body = try endpoint.body(system: ModelPrompt.instructions + ModelPrompt.answerFormat,
                                      user: ModelPrompt.prompt(for: request, listing: listing))
-        let reply = try transport.post(endpoint.chatURL, body: body, timeout: endpoint.timeout)
+        var reply = try transport.post(endpoint.chatURL, body: body, timeout: endpoint.timeout)
+        if reply.status == 400, endpoint.api == .openai {
+            // A server that refuses the switches that turn reasoning off: ask again without them.
+            let plain = try endpoint.body(system: ModelPrompt.instructions + ModelPrompt.answerFormat,
+                                          user: ModelPrompt.prompt(for: request, listing: listing), noReasoning: false)
+            reply = try transport.post(endpoint.chatURL, body: plain, timeout: endpoint.timeout)
+        }
         guard reply.status == 200 else {
             throw ModelError.httpStatus(reply.status, ModelEndpoint.preview(reply.body))
         }
         let content = try endpoint.content(of: reply.body)
-        return .understood(try ModelPrompt.interpretation(fromJSON: ModelPrompt.jsonObject(in: content),
-                                                          listing: listing))
+        let interpretation = try ModelPrompt.interpretation(fromJSON: ModelPrompt.jsonObject(in: content),
+                                                            listing: listing)
+        return (.understood(interpretation), endpoint.timings(of: reply.body))
     }
 }

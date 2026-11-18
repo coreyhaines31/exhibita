@@ -10,7 +10,7 @@ import Foundation
 public enum ModelPrompt {
     public static let instructions = """
     Turn a person's instruction about a screenshot into marks on items from a screen list. Each list item has a \
-    ref (t1, t2, ...).
+    ref (t1, t2, ...), then its text in quotes or its kind, then the x,y of its top-left corner in tens of pixels.
 
     Split the instruction into its parts. For each part give the person's own words for the thing to mark \
     (copied from the instruction), the mark, and the refs of the list items those words mean.
@@ -28,9 +28,9 @@ public enum ModelPrompt {
 
     Example.
     Screen:
-    t1 text "Settings" at 20,20 size 60x14
-    t2 text "Save changes" at 400,300 size 90x14
-    t3 email (hidden email address) at 100,120 size 180x14
+    t1 "Settings" 2,2
+    t2 "Save changes" 40,30
+    t3 email (hidden email address) 10,12
     Instruction: circle save and blur the email and box the logo
     Answer: {"parts":[{"words":"save","mark":"circle","targets":["t2"]},\
     {"words":"the email","mark":"blur","targets":["t3"]},{"words":"the logo","mark":"box","targets":[]}]}

@@ -1,33 +1,31 @@
-Run on macOS 26.6.2, split all, 62 instructions.
-
-### heldout
-
-| Interpreter | Answered | Exact, of answered | Exact, of all | Missed redaction targets | Over-redacted targets | Median ms | p90 ms |
-|---|---|---|---|---|---|---|---|
-| A grammar | 17/31 | 15/17 (88%) | 15/31 (48%) | 3 (in 10 blur instructions) | 5 | 0.80 | 2.20 |
-| B Apple on-device | 31/31 | 9/31 (29%) | 9/31 (29%) | 8 (in 10 blur instructions) | 18 | 2626 | 3554 |
-| A then B | 31/31 | 16/31 (52%) | 16/31 (52%) | 7 (in 10 blur instructions) | 20 | 2.38 | 2956 |
-| C ollama:qwen3.8:27b | 31/31 | 27/31 (87%) | 27/31 (87%) | 3 (in 10 blur instructions) | 1 | 1977 | 10508 |
-| A then C | 31/31 | 28/31 (90%) | 28/31 (90%) | 3 (in 10 blur instructions) | 5 | 2.38 | 8588 |
+Run on macOS 26.6.2, file instructions.json, split all, 62 instructions.
 
 ### dev
 
-| Interpreter | Answered | Exact, of answered | Exact, of all | Missed redaction targets | Over-redacted targets | Median ms | p90 ms |
-|---|---|---|---|---|---|---|---|
-| A grammar | 23/31 | 22/23 (96%) | 22/31 (71%) | 0 (in 7 blur instructions) | 0 | 0.26 | 0.98 |
-| B Apple on-device | 31/31 | 12/31 (39%) | 12/31 (39%) | 9 (in 7 blur instructions) | 14 | 2469 | 4247 |
-| A then B | 31/31 | 23/31 (74%) | 23/31 (74%) | 4 (in 7 blur instructions) | 11 | 0.30 | 2560 |
-| C ollama:qwen3.8:27b | 31/31 | 27/31 (87%) | 27/31 (87%) | 1 (in 7 blur instructions) | 0 | 1818 | 8881 |
-| A then C | 31/31 | 28/31 (90%) | 28/31 (90%) | 1 (in 7 blur instructions) | 0 | 0.30 | 1570 |
+| Interpreter | Answered | Exact, of answered | Exact, of all | Missed redaction, kind or literal | Missed redaction, semantic | Over-redacted | Not found right | Median ms | p90 ms | Model step median ms | Model step p90 ms |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| A grammar | 23/31 | 22/23 (96%) | 22/31 (71%) | 0 (5 of 5 blur instructions answered) | 0 (0 of 0 blur instructions answered) | 0 | 1/3 (33%) | 0.29 | 1.03 | n/a | n/a |
+| A then model (qwen3.8:27b) | 31/31 | 29/31 (94%) | 29/31 (94%) | 0 (5 of 5 blur instructions answered) | 1 (1 of 1 blur instructions answered) | 0 | 3/3 (100%) | 0.36 | 6542 | 6542 | 8573 |
+
+A then model (qwen3.8:27b): 8 model calls, medians: load 0.04 s, prompt 984.00 tokens in 4.32 s, output 30.00 tokens in 2.48 s; 0 reasoned.
+
+### heldout
+
+| Interpreter | Answered | Exact, of answered | Exact, of all | Missed redaction, kind or literal | Missed redaction, semantic | Over-redacted | Not found right | Median ms | p90 ms | Model step median ms | Model step p90 ms |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| A grammar | 15/31 | 15/15 (100%) | 15/31 (48%) | 0 (6 of 6 blur instructions answered) | 0 (0 of 0 blur instructions answered) | 0 | 1/3 (33%) | 0.55 | 1.68 | n/a | n/a |
+| A then model (qwen3.8:27b) | 30/31 | 29/30 (97%) | 29/31 (94%) | 0 (7 of 7 blur instructions answered) | 0 (2 of 2 blur instructions answered) | 0 | 3/3 (100%) | 1326 | 8618 | 7476 | 12538 |
+
+A then model (qwen3.8:27b): 15 model calls, medians: load 0.03 s, prompt 986.00 tokens in 4.33 s, output 26.00 tokens in 2.18 s; 0 reasoned.
 
 ### all
 
-| Interpreter | Answered | Exact, of answered | Exact, of all | Missed redaction targets | Over-redacted targets | Median ms | p90 ms |
-|---|---|---|---|---|---|---|---|
-| A grammar | 40/62 | 37/40 (93%) | 37/62 (60%) | 3 (in 17 blur instructions) | 5 | 0.33 | 1.85 |
-| B Apple on-device | 62/62 | 21/62 (34%) | 21/62 (34%) | 17 (in 17 blur instructions) | 32 | 2558 | 3672 |
-| A then B | 62/62 | 39/62 (63%) | 39/62 (63%) | 11 (in 17 blur instructions) | 31 | 0.66 | 2887 |
-| C ollama:qwen3.8:27b | 62/62 | 54/62 (87%) | 54/62 (87%) | 4 (in 17 blur instructions) | 1 | 1977 | 10508 |
-| A then C | 62/62 | 56/62 (90%) | 56/62 (90%) | 4 (in 17 blur instructions) | 5 | 0.66 | 2220 |
+| Interpreter | Answered | Exact, of answered | Exact, of all | Missed redaction, kind or literal | Missed redaction, semantic | Over-redacted | Not found right | Median ms | p90 ms | Model step median ms | Model step p90 ms |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| A grammar | 38/62 | 37/38 (97%) | 37/62 (60%) | 0 (11 of 11 blur instructions answered) | 0 (0 of 0 blur instructions answered) | 0 | 2/6 (33%) | 0.36 | 1.53 | n/a | n/a |
+| A then model (qwen3.8:27b) | 61/62 | 58/61 (95%) | 58/62 (94%) | 0 (12 of 12 blur instructions answered) | 1 (3 of 3 blur instructions answered) | 0 | 6/6 (100%) | 0.46 | 8162 | 6721 | 9406 |
 
-C: Ollama has no structured output for qwen3.8:27b, so its JSON was not constrained.
+A then model (qwen3.8:27b): 23 model calls, medians: load 0.03 s, prompt 984.00 tokens in 4.32 s, output 28.00 tokens in 2.18 s; 0 reasoned.
+
+Missed redaction targets are expected blur targets no blur covers, split into instructions that name a kind, a literal string or the pointer, and semantic ones (tagged "semantic"). Over-redacted counts blurs that touch no expected target. Not found right: of instructions whose answer is "not on the screen", those reported as not found with nothing marked in their place. Model step: time of the model call alone, on the instructions the grammar declined. Missed and over-redacted count answered instructions only.
+

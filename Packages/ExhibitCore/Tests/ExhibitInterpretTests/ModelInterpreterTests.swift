@@ -132,6 +132,41 @@ struct ModelInterpreterTests {
         #expect(body["max_tokens"] as? Int == ModelPrompt.maxResponseTokens)
     }
 
+    @Test func turnsReasoningOffOnBothAPIs() throws {
+        let native = FakeTransport.ollama(#"{"parts":[]}"#)
+        let request = InterpretRequest(instruction: "box the cheapest plan", targets: Screen.targets)
+        _ = try ModelInterpreter(endpoint: try Self.endpoint(), transport: native).interpretNow(request)
+        let nativeSent = try #require(native.requests.first)
+        let nativeBody = try #require(try JSONSerialization.jsonObject(with: nativeSent.body) as? [String: Any])
+        #expect(nativeBody["think"] as? Bool == false)
+
+        let compatible = FakeTransport { _, _ in
+            let reply: [String: Any] = ["choices": [["message": ["role": "assistant", "content": #"{"parts":[]}"#]]]]
+            return ModelHTTPResponse(status: 200, body: try JSONSerialization.data(withJSONObject: reply))
+        }
+        _ = try ModelInterpreter(endpoint: try Self.endpoint("http://localhost:1234/v1"), transport: compatible)
+            .interpretNow(request)
+        let sent = try #require(compatible.requests.first)
+        let body = try #require(try JSONSerialization.jsonObject(with: sent.body) as? [String: Any])
+        #expect(body["reasoning_effort"] as? String == "none")
+        #expect((body["chat_template_kwargs"] as? [String: Any])?["enable_thinking"] as? Bool == false)
+    }
+
+    @Test func asksAgainWithoutTheReasoningSwitchesWhenAServerRefusesThem() throws {
+        let picky = FakeTransport { _, body in
+            let sent = try JSONSerialization.jsonObject(with: body) as? [String: Any]
+            guard sent?["reasoning_effort"] == nil else {
+                return ModelHTTPResponse(status: 400, body: Data("unknown field reasoning_effort".utf8))
+            }
+            let reply: [String: Any] = ["choices": [["message": ["role": "assistant", "content": #"{"parts":[]}"#]]]]
+            return ModelHTTPResponse(status: 200, body: try JSONSerialization.data(withJSONObject: reply))
+        }
+        let outcome = try ModelInterpreter(endpoint: try Self.endpoint("http://localhost:1234/v1"), transport: picky)
+            .interpretNow(InterpretRequest(instruction: "box the cheapest plan", targets: Screen.targets))
+        #expect(outcome == .understood(Interpretation(operations: [])))
+        #expect(picky.requests.count == 2)
+    }
+
     @Test func reportsHTTPErrorsAndUnreadableAnswers() throws {
         let failing = FakeTransport { _, _ in ModelHTTPResponse(status: 404, body: Data("model not found".utf8)) }
         let request = InterpretRequest(instruction: "circle pricing", targets: Screen.targets)
@@ -142,6 +177,44 @@ struct ModelInterpreterTests {
             try ModelInterpreter(endpoint: try Self.endpoint(), transport: FakeTransport.ollama("no idea"))
                 .interpretNow(request)
         }
+    }
+
+    @Test func readsTheServersTimings() throws {
+        let ollama = FakeTransport { _, _ in
+            let reply: [String: Any] = [
+                "message": ["role": "assistant", "content": #"{"parts":[]}"#, "thinking": "hmm"],
+                "total_duration": 3_000_000_000, "load_duration": 10_000_000, "prompt_eval_count": 1265,
+                "prompt_eval_duration": 2_500_000_000, "eval_count": 29, "eval_duration": 400_000_000
+            ]
+            return ModelHTTPResponse(status: 200, body: try JSONSerialization.data(withJSONObject: reply))
+        }
+        let request = InterpretRequest(instruction: "box the cheapest plan", targets: Screen.targets)
+        let native = try ModelInterpreter(endpoint: try Self.endpoint(), transport: ollama).interpretTimed(request)
+        var expected = ModelTimings()
+        expected.totalSeconds = 3
+        expected.loadSeconds = 0.01
+        expected.promptTokens = 1265
+        expected.promptSeconds = 2.5
+        expected.outputTokens = 29
+        expected.outputSeconds = 0.4
+        expected.thinkingCharacters = 3
+        #expect(native.timings == expected)
+
+        let openAI = FakeTransport { _, _ in
+            let reply: [String: Any] = [
+                "choices": [["message": ["role": "assistant", "content": #"{"parts":[]}"#]]],
+                "usage": ["prompt_tokens": 757, "prompt_tokens_details": ["cached_tokens": 467], "completion_tokens": 45]
+            ]
+            return ModelHTTPResponse(status: 200, body: try JSONSerialization.data(withJSONObject: reply))
+        }
+        let compatible = try ModelInterpreter(endpoint: try Self.endpoint("http://localhost:1234/v1"),
+                                              transport: openAI).interpretTimed(request)
+        #expect(compatible.timings?.promptTokens == 757)
+        #expect(compatible.timings?.cachedPromptTokens == 467)
+        #expect(compatible.timings?.outputTokens == 45)
+        #expect(compatible.timings?.promptSeconds == nil)
+        #expect(try ModelInterpreter(endpoint: try Self.endpoint(), transport: FakeTransport.ollama(#"{"parts":[]}"#))
+            .interpretTimed(request).timings == nil)
     }
 
     @Test func timesOutAgainstASilentLoopbackServer() throws {
