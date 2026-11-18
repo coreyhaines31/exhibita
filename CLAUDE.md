@@ -11,7 +11,10 @@ export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 cd Packages/ExhibitCore && swift build && swift test
 EXHIBIT_RECORD_GOLDENS=1 swift test   # rewrite goldens and docs/samples/*.png; look at every changed image
 swiftlint --strict                     # from the repo root
+swift build -c release                 # .build/release/exhibit, the CLI
 ```
+
+`swift test` builds the `exhibit` binary too; `ExhibitCLITests/EndToEndTests` run it as a subprocess. `EXHIBIT_RECORD_GOLDENS=1` also regenerates `docs/samples/cli-demo.png` with the real binary.
 
 Judge build, test and lint by exit code, never by grepping output.
 
@@ -29,6 +32,13 @@ Judge build, test and lint by exit code, never by grepping output.
   - `VisionGeometry.swift`: Vision's normalized bottom-left boxes to pixels, and `InkGrid`, which shrinks padded OCR boxes to the ink inside them.
   - `SensitivePatterns.swift`: email, key, card and phone patterns (keys and cards ported from On Hand). Sensitive targets carry no `text`, and their characters are masked in the line's text. Never name a file with "secret" or "credential" in it; agent read rules block those names.
   - Faces: `VNDetectFaceRectanglesRequest`.
+  - Vision runs one image at a time on a private serial queue, never on the caller's thread; there is an `async` form. Blocking Vision calls from Swift concurrency's cooperative pool deadlocked (`ConcurrentFindingTests`). OCR-heavy suites carry `.timeLimit`; run tests to a log file and stop a run that passes about 3 minutes.
+- `Packages/ExhibitCore/Sources/ExhibitCLI` (library) and `Sources/exhibit` (the executable, product `exhibit`, a thin shell): the CLI on image files and bundles. Reference: `docs/cli.md`.
+  - `Commands.swift`: swift-argument-parser commands (pinned exactly); `CLI.run(arguments:)` returns status, stdout and stderr without printing, so tests drive it in process.
+  - `Selectors.swift`: `--text`/`--to`, `--regex`, `--kind`, `--rect` to candidates, using spans (no second OCR pass).
+  - `Planner.swift`: no-match, ambiguous, `--all`/`--nth`, one `MarkSpec` per command or `marks.json` entry. `Placement.swift`: arrow tails, text labels and step discs, scored against word boxes. `ApplyFile.swift`: `marks.json`. `Session.swift`: input, targets (reused from a bundle's document), output naming, writing.
+  - Exit codes and error `code` strings are a public contract (`docs/cli.md`); change them only on purpose.
+  - `MarkLayout` in ExhibitCore exposes the renderer's label, caption and disc sizes for placement.
 - `Packages/ExhibitCore/Sources/ExhibitFixtures` (not a product): synthetic screenshots drawn with CoreText (`FakeUI.swift`, `SampleFixture.swift`), shared by the test targets and sample generators.
 - Tests use Swift Testing. Goldens live in `Tests/ExhibitCoreTests/Goldens`, drawn over the shared fixtures.
 
