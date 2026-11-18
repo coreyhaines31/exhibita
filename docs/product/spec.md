@@ -1,6 +1,6 @@
 # Exhibit A — v1 spec
 
-Draft, 2026-11-18. Verdict: **unproven** (nothing built or measured).
+Draft, 2026-11-18. Verdict: **unproven**. Units 0 to 3 are built (core, targets, CLI on files, interpreter spike); the app is not.
 
 A Mac menu bar screenshot tool where marking up takes single keystrokes, a spoken sentence, or one CLI command from an agent. Tenth app in the Brushed family. Local, free, no account. CLI binary: `exhibit`.
 
@@ -8,7 +8,7 @@ A Mac menu bar screenshot tool where marking up takes single keystrokes, a spoke
 
 Decided 2026-11-18. Corey set the first and delegated the rest ("I trust your judgment").
 
-1. **Spoken instructions are interpreted on the Mac.** A fixed grammar handles common commands with no model; free-form sentences go to Apple's on-device model or a local model the user runs. Unit 0 measures which is good enough.
+1. **Spoken instructions are interpreted on the Mac.** A fixed grammar handles common commands with no model; free-form sentences go to a local model the user runs. Apple's on-device model was measured in unit 0 and is left out of v1: it got 29% of held-out instructions right and over-blurred heavily (see `docs/product/spike-interpreter.md`). Re-run the eval when Apple ships a new model.
 2. **Originals are kept for 30 days** so marks stay editable, outside Time Machine, with a one-click purge. The retention period is a setting, and "discard on export" is one of its values.
 3. **Licence: FSL-1.1-MIT** with a separately licensed `ee/` directory for paid code, as Midnight Oil does. Site and README say "free, source available", not "open source". The repo is private until release.
 4. **No own-key cloud models in v1.** Free means on-device or a local model the user runs; hosted interpretation is a paid cloud feature.
@@ -23,7 +23,7 @@ Same shape as Midnight Oil and Kill Cord: the app is free with its source availa
 | Capture, all seven marks, redaction, history | Yes | |
 | CLI and MCP for agents | Yes | |
 | Voice with the built-in grammar | Yes | |
-| Free-form instructions | Apple's on-device model, or a local model the user runs (an Ollama or LM Studio endpoint) | Hosted interpretation, no setup |
+| Free-form instructions | A local model the user runs (an Ollama or LM Studio endpoint) | Hosted interpretation, no setup |
 | Cloud | | Share links, synced history across Macs |
 | Teams | | Shared library, team-wide never-capture and auto-redact rules, shared mark styles, managed deployment |
 
@@ -112,7 +112,7 @@ Hold D, speak, release. Speech is transcribed on the Mac. The interpreter turns 
 | "Blur the emails" | Every email target blurred | Grammar |
 | "Circle Pricing and point at Sign up" | Circle on "Pricing", arrow to "Sign up" | Grammar |
 | "Highlight this" while pointing | Highlight on the text run under the pointer | Grammar |
-| "Hide anything that identifies the customer" | Model picks names, emails, account IDs from the list | Model tier |
+| "Hide anything that identifies the customer" | Model picks names, emails, account IDs from the list | Model tier; needs a local model set up |
 | "Circle the avatar" | "Couldn't find avatar" inline; draw by hand | No text target in v1 |
 
 ## CLI and MCP
@@ -144,10 +144,12 @@ exhibit mcp                                   # stdio MCP server, same commands
 | Empty history | "No captures yet" with the hotkey shown |
 | Targets still loading | Editor usable immediately; snapping and ⇧B show "reading text" until OCR finishes |
 | Microphone denied | Inline message at the dictate key with a link to Settings; hand tools unaffected |
-| Speech model downloading | Progress with size on first dictation; cancelable |
+| Speech model downloading | Progress with size on first dictation; cancelable. Rare on macOS 26, where the system transcriber needed no download in the spike |
 | Listening / interpreting | Live transcript while held, then a short working state; no success before marks exist |
 | Partial match | "Blurred 4 emails. Couldn't find: pricing button." Found marks applied |
 | Nothing understood | Transcript shown with "No changes made" |
+| Needs a model | The grammar declined and no model is set up: transcript shown with "This needs a model. Set one up in Settings." Nothing changes |
+| Model edit applied | Each mark is named in the summary ("Blurred 4 emails, circled Pricing"), because about 1 model answer in 10 is wrong; one ⌘Z removes the batch |
 | Secrets found, none blurred | Quiet count: "3 possible secrets. ⇧B to blur." Never blocks copying |
 | Never-capture app in frame | That window is blacked out with a label saying why |
 | Crash or quit mid-edit | Marks saved on every change; history restores them |
@@ -183,7 +185,7 @@ CLI on files comes first: useful to agents before any UI exists, needs no permis
 
 | Unit | What | Accepted when |
 |---|---|---|
-| 0 Spike | Interpreter eval and speech latency check | Model tier chosen from scores on a 40-instruction, 10-screenshot set |
+| 0 Spike | Interpreter eval and speech latency check | Done: 62 instructions over 10 screenshots; results in `docs/product/spike-interpreter.md` |
 | 1 Core | Document format, marks, renderer | Golden-image tests pass for all seven marks; redaction test passes |
 | 2 Targets | OCR, secret and face detectors | Fixtures return expected text boxes and kinds |
 | 3 CLI on files | Selectors and every markup command | `exhibit blur fixture.png --kind email` hides all fixture emails; unmatched selectors exit non-zero |
@@ -191,7 +193,7 @@ CLI on files comes first: useful to agents before any UI exists, needs no permis
 | 5 Editor | In-place editor, single-key tools, text snapping, undo, copy and save | The seven-keystroke example works; marks survive a force quit |
 | 6 Capture bridge | CLI asks the app for live captures; never-capture list; agent tagging | `exhibit capture --window` returns an image without any window changing focus |
 | 7 Voice | Push-to-talk, transcription, grammar interpreter, partial-result UI | Grammar rows in the voice table pass on fixtures |
-| 8 Model tier | Free-form interpreter chosen in unit 0, plus `say` | Eval score meets the bar set in unit 0 |
+| 8 Model tier | Local model endpoint as the free-form interpreter, plus `say`. Refs are validated in the app; no reliance on structured output | On a fresh held-out set of 30 or more: grammar then model at least 85% exact; zero missed redaction targets on kind or literal redactions; not-found right in at least 4 of 5; model step median at most 3 s and p90 at most 10 s |
 | 9 MCP | stdio server over the CLI commands | Claude Code captures, blurs and exports through it |
 | 10 Release | Sparkle, notarization, cask, launch at login, `--demo --snapshot`, icon | Notarized DMG opens on a second Mac; update from the previous build works |
 
@@ -220,15 +222,15 @@ Targets (assumed), not measurements. Baselines are taken once units 4 and 5 exis
 | Redaction not recoverable | not assessed, blocking | Test defined in unit 1 |
 | Originals handling and purge | not assessed, blocking | Unit 4 |
 | Agent capture rules | not assessed | Unit 6 |
-| Dictation accuracy | not assessed | Unit 0 |
+| Dictation accuracy | not assessed | Measured on synthetic speech only (8% word errors); real voices not assessed |
 | Performance | not assessed | No baseline |
 | Notarization and update path | not assessed, blocking | Never run for this app |
 | Orgs, billing, backend, analytics | justified N/A | Local single-user utility, zero telemetry |
 
 ### Not verified yet
 
-- How good Apple's on-device model is at choosing targets, and which Macs have it (unit 0).
-- Which speech engine to ship on macOS 14 and its download size; WhisperKit is the assumption.
+- How smaller local models (3B to 8B) do as the free-form interpreter; only one 27B model was measured, at 90% exact with the grammar first.
+- Speech on macOS 14 and 15. macOS 26 uses the system `SpeechTranscriber` (fast in the spike, no prompt for files); WhisperKit for older systems is still an unverified assumption.
 - How often macOS 15+ re-prompts for Screen Recording.
 - Whether the app can turn off the system ⌘⇧4 shortcut itself, or can only link to the setting.
 - Competitor facts (Shotcrisp, Lasso, Shotmark, Snapperon, CleanShot X) come from product pages read on 2026-11-18, not hands-on use.
