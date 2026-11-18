@@ -1,10 +1,11 @@
 [
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "billing-01",
     "instruction" : "Blur the emails",
-    "milliseconds" : 0.937917,
+    "milliseconds" : 1.118791,
     "missedRedactions" : 0,
     "output" : "blur [kind email]",
     "overRedactions" : 0,
@@ -19,7 +20,7 @@
     "exact" : false,
     "id" : "billing-02",
     "instruction" : "circle the plan price",
-    "milliseconds" : 1.2335,
+    "milliseconds" : 1.232167,
     "output" : "declined: \"plan price\" is not on the screen as text",
     "split" : "heldout",
     "tags" : [
@@ -32,7 +33,7 @@
     "exact" : false,
     "id" : "billing-03",
     "instruction" : "hide anything that identifies the customer",
-    "milliseconds" : 0.018333,
+    "milliseconds" : 0.026166,
     "output" : "declined: \"anything\" needs judgement",
     "split" : "dev",
     "tags" : [
@@ -42,10 +43,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "billing-04",
     "instruction" : "Point at Update plan and circle Cancel plan.",
-    "milliseconds" : 0.331459,
+    "milliseconds" : 0.41475,
     "output" : "arrow [\"Update plan\"]; circle [\"Cancel plan\"]",
     "split" : "heldout",
     "tags" : [
@@ -57,10 +59,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "billing-05",
     "instruction" : "highlight the total",
-    "milliseconds" : 0.329042,
+    "milliseconds" : 0.355125,
     "output" : "highlight [\"Total paid this year: $412.00\"]",
     "split" : "dev",
     "tags" : [
@@ -70,10 +73,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "billing-06",
     "instruction" : "blur this",
-    "milliseconds" : 0.248834,
+    "milliseconds" : 0.241125,
     "missedRedactions" : 0,
     "output" : "blur [\"Customer ID cus_8841207\"]",
     "overRedactions" : 0,
@@ -88,7 +92,8 @@
     "exact" : false,
     "id" : "billing-07",
     "instruction" : "highlight the discount code",
-    "milliseconds" : 1.269208,
+    "milliseconds" : 1.528542,
+    "notFoundCorrect" : false,
     "output" : "declined: \"discount code\" is not on the screen as text",
     "split" : "heldout",
     "tags" : [
@@ -98,10 +103,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "billing-08",
     "instruction" : "put an arrow here",
-    "milliseconds" : 0.251917,
+    "milliseconds" : 0.26775,
     "output" : "arrow [\"Change card\"]",
     "split" : "heldout",
     "tags" : [
@@ -111,10 +117,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "billing-09",
     "instruction" : "highlight the in voices heading",
-    "milliseconds" : 0.984042,
+    "milliseconds" : 1.02675,
     "output" : "highlight [\"Invoices\"]",
     "split" : "dev",
     "tags" : [
@@ -124,10 +131,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "inbox-01",
     "instruction" : "blur all the email addresses",
-    "milliseconds" : 0.392791,
+    "milliseconds" : 0.37675,
     "missedRedactions" : 0,
     "output" : "blur [kind email]",
     "overRedactions" : 0,
@@ -139,10 +147,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "inbox-02",
     "instruction" : "Circle the new annual price",
-    "milliseconds" : 0.485042,
+    "milliseconds" : 0.46075,
     "output" : "circle [\"Attached is the updated contract for Q1. The new annual price is $18,400, down from\"]",
     "split" : "heldout",
     "tags" : [
@@ -152,10 +161,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "inbox-03",
     "instruction" : "box the reply button",
-    "milliseconds" : 0.3855,
+    "milliseconds" : 0.395916,
     "output" : "box [\"Reply\"]",
     "split" : "dev",
     "tags" : [
@@ -165,10 +175,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "inbox-04",
     "instruction" : "blur the e mails",
-    "milliseconds" : 0.454792,
+    "milliseconds" : 0.372333,
     "missedRedactions" : 0,
     "output" : "blur [kind email]",
     "overRedactions" : 0,
@@ -181,10 +192,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "inbox-05",
     "instruction" : "number reply forward and archive",
-    "milliseconds" : 4.678125,
+    "milliseconds" : 4.719792,
     "output" : "step [\"Reply\", \"Forward\", \"Archive\"]",
     "split" : "dev",
     "tags" : [
@@ -197,7 +209,7 @@
     "exact" : false,
     "id" : "inbox-06",
     "instruction" : "highlight the deadline",
-    "milliseconds" : 1.491875,
+    "milliseconds" : 1.681708,
     "output" : "declined: \"deadline\" is not on the screen as text",
     "split" : "heldout",
     "tags" : [
@@ -207,10 +219,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "chat-01",
     "instruction" : "blur the token",
-    "milliseconds" : 0.289208,
+    "milliseconds" : 0.317083,
     "missedRedactions" : 0,
     "output" : "blur [kind key]",
     "overRedactions" : 0,
@@ -222,10 +235,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "chat-02",
     "instruction" : "Redact the API key and the phone number.",
-    "milliseconds" : 2.380917,
+    "milliseconds" : 0.39825,
     "missedRedactions" : 0,
     "output" : "blur [kind key, kind phone]",
     "overRedactions" : 0,
@@ -241,7 +255,7 @@
     "exact" : false,
     "id" : "chat-03",
     "instruction" : "circle the message about the failing job",
-    "milliseconds" : 0.026125,
+    "milliseconds" : 0.015959,
     "output" : "declined: \"about\" needs judgement",
     "split" : "dev",
     "tags" : [
@@ -254,7 +268,7 @@
     "exact" : false,
     "id" : "chat-04",
     "instruction" : "highlight kenji's first message",
-    "milliseconds" : 1.87475,
+    "milliseconds" : 1.708833,
     "output" : "declined: \"kenji first message\" is not on the screen as text",
     "split" : "heldout",
     "tags" : [
@@ -264,10 +278,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "chat-05",
     "instruction" : "put an arrow on the deploy window",
-    "milliseconds" : 0.376167,
+    "milliseconds" : 0.363208,
     "output" : "arrow [\"Fixed in #4821. Deploy window is 2:00 PM today.\"]",
     "split" : "dev",
     "tags" : [
@@ -277,12 +292,13 @@
   },
   {
     "answered" : true,
-    "exact" : false,
+    "answeredBy" : "grammar",
+    "exact" : true,
     "id" : "chat-06",
     "instruction" : "blur kenji watanabe",
-    "milliseconds" : 0.26925,
-    "missedRedactions" : 3,
-    "output" : "blur [\"Kenji Watanabe\"]",
+    "milliseconds" : 0.413541,
+    "missedRedactions" : 0,
+    "output" : "blur [\"Kenji Watanabe 10:02 AM\", \"Kenji Watanabe 10:05 AM\", \"Kenji Watanabe\", \"Kenji Watanabe 10:10 AM\"]",
     "overRedactions" : 0,
     "split" : "heldout",
     "tags" : [
@@ -292,10 +308,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "chat-07",
     "instruction" : "highlight that",
-    "milliseconds" : 0.25475,
+    "milliseconds" : 0.26875,
     "output" : "highlight [\"Fixed in #4821. Deploy window is 2:00 PM today.\"]",
     "split" : "dev",
     "tags" : [
@@ -305,10 +322,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "table-01",
     "instruction" : "blur the email column",
-    "milliseconds" : 0.261625,
+    "milliseconds" : 0.261208,
     "missedRedactions" : 0,
     "output" : "blur [kind email]",
     "overRedactions" : 0,
@@ -323,7 +341,7 @@
     "exact" : false,
     "id" : "table-02",
     "instruction" : "highlight the customer that is past due",
-    "milliseconds" : 0.016542,
+    "milliseconds" : 0.016375,
     "output" : "declined: \"that ...\" describes something rather than naming it",
     "split" : "heldout",
     "tags" : [
@@ -333,10 +351,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : false,
     "id" : "table-03",
     "instruction" : "circle the total",
-    "milliseconds" : 0.244917,
+    "milliseconds" : 0.288,
     "output" : "circle [\"Total\"]",
     "split" : "dev",
     "tags" : [
@@ -345,14 +364,12 @@
     ]
   },
   {
-    "answered" : true,
+    "answered" : false,
     "exact" : false,
     "id" : "table-04",
     "instruction" : "blur grace holloway and her email",
-    "milliseconds" : 1.849334,
-    "missedRedactions" : 0,
-    "output" : "blur [\"Grace Holloway\", kind email]",
-    "overRedactions" : 5,
+    "milliseconds" : 0.554208,
+    "output" : "declined: \"email\" with a possessive names one of several, which needs judgement",
     "split" : "heldout",
     "tags" : [
       "semantic",
@@ -365,7 +382,7 @@
     "exact" : false,
     "id" : "table-05",
     "instruction" : "box the cancelled account",
-    "milliseconds" : 1.416666,
+    "milliseconds" : 1.517167,
     "output" : "declined: \"cancelled account\" is not on the screen as text",
     "split" : "dev",
     "tags" : [
@@ -375,10 +392,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "table-06",
     "instruction" : "label the past due customer call them today",
-    "milliseconds" : 4.480709,
+    "milliseconds" : 4.557083,
     "output" : "text [\"Past due\"] label \"customer call them today\"",
     "split" : "heldout",
     "tags" : [
@@ -388,10 +406,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "editor-01",
     "instruction" : "blur all the secrets",
-    "milliseconds" : 0.277834,
+    "milliseconds" : 0.240209,
     "missedRedactions" : 0,
     "output" : "blur [kind key]",
     "overRedactions" : 0,
@@ -403,10 +422,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "editor-02",
     "instruction" : "highlight the database url",
-    "milliseconds" : 0.300208,
+    "milliseconds" : 0.316333,
     "output" : "highlight [\"DATABASE_URL=postgres://app:••••••••••@db.example.com:5432/orders\"]",
     "split" : "dev",
     "tags" : [
@@ -419,7 +439,7 @@
     "exact" : false,
     "id" : "editor-03",
     "instruction" : "circle line 5",
-    "milliseconds" : 0.609208,
+    "milliseconds" : 0.637375,
     "output" : "declined: \"line 5\" is not on the screen as text",
     "split" : "heldout",
     "tags" : [
@@ -432,7 +452,7 @@
     "exact" : false,
     "id" : "editor-04",
     "instruction" : "add a label saying rotate this next to the payments key",
-    "milliseconds" : 1.818083,
+    "milliseconds" : 0.305125,
     "output" : "declined: could not tell the label from what it labels",
     "split" : "dev",
     "tags" : [
@@ -441,12 +461,12 @@
     ]
   },
   {
-    "answered" : true,
-    "exact" : true,
+    "answered" : false,
+    "exact" : false,
     "id" : "editor-05",
     "instruction" : "Point to the SMTP password.",
-    "milliseconds" : 0.251541,
-    "output" : "arrow [\"SMTP_PASSWORD=•••••••••••••••\"]",
+    "milliseconds" : 0.233792,
+    "output" : "declined: \"smtp password\" qualifies a kind, which needs judgement",
     "split" : "heldout",
     "tags" : [
       "semantic",
@@ -455,10 +475,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "pricing-01",
     "instruction" : "Circle Pricing",
-    "milliseconds" : 0.23625,
+    "milliseconds" : 0.252959,
     "output" : "circle [\"Pricing\"]",
     "split" : "dev",
     "tags" : [
@@ -468,10 +489,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "pricing-02",
     "instruction" : "circle prising and point at sign up",
-    "milliseconds" : 0.961959,
+    "milliseconds" : 0.946,
     "output" : "circle [\"Pricing\"]; arrow [\"Sign up\"]",
     "split" : "heldout",
     "tags" : [
@@ -486,7 +508,7 @@
     "exact" : false,
     "id" : "pricing-03",
     "instruction" : "highlight the most popular plan's price",
-    "milliseconds" : 0.020834,
+    "milliseconds" : 0.014334,
     "output" : "declined: \"most\" needs judgement",
     "split" : "dev",
     "tags" : [
@@ -499,7 +521,7 @@
     "exact" : false,
     "id" : "pricing-04",
     "instruction" : "number the three plans",
-    "milliseconds" : 1.075792,
+    "milliseconds" : 1.173125,
     "output" : "declined: \"three plans\" is not on the screen as text",
     "split" : "heldout",
     "tags" : [
@@ -509,10 +531,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "pricing-05",
     "instruction" : "box the start free trial buttons",
-    "milliseconds" : 0.240792,
+    "milliseconds" : 0.360166,
     "output" : "box [\"Start free trial\", \"Start free trial\"]",
     "split" : "dev",
     "tags" : [
@@ -525,7 +548,7 @@
     "exact" : false,
     "id" : "pricing-06",
     "instruction" : "circle the free trial button on the pro plan",
-    "milliseconds" : 2.197667,
+    "milliseconds" : 2.397583,
     "output" : "declined: \"free trial button on the pro plan\" is not on the screen as text",
     "split" : "heldout",
     "tags" : [
@@ -535,10 +558,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "pricing-07",
     "instruction" : "circle this",
-    "milliseconds" : 0.252583,
+    "milliseconds" : 0.233708,
     "output" : "circle [\"Contact sales\"]",
     "split" : "dev",
     "tags" : [
@@ -548,10 +572,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "pricing-08",
     "instruction" : "circle sign op",
-    "milliseconds" : 0.799458,
+    "milliseconds" : 0.863583,
     "output" : "circle [\"Sign up\"]",
     "split" : "heldout",
     "tags" : [
@@ -561,10 +586,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "dashboard-01",
     "instruction" : "circle the churn rate",
-    "milliseconds" : 0.228791,
+    "milliseconds" : 0.286625,
     "output" : "circle [\"Churn rate\"]",
     "split" : "dev",
     "tags" : [
@@ -577,7 +603,7 @@
     "exact" : false,
     "id" : "dashboard-02",
     "instruction" : "highlight the biggest customer",
-    "milliseconds" : 1.095959,
+    "milliseconds" : 1.177542,
     "output" : "declined: \"biggest customer\" is not on the screen as text",
     "split" : "heldout",
     "tags" : [
@@ -587,10 +613,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "dashboard-03",
     "instruction" : "point at open tickets and label it needs triage",
-    "milliseconds" : 0.248959,
+    "milliseconds" : 0.275542,
     "output" : "arrow [\"Open tickets\"] label \"needs triage\"",
     "split" : "dev",
     "tags" : [
@@ -603,7 +630,7 @@
     "exact" : false,
     "id" : "dashboard-04",
     "instruction" : "highlight november",
-    "milliseconds" : 0.75425,
+    "milliseconds" : 0.761542,
     "output" : "declined: \"november\" is not on the screen as text",
     "split" : "heldout",
     "tags" : [
@@ -616,7 +643,8 @@
     "exact" : false,
     "id" : "dashboard-05",
     "instruction" : "circle the export button",
-    "milliseconds" : 0.672333,
+    "milliseconds" : 0.683833,
+    "notFoundCorrect" : false,
     "output" : "declined: \"export\" is not on the screen as text",
     "split" : "dev",
     "tags" : [
@@ -626,10 +654,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "login-01",
     "instruction" : "blur the e mail",
-    "milliseconds" : 0.091917,
+    "milliseconds" : 0.093917,
     "missedRedactions" : 0,
     "output" : "blur [kind email]",
     "overRedactions" : 0,
@@ -642,10 +671,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "login-02",
     "instruction" : "arrow to forgot password",
-    "milliseconds" : 0.111583,
+    "milliseconds" : 0.130542,
     "output" : "arrow [\"Forgot password?\"]",
     "split" : "heldout",
     "tags" : [
@@ -655,10 +685,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "login-03",
     "instruction" : "Box Sign in",
-    "milliseconds" : 0.093666,
+    "milliseconds" : 0.133584,
     "output" : "box [\"Sign in\"]",
     "split" : "dev",
     "tags" : [
@@ -668,10 +699,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "login-04",
     "instruction" : "step one email step two password step three sign in",
-    "milliseconds" : 0.659292,
+    "milliseconds" : 0.247209,
     "output" : "step [\"Email\", \"Password\", \"Sign in\"]",
     "split" : "heldout",
     "tags" : [
@@ -684,7 +716,8 @@
     "exact" : false,
     "id" : "login-05",
     "instruction" : "box create account and circle the logout link",
-    "milliseconds" : 0.297375,
+    "milliseconds" : 0.373166,
+    "notFoundCorrect" : false,
     "output" : "declined: \"logout\" is not on the screen as text",
     "split" : "dev",
     "tags" : [
@@ -696,10 +729,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "terminal-01",
     "instruction" : "highlight the error",
-    "milliseconds" : 0.299709,
+    "milliseconds" : 0.33775,
     "output" : "highlight [\"Error: connect ECONNREFUSED 127.0.0.1:5432\"]",
     "split" : "dev",
     "tags" : [
@@ -712,7 +746,7 @@
     "exact" : false,
     "id" : "terminal-02",
     "instruction" : "highlight the failed migration",
-    "milliseconds" : 1.394125,
+    "milliseconds" : 1.625458,
     "output" : "declined: \"failed migration\" is not on the screen as text",
     "split" : "heldout",
     "tags" : [
@@ -725,7 +759,7 @@
     "exact" : false,
     "id" : "terminal-03",
     "instruction" : "box the commit that fixed the retry backoff",
-    "milliseconds" : 0.01675,
+    "milliseconds" : 0.025209,
     "output" : "declined: \"that ...\" describes something rather than naming it",
     "split" : "dev",
     "tags" : [
@@ -735,10 +769,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "terminal-04",
     "instruction" : "blur this",
-    "milliseconds" : 0.226625,
+    "milliseconds" : 0.253542,
     "missedRedactions" : 0,
     "output" : "blur [key]",
     "overRedactions" : 0,
@@ -750,10 +785,12 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "team-01",
     "instruction" : "blur the faces",
-    "milliseconds" : 0.219375,
+    "milliseconds" : 0.244833,
+    "notFoundCorrect" : true,
     "output" : "not found: faces",
     "split" : "dev",
     "tags" : [
@@ -766,7 +803,7 @@
     "exact" : false,
     "id" : "team-02",
     "instruction" : "circle the remove button for mei",
-    "milliseconds" : 1.145291,
+    "milliseconds" : 1.302959,
     "output" : "declined: \"remove button for mei\" is not on the screen as text",
     "split" : "heldout",
     "tags" : [
@@ -776,10 +813,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "team-03",
     "instruction" : "highlight the owner",
-    "milliseconds" : 0.199625,
+    "milliseconds" : 0.273292,
     "output" : "highlight [\"Owner\"]",
     "split" : "dev",
     "tags" : [
@@ -792,8 +830,8 @@
     "exact" : false,
     "id" : "team-04",
     "instruction" : "blur everybody's emails except the pending invite",
-    "milliseconds" : 2.327791,
-    "output" : "declined: \"everybody emails except the pending invite\" describes a sensitive value the grammar cannot place",
+    "milliseconds" : 0.236084,
+    "output" : "declined: \"everybody emails except the pending invite\" qualifies a kind, which needs judgement",
     "split" : "heldout",
     "tags" : [
       "semantic",
@@ -802,10 +840,11 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "team-05",
     "instruction" : "point at invite member",
-    "milliseconds" : 0.258834,
+    "milliseconds" : 0.231875,
     "output" : "arrow [\"Invite member\"]",
     "split" : "dev",
     "tags" : [
@@ -815,10 +854,12 @@
   },
   {
     "answered" : true,
+    "answeredBy" : "grammar",
     "exact" : true,
     "id" : "team-06",
     "instruction" : "blur the credit card",
-    "milliseconds" : 0.252792,
+    "milliseconds" : 0.210125,
+    "notFoundCorrect" : true,
     "output" : "not found: credit card",
     "split" : "heldout",
     "tags" : [
@@ -831,7 +872,8 @@
     "exact" : false,
     "id" : "team-07",
     "instruction" : "blur the emails and circle the log out button",
-    "milliseconds" : 1.108583,
+    "milliseconds" : 0.681625,
+    "notFoundCorrect" : false,
     "output" : "declined: \"log out\" is not on the screen as text",
     "split" : "heldout",
     "tags" : [
