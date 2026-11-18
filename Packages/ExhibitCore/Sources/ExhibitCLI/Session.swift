@@ -20,7 +20,7 @@ struct Session {
     var layout: MarkLayout { MarkLayout(scale: scale, imageSize: imageSize) }
 
     static func open(_ path: String) throws -> Session {
-        let url = URL(fileURLWithPath: path).standardizedFileURL
+        let url = try CaptureID.resolve(path)
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) else {
             throw CLIError.io("No file at \(url.path).")

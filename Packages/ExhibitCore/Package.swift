@@ -24,7 +24,7 @@ let package = Package(
         .target(name: "ExhibitTargets", dependencies: ["ExhibitCore"]),
         // Every command's logic, so tests can drive it in process. The executable is a thin shell over it.
         .target(name: "ExhibitCLI", dependencies: [
-            "ExhibitCore", "ExhibitTargets", "ExhibitInterpret",
+            "ExhibitCore", "ExhibitTargets", "ExhibitInterpret", "ExhibitBridge", "ExhibitShell", "ExhibitStore",
             .product(name: "ArgumentParser", package: "swift-argument-parser")
         ]),
         .executableTarget(name: "exhibit", dependencies: ["ExhibitCLI"]),
@@ -60,6 +60,6 @@ let package = Package(
         // Depends on the executable so `swift test` builds the real binary for the end-to-end tests.
         .testTarget(name: "ExhibitCLITests",
                     dependencies: ["ExhibitCLI", "exhibit", "ExhibitCore", "ExhibitTargets", "ExhibitFixtures",
-                                   "ExhibitInterpret"])
+                                   "ExhibitInterpret", "ExhibitBridge"])
     ]
 )
