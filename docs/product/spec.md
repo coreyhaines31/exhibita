@@ -170,6 +170,8 @@ CLI on files comes first: useful to agents before any UI exists, needs no permis
 | 9 MCP | stdio server over the CLI commands | Claude Code captures, blurs and exports through it |
 | 10 Release | Sparkle, notarization, cask, launch at login, `--demo --snapshot`, icon | Notarized DMG opens on a second Mac; update from the previous build works |
 
+**Family membership.** Exhibit A ships as a full member of the Mac app family, the same as its nine siblings: PanelKit for the panel and settings, the Brushed look (metal, black, chrome, colour only in lights), an icon and menu bar glyph from `mac-app-kit` that differ in concept from the others, a site built on site-kit at `exhibitaformac.com`, a cask in `coreyhaines31/homebrew-tap`, and a place in every sibling site's "More free Mac apps" section and footer.
+
 Each unit is one issue, one branch, one PR into `development`. Rollback is reverting the PR; voice sits behind a setting until unit 8 lands. The marketing site and launch are separate work.
 
 ## Performance budgets to measure
