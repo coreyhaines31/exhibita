@@ -18,7 +18,7 @@ struct OllamaInterpreter: Interpreter {
             "stream": false,
             "think": think,
             "format": ModelPrompt.jsonSchema(refs: listing.refs),
-            "options": ["temperature": 0, "seed": 1],
+            "options": ["temperature": 0, "seed": 1, "num_predict": ModelPrompt.maxResponseTokens],
             "messages": [
                 ["role": "system", "content": ModelPrompt.instructions],
                 ["role": "user", "content": ModelPrompt.prompt(for: request, listing: listing)]

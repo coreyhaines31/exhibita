@@ -33,9 +33,9 @@ struct AppleModelInterpreter: Interpreter {
     func interpret(_ request: InterpretRequest) async throws -> InterpretOutcome {
         let listing = TargetListing(request)
         let session = LanguageModelSession(instructions: ModelPrompt.instructions)
+        let options = GenerationOptions(samplingMode: .greedy, maximumResponseTokens: ModelPrompt.maxResponseTokens)
         let response = try await session.respond(to: ModelPrompt.prompt(for: request, listing: listing),
-                                                 schema: try Self.schema(refs: listing.refs),
-                                                 options: GenerationOptions(samplingMode: .greedy))
+                                                 schema: try Self.schema(refs: listing.refs), options: options)
         return .understood(try ModelPrompt.interpretation(fromJSON: response.rawContent.jsonString, listing: listing))
     }
 
@@ -45,18 +45,20 @@ struct AppleModelInterpreter: Interpreter {
     }
 
     static func schema(refs: [String]) throws -> GenerationSchema {
-        let ref = DynamicGenerationSchema(name: "Ref", description: "A target ref from the screen list",
+        let ref = DynamicGenerationSchema(name: "Ref", description: "A ref from the screen list",
                                           anyOf: refs.isEmpty ? ["none"] : refs)
-        let operation = DynamicGenerationSchema(name: "Operation", properties: [
-            .init(name: "mark", schema: DynamicGenerationSchema(name: "Mark", anyOf: MarkKind.allCases.map(\.rawValue))),
-            .init(name: "targets", schema: DynamicGenerationSchema(arrayOf: ref)),
+        let mark = DynamicGenerationSchema(name: "Mark", anyOf: MarkKind.allCases.map(\.rawValue))
+        let targets = DynamicGenerationSchema(arrayOf: ref, maximumElements: ModelPrompt.maxTargets)
+        let part = DynamicGenerationSchema(name: "Part", properties: [
+            .init(name: "words", description: "The person's words for the thing, copied from the instruction",
+                  schema: DynamicGenerationSchema(type: String.self)),
+            .init(name: "mark", schema: mark),
+            .init(name: "targets", schema: targets),
             .init(name: "label", description: "Words for a text mark or an arrow caption",
                   schema: DynamicGenerationSchema(type: String.self), isOptional: true)
         ])
         let root = DynamicGenerationSchema(name: "Answer", properties: [
-            .init(name: "operations", schema: DynamicGenerationSchema(arrayOf: operation)),
-            .init(name: "notFound", description: "The person's words for things not on the screen",
-                  schema: DynamicGenerationSchema(arrayOf: DynamicGenerationSchema(type: String.self)))
+            .init(name: "parts", schema: DynamicGenerationSchema(arrayOf: part, maximumElements: ModelPrompt.maxParts))
         ])
         return try GenerationSchema(root: root, dependencies: [])
     }
