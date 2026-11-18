@@ -21,13 +21,15 @@ public enum CLI {
         }
     }
 
-    /// Runs one command line (without the program name). Never exits the process and never prints.
+    /// Runs one command line (without the program name). Never exits the process and never prints, except `mcp`,
+    /// which serves on stdin and stdout until its input ends.
     public static func run(arguments: [String]) -> CLIResult {
         var command: ParsableCommand
         do {
             command = try Exhibit.parseAsRoot(arguments)
             // `help <subcommand>` and a bare `exhibit` parse to commands whose run throws a help request.
             if !(command is ExhibitCommand) { try command.run() }
+            if command is MCP { return CLIResult(status: .success, stdout: "", stderr: "") }
         } catch {
             let code = Exhibit.exitCode(for: error)
             let message = Exhibit.fullMessage(for: error)
@@ -67,7 +69,7 @@ struct Exhibit: ParsableCommand {
             """,
         version: CLI.version,
         subcommands: [Targets.self, Blur.self, Highlight.self, Circle.self, Box.self, Arrow.self, Text.self, Step.self,
-                      Apply.self, Say.self]
+                      Apply.self, Say.self, MCP.self]
     )
 }
 
@@ -340,5 +342,22 @@ struct Apply: ExhibitCommand {
         guard let data = try? Data(contentsOf: url) else { throw CLIError.io("Could not read \(url.path).") }
         return try MarkRun.run(input: input, specs: try ApplyFile.specs(from: data), indexed: true,
                                output: outputOptions)
+    }
+}
+
+struct MCP: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "mcp",
+        abstract: "Serve targets, mark, apply and say to an agent over MCP on stdin and stdout.",
+        discussion: """
+            A Model Context Protocol server: JSON-RPC 2.0, one message per line. Each tool runs the CLI command of \
+            the same name, so results and errors are the CLI's JSON. say uses the model configured in this \
+            process's environment ($EXHIBIT_MODEL and friends); clients cannot change it.
+            Example: claude mcp add exhibit -- /path/to/exhibit mcp
+            """
+    )
+
+    func run() throws {
+        MCPServer().serveStandardIO()
     }
 }
