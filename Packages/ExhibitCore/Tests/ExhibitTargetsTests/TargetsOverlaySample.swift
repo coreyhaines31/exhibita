@@ -6,7 +6,7 @@ import Testing
 
 /// Writes `docs/samples/targets-overlay.png` when run with `EXHIBIT_RECORD_GOLDENS=1`: the sample fixture with
 /// every found target boxed (text blue, sensitive red, faces green), so a person can check detection by eye.
-@Suite struct TargetsOverlaySample {
+@Suite(.timeLimit(.minutes(2))) struct TargetsOverlaySample {
     static let repoRoot = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         .deletingLastPathComponent().deletingLastPathComponent()

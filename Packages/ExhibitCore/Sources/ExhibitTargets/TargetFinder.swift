@@ -6,11 +6,20 @@ import Vision
 /// Finds targets in an image: one `.text` target per recognized line, `.email`, `.key`, `.card` and `.phone`
 /// targets for sensitive items in that text, and a `.face` target per face.
 ///
-/// Everything runs on the Mac with Vision; nothing leaves it. `findTargets(in:)` is synchronous and takes a
-/// fraction of a second to a few seconds depending on image size, so call it off the main thread.
+/// Everything runs on the Mac with Vision; nothing leaves it. A call takes a fraction of a second to a few seconds
+/// depending on image size. Prefer the `async` form from Swift concurrency; the synchronous form blocks its caller,
+/// so keep it off the main thread.
+///
+/// Vision work runs one image at a time on a private dispatch queue, never on the caller's thread. Vision's
+/// `perform` hands work to queues derived from the calling context and waits for it; called from Swift
+/// concurrency's cooperative pool with every pool thread blocked the same way, that work never got a thread and
+/// all callers deadlocked. `ConcurrentFindingTests` guards this.
 public struct TargetFinder: Sendable {
     /// What replaces each UTF-16 code unit of a sensitive match in stored text.
     public static let maskCharacter: Character = "\u{2022}"
+
+    /// Serial, so one Vision request runs at a time process wide.
+    private static let visionQueue = DispatchQueue(label: "exhibit.targets.vision", qos: .userInitiated)
 
     public init() {}
 
@@ -19,7 +28,29 @@ public struct TargetFinder: Sendable {
     /// Sensitive items never appear in the output as text: their targets have no `text`, and the same characters
     /// in the `.text` target of their line are replaced by `maskCharacter`, one for each UTF-16 code unit, so
     /// offsets and spans still line up.
+    public func findTargets(in image: CGImage) async throws -> [Target] {
+        try await withCheckedThrowingContinuation { continuation in
+            Self.visionQueue.async {
+                continuation.resume(with: Result { try Self.performFind(in: image) })
+            }
+        }
+    }
+
+    /// The same as the `async` form, blocking the caller until the targets are found.
     public func findTargets(in image: CGImage) throws -> [Target] {
+        dispatchPrecondition(condition: .notOnQueue(Self.visionQueue))
+        let done = DispatchSemaphore(value: 0)
+        nonisolated(unsafe) var result: Result<[Target], Error>?
+        Self.visionQueue.async {
+            result = Result { try Self.performFind(in: image) }
+            done.signal()
+        }
+        done.wait()
+        guard let result else { return [] }
+        return try result.get()
+    }
+
+    private static func performFind(in image: CGImage) throws -> [Target] {
         let textRequest = VNRecognizeTextRequest()
         textRequest.recognitionLevel = .accurate
         // Correction "fixes" keys, codes and names into dictionary words.
@@ -28,17 +59,16 @@ public struct TargetFinder: Sendable {
         try VNImageRequestHandler(cgImage: image, options: [:]).perform([textRequest, faceRequest])
 
         let grid = InkGrid(image)
-        var targets: [Target] = []
+        var found: [Target] = []
         for observation in textRequest.results ?? [] {
             guard let candidate = observation.topCandidates(1).first, !candidate.string.isEmpty else { continue }
-            targets += Self.targets(forLine: candidate, observation: observation, image: image, grid: grid)
+            found += targets(forLine: candidate, observation: observation, image: image, grid: grid)
         }
         for face in faceRequest.results ?? [] {
-            targets.append(Target(kind: .face, rect: VisionGeometry.pixelRect(face.boundingBox, width: image.width,
-                                                                               height: image.height),
-                                  confidence: Double(face.confidence)))
+            let rect = VisionGeometry.pixelRect(face.boundingBox, width: image.width, height: image.height)
+            found.append(Target(kind: .face, rect: rect, confidence: Double(face.confidence)))
         }
-        return Self.ordered(targets)
+        return ordered(found)
     }
 
     private static func targets(forLine candidate: VNRecognizedText, observation: VNRecognizedTextObservation,

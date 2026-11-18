@@ -26,7 +26,7 @@ private func line(_ targets: [Target], startingWith prefix: String) -> Target? {
     lines(targets).first { $0.text?.hasPrefix(prefix) == true }
 }
 
-@Suite struct TargetFinderTests {
+@Suite(.timeLimit(.minutes(2))) struct TargetFinderTests {
     @Test(arguments: [1.0, 2.0])
     func linesAreFoundWithTightBoxes(scale: Double) throws {
         let fixture = targetsFixture(scale: scale)
@@ -109,7 +109,7 @@ private func line(_ targets: [Target], startingWith prefix: String) -> Target? {
     }
 }
 
-@Suite struct TargetFinderUnitTests {
+@Suite(.timeLimit(.minutes(2))) struct TargetFinderUnitTests {
     @Test func masksKeepUTF16Offsets() {
         let text = "a😀 key"
         let masked = TargetFinder.masked(text, ranges: [NSRange(location: 4, length: 3)])
@@ -145,7 +145,7 @@ private func line(_ targets: [Target], startingWith prefix: String) -> Target? {
     }
 }
 
-@Suite struct VisionGeometryTests {
+@Suite(.timeLimit(.minutes(2))) struct VisionGeometryTests {
     @Test func normalizedBottomLeftBecomesTopLeftPixels() {
         // A box in the top-left quarter of a 200 by 100 image, in Vision's bottom-left space.
         let rect = VisionGeometry.pixelRect(CGRect(x: 0, y: 0.5, width: 0.5, height: 0.5), width: 200, height: 100)
