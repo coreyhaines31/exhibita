@@ -56,5 +56,7 @@ import Testing
             .text("", at: PixelPoint(x: 0, y: 0))
         ]
         _ = try Renderer.render(original: original, marks: odd)
+        let blank = try Renderer.render(original: original, marks: [.text("", at: PixelPoint(x: 5, y: 5))])
+        #expect(Pixels(blank) == Pixels(original))
     }
 }

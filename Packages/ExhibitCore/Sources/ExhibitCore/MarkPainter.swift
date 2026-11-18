@@ -18,8 +18,10 @@ struct MarkPainter {
         case .highlight:
             drawHighlight(mark.bounds.cgRect, color: mark.style.color)
         case .text:
-            let origin = mark.bounds.cgRect.origin
-            drawLabel(mark.style.label ?? "", topLeft: origin, color: mark.style.color)
+            // A text mark with nothing to say draws nothing, rather than an empty pill.
+            if let label = mark.style.label, !label.isEmpty {
+                drawLabel(label, topLeft: mark.bounds.cgRect.origin, color: mark.style.color)
+            }
         case .box:
             drawBox(mark.bounds.cgRect, color: mark.style.color)
         case .step:
