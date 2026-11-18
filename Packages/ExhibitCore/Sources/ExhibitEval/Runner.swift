@@ -22,11 +22,10 @@ struct Runner {
             } catch {
                 outcome = .failure(error)
             }
-            let elapsed = clock.now - start
-            let milliseconds = Double(elapsed.components.seconds) * 1000
-                + Double(elapsed.components.attoseconds) / 1e15
-            let scored = Scoring.score(instruction, outcome: outcome, targets: request.targets,
+            let milliseconds = Self.milliseconds(clock.now - start)
+            var scored = Scoring.score(instruction, outcome: outcome, targets: request.targets,
                                        milliseconds: milliseconds)
+            scored.answeredBy = scored.answered ? interpreter.name : nil
             log("\(interpreter.name) \(index + 1)/\(selected.count) \(instruction.id) "
                 + "\(scored.exact ? "ok" : scored.answered ? "WRONG" : "declined") "
                 + "\(Int(milliseconds)) ms: \(scored.output)")
@@ -35,12 +34,50 @@ struct Runner {
         return results
     }
 
-    /// The grammar first, the model only where the grammar declined: what would ship. Computed from the two
-    /// recorded runs; the grammar is deterministic and the models decode greedily, so re-running would repeat them.
+    /// What ships: the grammar's answers where it answered, and the model asked only where the grammar declined,
+    /// as `exhibit say` does. The model step is timed on its own as well.
+    func runChain(grammar: [Scored], model: ModelInterpreter) async -> [Scored] {
+        var results: [Scored] = []
+        let declined = grammar.filter { !$0.answered }.count
+        var asked = 0
+        for (instruction, first) in zip(selected, grammar) {
+            guard !first.answered else {
+                results.append(first)
+                continue
+            }
+            asked += 1
+            let request = set.request(for: instruction)
+            let clock = ContinuousClock()
+            let start = clock.now
+            let outcome: Result<InterpretOutcome, Error>
+            do {
+                outcome = .success(try await model.interpret(request))
+            } catch {
+                outcome = .failure(error)
+            }
+            let milliseconds = Self.milliseconds(clock.now - start)
+            var scored = Scoring.score(instruction, outcome: outcome, targets: request.targets,
+                                       milliseconds: first.milliseconds + milliseconds)
+            scored.answeredBy = scored.answered ? "model" : nil
+            scored.modelMilliseconds = milliseconds
+            log("grammar then model \(asked)/\(declined) \(instruction.id) "
+                + "\(scored.exact ? "ok" : scored.answered ? "WRONG" : "failed") \(Int(milliseconds)) ms: \(scored.output)")
+            results.append(scored)
+        }
+        return results
+    }
+
+    static func milliseconds(_ elapsed: Duration) -> Double {
+        Double(elapsed.components.seconds) * 1000 + Double(elapsed.components.attoseconds) / 1e15
+    }
+
+    /// The grammar first, the model only where the grammar declined, computed from two recorded runs (for Apple's
+    /// model, which is not shipped).
     static func chain(grammar: [Scored], model: [Scored]) -> [Scored] {
         zip(grammar, model).map { first, second in
             guard !first.answered else { return first }
             var combined = second
+            combined.modelMilliseconds = second.milliseconds
             combined.milliseconds += first.milliseconds
             return combined
         }
@@ -62,27 +99,50 @@ func log(_ message: String) {
 
 /// The summary table for one split.
 enum Report {
+    static let legend = [
+        "Missed redaction targets are expected blur targets no blur covers, split into instructions that name a kind, "
+            + "a literal string or the pointer, and semantic ones (tagged \"semantic\"). Over-redacted counts blurs "
+            + "that touch no expected target. Not found right: of instructions whose answer is \"not on the screen\", "
+            + "those reported as not found with nothing marked in their place. Model step: time of the model call "
+            + "alone, on the instructions the grammar declined. Missed and over-redacted count answered "
+            + "instructions only.",
+        ""
+    ]
+
     static func table(_ runs: [(name: String, results: [Scored])], split: String) -> String {
         var lines = [
-            "| Interpreter | Answered | Exact, of answered | Exact, of all | Missed redaction targets | "
-                + "Over-redacted targets | Median ms | p90 ms |",
-            "|---|---|---|---|---|---|---|---|"
+            "| Interpreter | Answered | Exact, of answered | Exact, of all | Missed redaction, kind or literal | "
+                + "Missed redaction, semantic | Over-redacted | Not found right | Median ms | p90 ms | "
+                + "Model step median ms | Model step p90 ms |",
+            "|---|---|---|---|---|---|---|---|---|---|---|---|"
         ]
         for run in runs {
             let rows = split == "all" ? run.results : run.results.filter { $0.split == split }
             guard !rows.isEmpty else { continue }
             let answered = rows.filter(\.answered)
             let exact = rows.filter(\.exact).count
-            let missed = answered.compactMap(\.missedRedactions).reduce(0, +)
+            let literal = rows.filter { !$0.tags.contains("semantic") && $0.missedRedactions != nil }
+            let semantic = rows.filter { $0.tags.contains("semantic") && $0.missedRedactions != nil }
             let over = answered.compactMap(\.overRedactions).reduce(0, +)
-            let redactions = rows.filter { $0.missedRedactions != nil || $0.tags.contains("blur") }.count
+            let notFound = rows.compactMap(\.notFoundCorrect)
             let latencies = rows.map(\.milliseconds).sorted()
+            let modelSteps = rows.compactMap(\.modelMilliseconds).sorted()
             lines.append("| \(run.name) | \(answered.count)/\(rows.count) | "
                 + "\(fraction(exact, answered.count)) | \(fraction(exact, rows.count)) | "
-                + "\(missed) (in \(redactions) blur instructions) | \(over) | "
-                + "\(format(percentile(latencies, 0.5))) | \(format(percentile(latencies, 0.9))) |")
+                + "\(missed(literal)) | \(missed(semantic)) | \(over) | "
+                + "\(fraction(notFound.filter { $0 }.count, notFound.count)) | "
+                + "\(format(percentile(latencies, 0.5))) | \(format(percentile(latencies, 0.9))) | "
+                + "\(modelSteps.isEmpty ? "n/a" : format(percentile(modelSteps, 0.5))) | "
+                + "\(modelSteps.isEmpty ? "n/a" : format(percentile(modelSteps, 0.9))) |")
         }
         return lines.joined(separator: "\n")
+    }
+
+    /// Missed targets over the answered instructions, and how many such instructions there were.
+    static func missed(_ rows: [Scored]) -> String {
+        let answered = rows.filter(\.answered)
+        let count = answered.compactMap(\.missedRedactions).reduce(0, +)
+        return "\(count) (\(answered.count) of \(rows.count) blur instructions answered)"
     }
 
     static func fraction(_ count: Int, _ total: Int) -> String {

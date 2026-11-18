@@ -1,69 +1,89 @@
 import ExhibitInterpret
 import Foundation
 
-// The interpreter and speech spike (issue 3). Not shipped.
+// The interpreter eval. Not shipped.
 //
-//   swift run exhibit-eval interpret [--split dev|heldout|all] [--only grammar,apple,ollama]
-//                                    [--ollama-model qwen3.8:27b]
+//   swift run exhibit-eval interpret [--file instructions.json] [--split dev|heldout|all|<any split in the file>]
+//                                    [--only grammar,model,apple,model-alone]
+//                                    [--model qwen3.8:27b] [--model-endpoint http://127.0.0.1:11434]
 //   swift run exhibit-eval speech
 //
-// Results go to eval/interpreter/results/. Progress goes to stderr.
+// "grammar" is the shipping grammar. "model" is the shipping chain, as `exhibit say` runs it: the grammar first, then
+// the shipping model interpreter only where the grammar declined. "model-alone" asks the model every instruction.
+// "apple" is Apple's on-device model (not shipped). Results go to eval/interpreter/results/, named after the split.
+// Progress goes to stderr.
 
 struct Options {
     var command = "interpret"
+    var file = "instructions.json"
     var split = "dev"
-    var only: Set<String> = ["grammar", "apple", "ollama"]
-    var ollamaModel = "qwen3.8:27b"
+    var only: Set<String> = ["grammar", "model"]
+    var model = "qwen3.8:27b"
+    var endpoint = ModelEndpoint.defaultURL
 
     init(_ arguments: [String]) throws {
         var arguments = arguments[...]
         if let first = arguments.first, !first.hasPrefix("--") { command = first; arguments = arguments.dropFirst() }
         while let argument = arguments.popFirst() {
             switch argument {
+            case "--file": file = arguments.popFirst() ?? file
             case "--split": split = arguments.popFirst() ?? split
-            case "--only": only = Set((arguments.popFirst() ?? "").split(separator: ",").map(String.init))
-            case "--ollama-model": ollamaModel = arguments.popFirst() ?? ollamaModel
+            case "--only":
+                only = Set((arguments.popFirst() ?? "").split(separator: ",").map { $0 == "ollama" ? "model" : String($0) })
+            case "--model", "--ollama-model": model = arguments.popFirst() ?? model
+            case "--model-endpoint":
+                guard let url = arguments.popFirst().flatMap(URL.init(string:)) else {
+                    throw EvalError("--model-endpoint needs a URL")
+                }
+                endpoint = url
             default: throw EvalError("unknown argument \(argument)")
             }
         }
-        guard ["dev", "heldout", "all"].contains(split) else { throw EvalError("--split is dev, heldout or all") }
     }
 }
 
 func runInterpreters(_ options: Options) async throws {
-    let set = try EvalSet.load()
+    let set = try EvalSet.load(file: options.file)
     let runner = Runner(set: set, split: options.split)
+    guard !runner.selected.isEmpty else {
+        throw EvalError("no instructions in split \(options.split) of \(options.file)")
+    }
     var runs: [(name: String, results: [Scored])] = []
     var notes: [String] = []
-    var grammar: [Scored]?
-    if options.only.contains("grammar") {
-        let results = await runner.run(GrammarInterpreter())
-        grammar = results
-        runs.append(("A grammar", results))
-    }
+    let grammar = await runner.run(GrammarInterpreter())
+    if options.only.contains("grammar") { runs.append(("A grammar", grammar)) }
     if options.only.contains("apple") {
         if let results = try await runApple(runner) {
             runs.append(("B Apple on-device", results))
-            if let grammar { runs.append(("A then B", Runner.chain(grammar: grammar, model: results))) }
+            runs.append(("A then B", Runner.chain(grammar: grammar, model: results)))
         } else {
             notes.append("B Apple on-device: not assessed, \(appleModelUnavailableReason() ?? "unknown")")
         }
     }
-    if options.only.contains("ollama") {
-        let model = ModelInterpreter(endpoint: try ModelEndpoint(model: options.ollamaModel, timeout: 300))
+    if !options.only.isDisjoint(with: ["model", "model-alone"]) {
+        let model = ModelInterpreter(endpoint: try ModelEndpoint(url: options.endpoint, model: options.model,
+                                                                 timeout: 300))
+        // Loads the model, so the first measured instruction does not pay for it.
         _ = try await model.interpret(InterpretRequest(instruction: "circle ok", targets: []))
-        let results = await runner.run(model)
-        runs.append(("C ollama:\(options.ollamaModel)", results))
-        if let grammar { runs.append(("A then C", Runner.chain(grammar: grammar, model: results))) }
+        if options.only.contains("model") {
+            runs.append(("A then model (\(options.model))", await runner.runChain(grammar: grammar, model: model)))
+        }
+        if options.only.contains("model-alone") {
+            runs.append(("C model alone (\(options.model))", await runner.run(model)))
+        }
     }
-    for run in runs { try Runner.write(run.results, name: run.name.replacingOccurrences(of: " ", with: "_"),
-                                       split: options.split) }
-    var summary = ["Run on \(osVersion()), split \(options.split), \(runner.selected.count) instructions.", ""]
-    let splits = options.split == "all" ? ["heldout", "dev", "all"] : [options.split]
+    for run in runs {
+        let name = run.name.replacingOccurrences(of: " ", with: "_").replacingOccurrences(of: "(", with: "")
+            .replacingOccurrences(of: ")", with: "")
+        try Runner.write(run.results, name: name, split: options.split)
+    }
+    var summary = ["Run on \(osVersion()), file \(options.file), split \(options.split), "
+                   + "\(runner.selected.count) instructions.", ""]
+    let splits = options.split == "all" ? Array(Set(runner.selected.map(\.split))).sorted() + ["all"] : [options.split]
     for split in splits {
         summary += ["### \(split)", "", Report.table(runs, split: split), ""]
     }
-    summary += notes
+    summary += Report.legend + notes
     let text = summary.joined(separator: "\n")
     print(text)
     try Data((text + "\n").utf8).write(to: EvalSet.root.appendingPathComponent("results/summary-\(options.split).md"))
