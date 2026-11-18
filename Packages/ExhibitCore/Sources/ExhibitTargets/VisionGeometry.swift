@@ -15,18 +15,20 @@ enum VisionGeometry {
 
 /// The image's pixels, for shrinking OCR boxes to the ink inside them.
 ///
-/// Vision pads its boxes by a few pixels and the padding varies. A box whose four corners share one colour sits
-/// on a plain background, so rows and columns of that colour at its edges can be cut away. A box on anything
-/// busier is left as it is.
+/// Vision pads its boxes by a varying number of pixels, sometimes past the edge of a button. The colours along
+/// a box's border are its background (a button and the window behind it, say); every other pixel is ink, and
+/// the box shrinks to the ink.
 struct InkGrid {
     let width: Int
     let height: Int
     private let bytes: [UInt8]
 
-    /// Channel difference within which corner pixels count as the same background.
-    static let backgroundTolerance = 24
-    /// Channel difference beyond which a pixel counts as ink.
-    static let inkThreshold = 40
+    /// Channel difference within which a pixel matches a background colour. Anything further from every
+    /// background colour is ink, including antialiased glyph edges. Small, so white text next to a light gray
+    /// window still reads as ink.
+    static let tolerance = 12
+    /// Share of the border a colour must cover to count as background.
+    static let backgroundShare = 0.03
 
     init?(_ image: CGImage) {
         let width = image.width
@@ -46,7 +48,8 @@ struct InkGrid {
         bytes = buffer
     }
 
-    /// `rect` shrunk to the ink inside it, or `rect` unchanged when its background is not plain or it holds no ink.
+    /// `rect` shrunk to the ink inside it, or `rect` unchanged when it is tiny, has no clear background or holds
+    /// no ink.
     func trimmed(_ rect: PixelRect) -> PixelRect {
         let box = rect.standardized
         let left = max(0, Int(box.minX.rounded(.down)))
@@ -55,16 +58,17 @@ struct InkGrid {
         let bottom = min(height, Int(box.maxY.rounded(.up)))
         guard right - left >= 3, bottom - top >= 3 else { return rect }
 
-        let background = pixel(left, top)
-        let corners = [pixel(right - 1, top), pixel(left, bottom - 1), pixel(right - 1, bottom - 1)]
-        guard corners.allSatisfy({ $0.difference(background) <= Self.backgroundTolerance }) else { return rect }
-
+        let backgrounds = backgroundColors(left: left, top: top, right: right, bottom: bottom)
+        guard !backgrounds.isEmpty else { return rect }
+        let isInk = { (color: Color) in
+            backgrounds.allSatisfy { $0.difference(color) > Self.tolerance }
+        }
         var inkLeft = right
         var inkRight = left - 1
         var inkTop = bottom
         var inkBottom = top - 1
         for row in top..<bottom {
-            for column in left..<right where pixel(column, row).difference(background) > Self.inkThreshold {
+            for column in left..<right where isInk(pixel(column, row)) {
                 inkLeft = min(inkLeft, column)
                 inkRight = max(inkRight, column)
                 inkTop = min(inkTop, row)
@@ -74,6 +78,36 @@ struct InkGrid {
         guard inkRight >= inkLeft, inkBottom >= inkTop else { return rect }
         return PixelRect(x: Double(inkLeft), y: Double(inkTop), width: Double(inkRight - inkLeft + 1),
                          height: Double(inkBottom - inkTop + 1))
+    }
+
+    /// Colours that cover at least `backgroundShare` of the box's border and appear on at least two of its sides,
+    /// grouped within `tolerance`. A glyph the box cuts through usually touches one side only.
+    private func backgroundColors(left: Int, top: Int, right: Int, bottom: Int) -> [Color] {
+        let sides: [[Color]] = [
+            (left..<right).map { pixel($0, top) },
+            (left..<right).map { pixel($0, bottom - 1) },
+            (top..<bottom).map { pixel(left, $0) },
+            (top..<bottom).map { pixel(right - 1, $0) }
+        ]
+        var groups: [ColorGroup] = []
+        for (side, colors) in sides.enumerated() {
+            for color in colors {
+                if let index = groups.firstIndex(where: { $0.color.difference(color) <= Self.tolerance }) {
+                    groups[index].count += 1
+                    groups[index].sides.insert(side)
+                } else if groups.count < 32 {
+                    groups.append(ColorGroup(color: color, count: 1, sides: [side]))
+                }
+            }
+        }
+        let needed = Double(sides.map(\.count).reduce(0, +)) * Self.backgroundShare
+        return groups.filter { Double($0.count) >= needed && $0.sides.count >= 2 }.map(\.color)
+    }
+
+    private struct ColorGroup {
+        let color: Color
+        var count: Int
+        var sides: Set<Int>
     }
 
     private struct Color {

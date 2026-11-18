@@ -163,10 +163,35 @@ private func line(_ targets: [Target], startingWith prefix: String) -> Target? {
             context.fill(CGRect(x: 10, y: 5, width: 12, height: 8))
         }
         let grid = try #require(InkGrid(image))
-        #expect(grid.trimmed(PixelRect(x: 2, y: 1, width: 30, height: 17)) == PixelRect(x: 10, y: 5, width: 12, height: 8))
-        // A corner on the ink means the background is not plain: left alone.
-        let busy = PixelRect(x: 12, y: 1, width: 20, height: 17)
-        #expect(grid.trimmed(PixelRect(x: 10, y: 5, width: 20, height: 10)) == PixelRect(x: 10, y: 5, width: 20, height: 10))
-        #expect(grid.trimmed(busy).width <= busy.width)
+        let trimmed = grid.trimmed(PixelRect(x: 2, y: 1, width: 30, height: 17))
+        #expect(trimmed == PixelRect(x: 10, y: 5, width: 12, height: 8))
+        // A box that cuts into the ink keeps all the ink it holds.
+        let cut = grid.trimmed(PixelRect(x: 12, y: 1, width: 20, height: 17))
+        #expect(cut == PixelRect(x: 12, y: 5, width: 10, height: 8))
+    }
+
+    @Test func inkTrimHandlesABoxThatSpillsOffAButton() throws {
+        // White text on a blue button, with the OCR box running past the button onto a gray window.
+        let image = makeImage(width: 60, height: 20) { context in
+            context.setFillColor(CGColor(gray: 0.93, alpha: 1))
+            context.fill(CGRect(x: 0, y: 0, width: 60, height: 20))
+            context.setFillColor(CGColor(srgbRed: 0, green: 0.48, blue: 1, alpha: 1))
+            context.fill(CGRect(x: 8, y: 0, width: 52, height: 20))
+            context.setFillColor(CGColor(gray: 1, alpha: 1))
+            context.fill(CGRect(x: 20, y: 6, width: 20, height: 8))
+        }
+        let grid = try #require(InkGrid(image))
+        #expect(grid.trimmed(PixelRect(x: 2, y: 2, width: 52, height: 16)) == PixelRect(x: 20, y: 6, width: 20, height: 8))
+    }
+
+    @Test func inkTrimLeavesTinyOrBlankBoxesAlone() throws {
+        let grid = try #require(InkGrid(makeImage(width: 10, height: 10) { context in
+            context.setFillColor(CGColor(gray: 1, alpha: 1))
+            context.fill(CGRect(x: 0, y: 0, width: 10, height: 10))
+        }))
+        let blank = PixelRect(x: 1, y: 1, width: 8, height: 8)
+        #expect(grid.trimmed(blank) == blank)
+        let tiny = PixelRect(x: 1, y: 1, width: 2, height: 2)
+        #expect(grid.trimmed(tiny) == tiny)
     }
 }
