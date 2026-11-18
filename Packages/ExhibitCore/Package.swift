@@ -23,7 +23,8 @@ let package = Package(
             "ExhibitCore", "ExhibitTargets", .product(name: "ArgumentParser", package: "swift-argument-parser")
         ]),
         .executableTarget(name: "exhibit", dependencies: ["ExhibitCLI"]),
-        // Instructions to operations: the interpreter contract and the grammar. Text in, no image, no model.
+        // Instructions to operations: the interpreter contract, the grammar and the loopback model client. Text in,
+        // never the image.
         .target(name: "ExhibitInterpret", dependencies: ["ExhibitCore"]),
         // The interpreter and speech spike (issue 3): `swift run exhibit-eval`. Not shipped. Uses FoundationModels
         // and SpeechAnalyzer behind macOS 26 availability checks.

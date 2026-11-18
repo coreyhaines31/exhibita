@@ -4,7 +4,7 @@ import Foundation
 // The interpreter and speech spike (issue 3). Not shipped.
 //
 //   swift run exhibit-eval interpret [--split dev|heldout|all] [--only grammar,apple,ollama]
-//                                    [--ollama-model qwen3.8:27b] [--think]
+//                                    [--ollama-model qwen3.8:27b]
 //   swift run exhibit-eval speech
 //
 // Results go to eval/interpreter/results/. Progress goes to stderr.
@@ -14,7 +14,6 @@ struct Options {
     var split = "dev"
     var only: Set<String> = ["grammar", "apple", "ollama"]
     var ollamaModel = "qwen3.8:27b"
-    var think = false
 
     init(_ arguments: [String]) throws {
         var arguments = arguments[...]
@@ -24,7 +23,6 @@ struct Options {
             case "--split": split = arguments.popFirst() ?? split
             case "--only": only = Set((arguments.popFirst() ?? "").split(separator: ",").map(String.init))
             case "--ollama-model": ollamaModel = arguments.popFirst() ?? ollamaModel
-            case "--think": think = true
             default: throw EvalError("unknown argument \(argument)")
             }
         }
@@ -52,13 +50,10 @@ func runInterpreters(_ options: Options) async throws {
         }
     }
     if options.only.contains("ollama") {
-        var ollama = OllamaInterpreter(model: options.ollamaModel, think: options.think)
-        try await ollama.warmUp()
-        let results = await runner.run(ollama)
-        runs.append(("C \(ollama.name)\(options.think ? " thinking" : "")", results))
-        if !ollama.constrained {
-            notes.append("C: Ollama has no structured output for \(ollama.model), so its JSON was not constrained.")
-        }
+        let model = ModelInterpreter(endpoint: try ModelEndpoint(model: options.ollamaModel, timeout: 300))
+        _ = try await model.interpret(InterpretRequest(instruction: "circle ok", targets: []))
+        let results = await runner.run(model)
+        runs.append(("C ollama:\(options.ollamaModel)", results))
         if let grammar { runs.append(("A then C", Runner.chain(grammar: grammar, model: results))) }
     }
     for run in runs { try Runner.write(run.results, name: run.name.replacingOccurrences(of: " ", with: "_"),
