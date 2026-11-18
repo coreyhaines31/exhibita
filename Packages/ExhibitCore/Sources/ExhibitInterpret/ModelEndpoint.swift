@@ -71,9 +71,14 @@ public struct ModelEndpoint: Sendable, Equatable {
         }
     }
 
-    /// The request body: the system prompt and the user message, greedy decoding, a capped answer. No `format` or
-    /// `response_format`: some runners refuse structured output, so it is never asked for.
-    func body(system: String, user: String) throws -> Data {
+    /// The request body: the system prompt and the user message, greedy decoding, a capped answer, no reasoning.
+    /// No `format` or `response_format`: some runners refuse structured output, so it is never asked for.
+    ///
+    /// Reasoning models think before answering unless told not to, which took a 27B model from about 6 s to 13 s
+    /// on Ollama's `/v1` (`docs/product/model-latency.md`). Ollama's own API takes `think: false`; OpenAI-compatible
+    /// servers take `reasoning_effort: "none"` (Ollama, OpenAI) or `chat_template_kwargs.enable_thinking: false`
+    /// (llama.cpp, vLLM). `noReasoning: false` leaves the last two out, for a server that refuses them.
+    func body(system: String, user: String, noReasoning: Bool = true) throws -> Data {
         let messages = [["role": "system", "content": system], ["role": "user", "content": user]]
         let object: [String: Any] = switch api {
         case .ollama:
@@ -85,9 +90,13 @@ public struct ModelEndpoint: Sendable, Equatable {
             [
                 "model": model, "stream": false, "messages": messages, "temperature": 0, "seed": 1,
                 "max_tokens": ModelPrompt.maxResponseTokens
-            ]
+            ].merging(noReasoning ? Self.openAINoReasoning : [:]) { $1 }
         }
         return try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+    }
+
+    static var openAINoReasoning: [String: Any] {
+        ["reasoning_effort": "none", "chat_template_kwargs": ["enable_thinking": false]]
     }
 
     /// The text of the model's reply.

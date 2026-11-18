@@ -133,7 +133,13 @@ public struct ModelInterpreter: Interpreter {
         let listing = TargetListing(request)
         let body = try endpoint.body(system: ModelPrompt.instructions + ModelPrompt.answerFormat,
                                      user: ModelPrompt.prompt(for: request, listing: listing))
-        let reply = try transport.post(endpoint.chatURL, body: body, timeout: endpoint.timeout)
+        var reply = try transport.post(endpoint.chatURL, body: body, timeout: endpoint.timeout)
+        if reply.status == 400, endpoint.api == .openai {
+            // A server that refuses the switches that turn reasoning off: ask again without them.
+            let plain = try endpoint.body(system: ModelPrompt.instructions + ModelPrompt.answerFormat,
+                                          user: ModelPrompt.prompt(for: request, listing: listing), noReasoning: false)
+            reply = try transport.post(endpoint.chatURL, body: plain, timeout: endpoint.timeout)
+        }
         guard reply.status == 200 else {
             throw ModelError.httpStatus(reply.status, ModelEndpoint.preview(reply.body))
         }
