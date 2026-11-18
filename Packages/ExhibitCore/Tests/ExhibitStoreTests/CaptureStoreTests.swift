@@ -118,6 +118,28 @@ private let day: TimeInterval = 86_400
         #expect(left == [CaptureStore.neverIndexFileName])
     }
 
+    @Test func exportsBesideACaptureGoWithIt() throws {
+        let store = try temporaryStore()
+        defer { try? FileManager.default.removeItem(at: store.directory.deletingLastPathComponent()) }
+        let first = try store.create(image: solidImage(), scale: 1, capturedBy: .agent)
+        let second = try store.create(image: solidImage(), scale: 1, capturedBy: .agent)
+        let name = first.id.uuidString
+        #expect(store.exportURL(for: first.id).lastPathComponent == "\(name).png")
+        let exports = ["\(name).png", "\(name)-marked.png", "\(name)-marked-3.png"]
+        let kept = ["\(second.id.uuidString).png", "\(name)-notes.png", "\(name).txt"]
+        for file in exports + kept {
+            try Data([1]).write(to: store.directory.appendingPathComponent(file))
+        }
+        try store.delete(first.id)
+        let left = Set(try FileManager.default.contentsOfDirectory(atPath: store.directory.path))
+        #expect(left.isDisjoint(with: exports))
+        #expect(left.isSuperset(of: kept))
+
+        #expect(try store.purgeAll() == 1)
+        let afterPurge = Set(try FileManager.default.contentsOfDirectory(atPath: store.directory.path))
+        #expect(afterPurge == [CaptureStore.neverIndexFileName, "\(name)-notes.png", "\(name).txt"])
+    }
+
     @Test func sweepDeletesOnlyExpiredCaptures() throws {
         let store = try temporaryStore()
         defer { try? FileManager.default.removeItem(at: store.directory.deletingLastPathComponent()) }

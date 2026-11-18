@@ -80,6 +80,12 @@ public struct CaptureStore: Sendable {
         CaptureBundle.url(for: id, in: directory)
     }
 
+    /// Where an agent capture's flattened copy goes: `<id>.png` beside the bundle. `exhibit` commands on the
+    /// capture write `<id>-marked.png` and up beside it too. All of them go when the capture is deleted.
+    public func exportURL(for id: UUID) -> URL {
+        directory.appendingPathComponent("\(id.uuidString).png")
+    }
+
     public func load(_ id: UUID) throws -> CaptureBundle.Loaded {
         try CaptureBundle.load(from: url(for: id))
     }
@@ -118,7 +124,11 @@ public struct CaptureStore: Sendable {
     // MARK: - Deleting
 
     /// Deletes one capture's files. Deleting a capture that is already gone is not an error.
+    /// Its flattened exports beside it (`<id>.png`, `<id>-marked.png`, `<id>-marked-2.png`, ...) go with it.
     public func delete(_ id: UUID) throws {
+        for export in exportURLs(of: id) {
+            try? FileManager.default.removeItem(at: export)
+        }
         let url = url(for: id)
         guard FileManager.default.fileExists(atPath: url.path) else { return }
         try FileManager.default.removeItem(at: url)
@@ -128,7 +138,7 @@ public struct CaptureStore: Sendable {
     @discardableResult
     public func purgeAll() throws -> Int {
         let captures = bundleURLs()
-        for url in captures + stagingURLs() {
+        for url in captures + stagingURLs() + exportURLs(of: nil) {
             try FileManager.default.removeItem(at: url)
         }
         return captures.count
@@ -165,6 +175,17 @@ public struct CaptureStore: Sendable {
         contents().filter { url in
             url.pathExtension == CaptureBundle.fileExtension && !url.lastPathComponent.hasPrefix(".")
                 && UUID(uuidString: url.deletingPathExtension().lastPathComponent) != nil
+        }
+    }
+
+    /// Flattened PNGs named after a capture id, for one capture or for any.
+    private func exportURLs(of id: UUID?) -> [URL] {
+        contents().filter { url in
+            guard url.pathExtension.lowercased() == "png" else { return false }
+            let name = url.deletingPathExtension().lastPathComponent
+            guard name.range(of: #"^[0-9A-Fa-f-]{36}(-marked(-[0-9]+)?)?$"#, options: .regularExpression) != nil,
+                  let found = UUID(uuidString: String(name.prefix(36))) else { return false }
+            return id == nil || found == id
         }
     }
 
