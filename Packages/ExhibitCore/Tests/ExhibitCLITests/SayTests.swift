@@ -182,6 +182,30 @@ final class CannedModel: ModelTransport, @unchecked Sendable {
         #expect(saved.map(\.style.stepNumber) == [1, 2])
     }
 
+    @Test func circlesTheWordNotItsWholeLine() throws {
+        let words = [("Pricing", 0, 100.0, 70.0), ("·", 8, 180, 10), ("Docs", 10, 200, 40), ("·", 15, 250, 10),
+                     ("Sign", 17, 270, 40), ("out", 22, 320, 30)]
+        let footer = Target(kind: .text, text: "Pricing · Docs · Sign out",
+                            rect: PixelRect(x: 100, y: 300, width: 250, height: 20),
+                            spans: words.map { word, start, x, width in
+                                TextSpan(start: start, length: word.utf16.count,
+                                         rect: PixelRect(x: x, y: 300, width: width, height: 20))
+                            })
+        let fixture = sampleFixture()
+        let document = CaptureDocument(size: PixelSize(width: fixture.image.width, height: fixture.image.height),
+                                       scale: 2, targets: [footer, Self.email])
+        let bundle = try CaptureBundle.save(document, original: fixture.image, in: directory)
+        let result = CLI.run(arguments: ["say", bundle.path, "blur the emails and circle pricing"],
+                             environment: Self.noModel)
+        #expect(result.status == .success, "\(result.stderr)")
+        #expect(try json(result.stdout)["summary"] as? String == "Blurred 1 email, circled \"Pricing\".")
+        let circle = try #require(CaptureBundle.load(from: bundle).document.marks.first { $0.kind == .circle })
+        #expect(circle.targetID == footer.id)
+        #expect(circle.geometry == .rect(PixelRect(x: 100, y: 300, width: 70, height: 20)))
+        let blur = try #require(CaptureBundle.load(from: bundle).document.marks.first { $0.kind == .blur })
+        #expect(blur.geometry == .rect(Self.email.rect))
+    }
+
     @Test func neverOverwritesWithoutForce() throws {
         let input = try writePNG(sampleFixture(), named: "shot.png", in: directory)
         let result = CLI.run(arguments: ["say", input, "circle pricing", "-o", input], environment: Self.noModel)

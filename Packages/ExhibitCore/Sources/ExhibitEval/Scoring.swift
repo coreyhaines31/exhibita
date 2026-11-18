@@ -98,6 +98,7 @@ enum Scoring {
                     switch pick {
                     case .kind(let kind): "kind \(kind.rawValue)"
                     case .text(let text): "text \"\(text)\""
+                    case .part: pick.part(in: targets).map { "\"\($0.text)\" in a line" } ?? "?"
                     case .id(let id):
                         targets.first { $0.id == id }.map { $0.text.map { "\"\($0)\"" } ?? $0.kind.rawValue } ?? "?"
                     }

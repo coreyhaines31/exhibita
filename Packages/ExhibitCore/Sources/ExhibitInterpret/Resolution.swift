@@ -6,7 +6,7 @@ extension TargetPick {
     /// containing the string, ignoring case and look-alike letters.
     public func targets(in targets: [Target]) -> [Target] {
         switch self {
-        case .id(let id):
+        case .id(let id), .part(let id, _, _):
             return targets.filter { $0.id == id }
         case .kind(let kind):
             return targets.filter { $0.kind == kind }
@@ -18,6 +18,16 @@ extension TargetPick {
                 return Confusables.fold(text).range(of: folded, options: .caseInsensitive) != nil
             }
         }
+    }
+
+    /// For a `.part`, the words it names and the box they cover, from the target's spans. Nil for other picks, or
+    /// when the range is not in the target's text.
+    public func part(in targets: [Target]) -> (text: String, rect: PixelRect)? {
+        guard case .part(let id, let start, let length) = self,
+              let target = targets.first(where: { $0.id == id }), let text = target.text else { return nil }
+        let range = NSRange(location: start, length: length)
+        guard let rect = target.rect(forUTF16Range: range) else { return nil }
+        return ((text as NSString).substring(with: range), rect.standardized)
     }
 }
 
@@ -36,6 +46,12 @@ extension InterpretedOperation {
             switch pick {
             case .id(let id):
                 if let target = targets.first(where: { $0.id == id }) { entry.rect.append(target.rect.standardized) }
+            case .part(let id, _, _):
+                if let part = pick.part(in: targets) {
+                    entry.rect.append(part.rect)
+                } else if let target = targets.first(where: { $0.id == id }) {
+                    entry.rect.append(target.rect.standardized)
+                }
             case .kind(let kind):
                 entry.kinds.append(kind.rawValue)
             case .text(let text):

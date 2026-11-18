@@ -14,6 +14,8 @@ enum Selector: Equatable {
     case rect(PixelRect)
     /// One target by id. Only from `say`, whose interpreters name targets; there is no flag for it.
     case target(UUID)
+    /// Part of one target's text, as a UTF-16 range, the way `--to` narrows to a phrase. Only from `say`.
+    case targetPart(UUID, NSRange)
 
     /// The selector as it would be typed, for reports and errors.
     var description: String {
@@ -24,6 +26,8 @@ enum Selector: Equatable {
         case .rect(let rect): "--rect \(Self.number(rect.x)),\(Self.number(rect.y)),\(Self.number(rect.width)),"
             + Self.number(rect.height)
         case .target(let id): "target \(id.uuidString)"
+        case .targetPart(let id, let range):
+            "target \(id.uuidString) characters \(range.location)..<\(range.location + range.length)"
         }
     }
 
@@ -77,6 +81,14 @@ enum SelectorMatcher {
             return targets.filter { $0.id == id }.map {
                 Candidate(rect: $0.rect.standardized, targetID: $0.id, text: $0.text, kind: $0.kind)
             }
+        case .targetPart(let id, let range):
+            return targets.filter { $0.id == id }.map { target in
+                guard let text = target.text, let found = candidate(target, text: text, range: range) else {
+                    return Candidate(rect: target.rect.standardized, targetID: target.id, text: target.text,
+                                     kind: target.kind)
+                }
+                return found
+            }
         case .kind(let kind):
             return targets.filter { $0.kind == kind }.map {
                 Candidate(rect: $0.rect.standardized, targetID: $0.id, text: $0.text, kind: $0.kind)
@@ -116,7 +128,7 @@ enum SelectorMatcher {
                 + "Sensitive values are masked there and are selected with --kind."
         case .kind:
             return "Run `exhibit targets <input>` to see the kinds that were found."
-        case .rect, .target:
+        case .rect, .target, .targetPart:
             return nil
         }
     }

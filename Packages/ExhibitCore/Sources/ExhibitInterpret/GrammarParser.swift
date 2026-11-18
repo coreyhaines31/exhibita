@@ -133,10 +133,10 @@ extension GrammarParser {
         var missing: [String] = []
         for item in items {
             switch item {
-            case .targets(let targets): picks += targets.map { .id($0.id) }
+            case .targets(let targets, let phrase): picks += targets.map { matcher.pick($0, phrase: phrase, for: mark) }
             case .kinds(let kinds): picks += kinds.map(TargetPick.kind)
             case .notFound(let phrase): missing.append(phrase)
-            case .ambiguous(let found): return .failure(Decline(message: "\(found.count) equal matches"))
+            case .ambiguous(let found, _): return .failure(Decline(message: "\(found.count) equal matches"))
             case .unmatched(let phrase): return .failure(Decline(message: "\"\(phrase)\" is not on the screen as text"))
             case .decline(let reason): return .failure(Decline(message: reason))
             }
@@ -150,14 +150,19 @@ extension GrammarParser {
         let whole = matcher.resolve(words, for: mark)
         if Self.resolved(whole) { return [whole] }
         let chunks = words.split(separator: "and").map(Array.init).filter { !$0.isEmpty }
-        let parts = chunks.flatMap { chunk -> [[String]] in
-            if chunks.count > 1, Self.resolved(matcher.resolve(chunk, for: mark)) { return [chunk] }
+        let parts = chunks.flatMap { chunk -> [(words: [String], segment: Bool)] in
+            if chunks.count > 1, Self.resolved(matcher.resolve(chunk, for: mark)) { return [(chunk, false)] }
             let bare = Array(chunk.drop { GrammarLexicon.determiners.contains($0) })
-            if let segments = matcher.segment(bare), segments.count > 1 { return segments }
-            return [chunk]
+            if let segments = matcher.segment(bare), segments.count > 1 { return segments.map { ($0, true) } }
+            return [(chunk, false)]
         }
         guard parts.count > 1 else { return [whole] }
-        return parts.map { matcher.resolve($0, for: mark) }
+        return parts.map { part in
+            // No line holds the whole phrase, so it was split into lines that each read one piece. A highlight
+            // takes those lines, not every line where one word of the phrase turns up.
+            if part.segment, mark == .highlight { return .targets(matcher.wholeLines(part.words)) }
+            return matcher.resolve(part.words, for: mark)
+        }
     }
 
     private static func resolved(_ result: ItemResult) -> Bool {
@@ -171,18 +176,18 @@ extension GrammarParser {
     /// candidate is clearly nearest: "number reply forward and archive" takes the Archive button beside Forward.
     private func breakTies(_ items: inout [ItemResult]) {
         let anchors = items.flatMap { item -> [Target] in
-            if case .targets(let targets) = item { return targets }
+            if case .targets(let targets, _) = item { return targets }
             return []
         }
         guard !anchors.isEmpty else { return }
         let centre = PixelPoint(x: anchors.map(\.rect.midX).reduce(0, +) / Double(anchors.count),
                                 y: anchors.map(\.rect.midY).reduce(0, +) / Double(anchors.count))
         for (index, item) in items.enumerated() {
-            guard case .ambiguous(let found) = item else { continue }
+            guard case .ambiguous(let found, let phrase) = item else { continue }
             let ranked = found.map { (target: $0, distance: hypot($0.rect.midX - centre.x, $0.rect.midY - centre.y)) }
                 .sorted { $0.distance < $1.distance }
             if ranked.count >= 2, ranked[0].distance * 2 < ranked[1].distance {
-                items[index] = .targets([ranked[0].target])
+                items[index] = .targets([ranked[0].target], phrase: phrase)
             }
         }
     }

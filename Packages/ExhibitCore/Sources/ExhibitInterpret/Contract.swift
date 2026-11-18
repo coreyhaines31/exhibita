@@ -26,6 +26,10 @@ public enum TargetPick: Sendable, Equatable, Hashable, Codable {
     /// One listed target. Models only ever answer with these: they choose among the listed targets and never
     /// produce coordinates.
     case id(UUID)
+    /// Part of one listed text target: a UTF-16 range of its `text`, counted like `TextSpan`. The grammar answers
+    /// with this when the phrase is only some of a line ("Pricing" in "Pricing · Docs · Sign out"), so the mark
+    /// goes on the phrase, as `--to` would put it, and stays attached to the line.
+    case part(UUID, start: Int, length: Int)
     /// Every target of a kind: `--kind`.
     case kind(TargetKind)
     /// Every text line containing the string, ignoring case and look-alike letters: `--text`.

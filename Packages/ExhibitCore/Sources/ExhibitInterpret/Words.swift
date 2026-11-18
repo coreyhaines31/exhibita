@@ -21,6 +21,37 @@ enum Words {
         return joinSpelledEmail(words)
     }
 
+    /// Where each word of `of(text)` sits in `text`, as UTF-16 ranges, or nil when the two cannot be lined up (a
+    /// joined "e mail", say). Look-alike folding keeps offsets, so the ranges are ranges of `text` itself.
+    static func ranges(in text: String) -> [NSRange]? {
+        let folded = Confusables.fold(text) as NSString
+        let kept = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "$%@#./"))
+        let edges = CharacterSet(charactersIn: "./")
+        func isKept(_ index: Int) -> Bool {
+            Unicode.Scalar(folded.character(at: index)).map(kept.contains) ?? false
+        }
+        func isEdge(_ index: Int) -> Bool {
+            Unicode.Scalar(folded.character(at: index)).map(edges.contains) ?? false
+        }
+        var ranges: [NSRange] = []
+        var index = 0
+        while index < folded.length {
+            guard isKept(index) else { index += 1; continue }
+            var start = index
+            while index < folded.length, isKept(index) { index += 1 }
+            var end = index
+            while start < end, isEdge(start) { start += 1 }
+            while end > start, isEdge(end - 1) { end -= 1 }
+            guard start < end else { continue }
+            let possessive = folded.substring(with: NSRange(location: start, length: end - start)).lowercased() == "s"
+                && start > 0 && ["'", "\u{2019}"].contains(folded.substring(with: NSRange(location: start - 1, length: 1)))
+                && (end == folded.length || folded.character(at: end) == 0x20)
+            if !possessive { ranges.append(NSRange(location: start, length: end - start)) }
+        }
+        let words = ranges.map { folded.substring(with: $0).lowercased() }
+        return words == of(text) ? ranges : nil
+    }
+
     /// Dictation writes "email" as "e mail" or "e-mail".
     private static func joinSpelledEmail(_ words: [String]) -> [String] {
         var joined: [String] = []

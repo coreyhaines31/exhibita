@@ -172,13 +172,15 @@ struct Say: ExhibitCommand {
         }
     }
 
-    /// One spec per operation, naming targets by id so marks stay attached to them in a bundle. Steps get one spec
+    /// One spec per operation, naming targets by id so marks stay attached to them in a bundle (a phrase inside a
+    /// line by the line's id and the phrase's range, so the mark goes on the phrase). Steps get one spec
     /// per target, so they are numbered in the order said rather than in reading order.
     static func specs(for interpretation: Interpretation) -> [MarkSpec] {
         interpretation.operations.flatMap { operation -> [MarkSpec] in
             let selectors = operation.picks.map { pick -> Selector in
                 switch pick {
                 case .id(let id): .target(id)
+                case .part(let id, let start, let length): .targetPart(id, NSRange(location: start, length: length))
                 case .kind(let kind): .kind(kind)
                 case .text(let text): .text(text)
                 }

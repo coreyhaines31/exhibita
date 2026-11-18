@@ -47,6 +47,24 @@ import Testing
         #expect(try CaptureBundle.load(from: url).document.marks.isEmpty)
     }
 
+    @Test func replacesAnExistingBundleWhole() throws {
+        let directory = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        var doc = document()
+        let url = try CaptureBundle.save(doc, original: original, in: directory)
+        let other = makeImage(width: 64, height: 48) { context in
+            context.setFillColor(CGColor(gray: 0, alpha: 1))
+            context.fill(CGRect(x: 0, y: 0, width: 64, height: 48))
+        }
+        doc.marks.removeAll()
+        #expect(try CaptureBundle.save(doc, original: other, in: directory) == url)
+        let loaded = try CaptureBundle.load(from: url)
+        #expect(loaded.document.marks.isEmpty)
+        #expect(Pixels(loaded.original) == Pixels(other))
+        // No staging directory is left beside it.
+        #expect(try FileManager.default.contentsOfDirectory(atPath: directory.path) == [url.lastPathComponent])
+    }
+
     @Test func encodingIsStable() throws {
         let doc = document()
         #expect(try CaptureBundle.encode(doc) == CaptureBundle.encode(doc))

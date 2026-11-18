@@ -61,8 +61,8 @@ func point(_ object: Any?) throws -> PixelPoint {
 
 private final class BundleMarker {}
 
-/// Runs the built `exhibit` binary, as an agent would.
-func runBinary(_ arguments: [String]) throws -> CLIResult {
+/// Runs the built `exhibit` binary, as an agent would, with `input` on its standard input.
+func runBinary(_ arguments: [String], input: String? = nil) throws -> CLIResult {
     // The test bundle sits in the products directory beside the binary `swift test` built.
     let products = Bundle(for: BundleMarker.self).bundleURL.deletingLastPathComponent()
     let process = Process()
@@ -72,7 +72,11 @@ func runBinary(_ arguments: [String]) throws -> CLIResult {
     let stderr = Pipe()
     process.standardOutput = stdout
     process.standardError = stderr
+    let stdin = Pipe()
+    process.standardInput = stdin
     try process.run()
+    if let input { stdin.fileHandleForWriting.write(Data(input.utf8)) }
+    try stdin.fileHandleForWriting.close()
     let out = stdout.fileHandleForReading.readDataToEndOfFile()
     let err = stderr.fileHandleForReading.readDataToEndOfFile()
     process.waitUntilExit()

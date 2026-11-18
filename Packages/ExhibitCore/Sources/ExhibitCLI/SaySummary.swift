@@ -19,8 +19,13 @@ struct SaySummary {
     init(interpretation: Interpretation, targets: [Target]) {
         let operations = interpretation.operations.map { operation in
             let marked = targets.filter { operation.targetIDs(in: targets).contains($0.id) }
+            var phrases: [UUID: String] = [:]
+            for pick in operation.picks {
+                if case .part(let id, _, _) = pick, let part = pick.part(in: targets) { phrases[id] = part.text }
+            }
             return Operation(mark: operation.mark.rawValue,
-                             summary: Self.phrase(operation.mark, marked: marked, label: operation.label),
+                             summary: Self.phrase(operation.mark, marked: marked, phrases: phrases,
+                                                  label: operation.label),
                              targetIDs: marked.map(\.id), label: operation.label)
         }
         var sentence = Self.capitalized(operations.map(\.summary).joined(separator: ", "))
@@ -33,8 +38,9 @@ struct SaySummary {
         self.sentence = sentence
     }
 
-    static func phrase(_ mark: MarkKind, marked: [Target], label: String?) -> String {
-        let what = names(marked)
+    /// `phrases` names the words marked inside a line, by the line's id, in place of the whole line.
+    static func phrase(_ mark: MarkKind, marked: [Target], phrases: [UUID: String] = [:], label: String?) -> String {
+        let what = names(marked, phrases: phrases)
         let quotedLabel = label.map { "\"\(clipped($0))\"" } ?? ""
         switch mark {
         case .blur: return "blurred \(what)"
@@ -48,11 +54,11 @@ struct SaySummary {
     }
 
     /// "\"Pricing\"", "\"Reply\" and \"Forward\"", "4 emails", "\"Total\", 2 emails and 1 key".
-    static func names(_ targets: [Target]) -> String {
+    static func names(_ targets: [Target], phrases: [UUID: String] = [:]) -> String {
         let lines = targets.filter { $0.kind == .text }
         var parts: [String] = lines.count > 3
             ? ["\(lines.count) lines"]
-            : lines.map { "\"\(clipped($0.text ?? ""))\"" }
+            : lines.map { "\"\(clipped(phrases[$0.id] ?? $0.text ?? ""))\"" }
         var counts: [(TargetKind, Int)] = []
         for target in targets where target.kind != .text {
             if let index = counts.firstIndex(where: { $0.0 == target.kind }) {
