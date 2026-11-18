@@ -16,9 +16,9 @@ Decided 2026-11-18. Corey set the first and delegated the rest ("I trust your ju
 
 ## Free and paid
 
-Same shape as Midnight Oil and Kill Cord: the app is free and open, and money comes from teams and cloud.
+Same shape as Midnight Oil and Kill Cord: the app is free with its source available, and money comes from teams and cloud.
 
-| | Free, open, local | Paid, later |
+| | Free, source available, local | Paid, later |
 |---|---|---|
 | Capture, all seven marks, redaction, history | Yes | |
 | CLI and MCP for agents | Yes | |
@@ -169,7 +169,7 @@ Purge history and "discard original" ask for confirmation. Everything else is un
 Controls:
 
 - **Redaction is destructive on export.** Exported files are flattened pixels with no layers and no copy of the original. Test: two captures that differ only in the text under a blur produce identical output in that region.
-- **Originals on disk are the main stored risk.** Plain files in Application Support, excluded from Time Machine, kept 30 days (assumed), deleted as files on purge.
+- **Originals on disk are the main stored risk.** Plain files in Application Support, excluded from Time Machine, kept 30 days by default (a setting), deleted as files on purge.
 - **Never-capture list.** Password managers and Keychain Access by default, editable. Applies to people and agents.
 - **Agent captures are visible.** Flash, history tag, and auto-blur of detected secrets before the agent receives the image, on by default.
 - **Screen text is untrusted.** `targets` output is labelled as on-screen content so agents treat it as data.
@@ -179,7 +179,7 @@ Residual risks: secret detection is pattern matching and will miss things; anyth
 
 ## Build units
 
-CLI on files comes first: useful to agents before any UI exists, needs no permissions, and becomes the test harness.
+CLI on files comes first: useful to agents before any UI exists, needs no permissions, and becomes the test harness. Build order is 1, 2, 3, then 0 (the spike scores interpreters against real target lists, which need the CLI), then 4 onward.
 
 | Unit | What | Accepted when |
 |---|---|---|
@@ -218,7 +218,7 @@ Targets (assumed), not measurements. Baselines are taken once units 4 and 5 exis
 |---|---|---|
 | Core journeys | not assessed | Nothing built |
 | Redaction not recoverable | not assessed, blocking | Test defined in unit 1 |
-| Originals handling and purge | not assessed, blocking | Depends on decision 2 |
+| Originals handling and purge | not assessed, blocking | Unit 4 |
 | Agent capture rules | not assessed | Unit 6 |
 | Dictation accuracy | not assessed | Unit 0 |
 | Performance | not assessed | No baseline |
