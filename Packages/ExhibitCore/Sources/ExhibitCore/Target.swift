@@ -11,13 +11,18 @@ public struct Target: Codable, Sendable, Equatable, Identifiable {
     public var rect: PixelRect
     /// Detector confidence from 0 to 1, when the detector reports one.
     public var confidence: Double?
+    /// Boxes of the words in `text`, so a substring can be located without reading the image again.
+    /// Absent in files written before spans existed; `rect(for:)` then falls back to the whole `rect`.
+    public var spans: [TextSpan]?
 
-    public init(id: UUID = UUID(), kind: TargetKind, text: String? = nil, rect: PixelRect, confidence: Double? = nil) {
+    public init(id: UUID = UUID(), kind: TargetKind, text: String? = nil, rect: PixelRect, confidence: Double? = nil,
+                spans: [TextSpan]? = nil) {
         self.id = id
         self.kind = kind
         self.text = text
         self.rect = rect
         self.confidence = confidence
+        self.spans = spans
     }
 }
 

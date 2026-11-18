@@ -9,7 +9,7 @@ This machine's active developer directory is Command Line Tools, so prefix Swift
 ```sh
 export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 cd Packages/ExhibitCore && swift build && swift test
-EXHIBIT_RECORD_GOLDENS=1 swift test   # rewrite goldens and docs/samples/all-marks.png; look at every changed image
+EXHIBIT_RECORD_GOLDENS=1 swift test   # rewrite goldens and docs/samples/*.png; look at every changed image
 swiftlint --strict                     # from the repo root
 ```
 
@@ -24,7 +24,13 @@ Judge build, test and lint by exit code, never by grepping output.
   - `PNG.swift`: encode (metadata chunks stripped) and decode; `ExhibitError`.
   - `Renderer.swift`: `Renderer.render(original:marks:scale:)`; `MarkPainter.swift` and `LabelledMarks.swift` draw the marks.
   - `Redaction.swift`: blur fills built only from pixels outside every blur region.
-- Tests use Swift Testing. Goldens live in `Tests/ExhibitCoreTests/Goldens`, drawn over synthetic fixtures in `Fixtures.swift` and `SampleFixture.swift`.
+- `Packages/ExhibitCore/Sources/ExhibitTargets` (library, adds Vision; ExhibitCore stays free of it): `TargetFinder().findTargets(in:)` returns `[Target]` in original pixels, top-left origin, ordered top to bottom then left to right.
+  - OCR: `VNRecognizeTextRequest`, accurate, language correction off. One `.text` target per line, with per-word `spans`; `Target.rect(for:)` in ExhibitCore resolves a substring from spans, so selectors never re-run OCR.
+  - `VisionGeometry.swift`: Vision's normalized bottom-left boxes to pixels, and `InkGrid`, which shrinks padded OCR boxes to the ink inside them.
+  - `SensitivePatterns.swift`: email, key, card and phone patterns (keys and cards ported from On Hand). Sensitive targets carry no `text`, and their characters are masked in the line's text. Never name a file with "secret" or "credential" in it; agent read rules block those names.
+  - Faces: `VNDetectFaceRectanglesRequest`.
+- `Packages/ExhibitCore/Sources/ExhibitFixtures` (not a product): synthetic screenshots drawn with CoreText (`FakeUI.swift`, `SampleFixture.swift`), shared by the test targets and sample generators.
+- Tests use Swift Testing. Goldens live in `Tests/ExhibitCoreTests/Goldens`, drawn over the shared fixtures.
 
 ## Rules
 
