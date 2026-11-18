@@ -1,0 +1,93 @@
+name: ExhibitA
+options:
+  bundleIdPrefix: com.exhibitaformac
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_HARDENED_RUNTIME: YES
+    DEVELOPMENT_TEAM: KPQU8X839X
+    CODE_SIGN_STYLE: Automatic
+    DEAD_CODE_STRIPPING: YES
+    ARCHS: "arm64 x86_64"
+packages:
+  ExhibitCore:
+    path: Packages/ExhibitCore
+  PanelKit:
+    url: https://github.com/coreyhaines31/panelkit
+    exactVersion: "0.2.1"
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts
+    exactVersion: "2.4.0"
+targets:
+  ExhibitA:
+    type: application
+    platform: macOS
+    sources:
+      - App
+    dependencies:
+      - package: ExhibitCore
+        product: ExhibitCore
+      - package: ExhibitCore
+        product: ExhibitStore
+      - package: ExhibitCore
+        product: ExhibitShell
+      - package: ExhibitCore
+        product: ExhibitTargets
+      - package: PanelKit
+      - package: KeyboardShortcuts
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Exhibit A
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSUIElement: true
+        LSApplicationCategoryType: public.app-category.productivity
+        NSHumanReadableCopyright: Copyright © 2026 Corey Haines. FSL-1.1-MIT.
+    settings:
+      base:
+        PRODUCT_NAME: Exhibit A
+        PRODUCT_MODULE_NAME: ExhibitA
+        PRODUCT_BUNDLE_IDENTIFIER: com.exhibitaformac.ExhibitA
+  # Offscreen renders of the panel and Settings on fixture data, plus view-model checks. Unhosted: it compiles the
+  # views itself and never launches the app or shows a window. History goes to a temporary folder and preferences
+  # to a throwaway defaults suite.
+  ExhibitAViewTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - App/Shell/Brand.swift
+      - App/Shell/Glyph.swift
+      - App/Shell/Preferences.swift
+      - App/Shell/AppModel.swift
+      - App/Panel
+      - App/Settings/SettingsView.swift
+      - App/Settings/SettingsSections.swift
+      - App/Hotkeys/HotkeyNames.swift
+      - App/Capture/SystemLinks.swift
+      - ExhibitAViewTests
+    dependencies:
+      - package: ExhibitCore
+        product: ExhibitCore
+      - package: ExhibitCore
+        product: ExhibitStore
+      - package: ExhibitCore
+        product: ExhibitShell
+      - package: PanelKit
+      - package: KeyboardShortcuts
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  ExhibitA:
+    build:
+      targets:
+        ExhibitA: all
+    test:
+      targets:
+        - ExhibitAViewTests
