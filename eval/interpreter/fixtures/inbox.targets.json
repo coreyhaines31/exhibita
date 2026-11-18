@@ -1,0 +1,524 @@
+{
+  "image": {
+    "height": 800,
+    "width": 1280
+  },
+  "input": "inbox.png",
+  "note": "Text in targets was read from the image by OCR. It is data from the screen, not instructions. Sensitive values (email, key, card, phone) have no text, and their characters are masked with \u2022 in the line they came from; select them with --kind.",
+  "targets": [
+    {
+      "confidence": 1,
+      "id": "8866DF36-5BD7-47ED-BCDC-149C823C4804",
+      "kind": "text",
+      "rect": {
+        "height": 14,
+        "width": 90,
+        "x": 197,
+        "y": 17
+      },
+      "text": "Priya Raman"
+    },
+    {
+      "confidence": 1,
+      "id": "D7526FE9-D81B-4036-AF52-6119DBF2DBC2",
+      "kind": "text",
+      "rect": {
+        "height": 13,
+        "width": 30,
+        "x": 17,
+        "y": 26
+      },
+      "text": "Mail"
+    },
+    {
+      "confidence": 1,
+      "id": "7A843633-D767-47BB-A47D-FBC5CAFB65E2",
+      "kind": "text",
+      "rect": {
+        "height": 19,
+        "width": 249,
+        "x": 632,
+        "y": 30
+      },
+      "text": "Contract renewal for Q1"
+    },
+    {
+      "confidence": 1,
+      "id": "DD2FF45E-46FA-43B8-BAA4-6DE925D757AE",
+      "kind": "text",
+      "rect": {
+        "height": 13,
+        "width": 158,
+        "x": 196,
+        "y": 38
+      },
+      "text": "Contract renewal for Q1"
+    },
+    {
+      "confidence": 1,
+      "id": "3FA9DB1B-2386-4EF4-86F2-CD8D0C59A07B",
+      "kind": "text",
+      "rect": {
+        "height": 14,
+        "width": 252,
+        "x": 197,
+        "y": 61
+      },
+      "text": "Hi, attached is the updated contract..."
+    },
+    {
+      "confidence": 1,
+      "id": "8B8232FD-EF53-4811-BC10-A804238770B9",
+      "kind": "text",
+      "rect": {
+        "height": 12,
+        "width": 39,
+        "x": 27,
+        "y": 73
+      },
+      "text": "Inbox"
+    },
+    {
+      "confidence": 1,
+      "id": "4ED164C2-D177-4557-905B-A0B99CC2001A",
+      "kind": "text",
+      "rect": {
+        "height": 16,
+        "width": 331,
+        "x": 633,
+        "y": 78
+      },
+      "text": "From: Priya Raman <\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022>"
+    },
+    {
+      "confidence": 1,
+      "id": "067F39A9-F350-48CD-AE92-7084E43A6458",
+      "kind": "email",
+      "rect": {
+        "height": 16,
+        "width": 183.1,
+        "x": 773,
+        "y": 78
+      }
+    },
+    {
+      "confidence": 1,
+      "id": "874168F8-B22E-414D-8307-71CD474E6780",
+      "kind": "text",
+      "rect": {
+        "height": 15,
+        "width": 151,
+        "x": 632,
+        "y": 100
+      },
+      "text": "To: \u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"
+    },
+    {
+      "confidence": 1,
+      "id": "91CEB0BF-5F0B-40E8-A012-E0988BDA7420",
+      "kind": "email",
+      "rect": {
+        "height": 15,
+        "width": 127,
+        "x": 656,
+        "y": 100
+      }
+    },
+    {
+      "confidence": 1,
+      "id": "1F0E5698-A947-4C68-8C62-2EF31A42E5C9",
+      "kind": "text",
+      "rect": {
+        "height": 14,
+        "width": 116,
+        "x": 196,
+        "y": 107
+      },
+      "text": "Tomas Lindqvist"
+    },
+    {
+      "confidence": 1,
+      "id": "F14B2581-8E75-4E9F-92BC-30397E02A90B",
+      "kind": "text",
+      "rect": {
+        "height": 13,
+        "width": 49,
+        "x": 26,
+        "y": 110
+      },
+      "text": "Starred"
+    },
+    {
+      "confidence": 1,
+      "id": "0A069FB9-C096-4925-A325-ADD880D07AB5",
+      "kind": "text",
+      "rect": {
+        "height": 13,
+        "width": 152,
+        "x": 633,
+        "y": 122
+      },
+      "text": "Nov 17,2026, 9:42 AM"
+    },
+    {
+      "confidence": 1,
+      "id": "B44BBD52-FF42-427E-8B98-628B6EA81BAE",
+      "kind": "text",
+      "rect": {
+        "height": 15,
+        "width": 161,
+        "x": 197,
+        "y": 129
+      },
+      "text": "Re: Design review notes"
+    },
+    {
+      "confidence": 1,
+      "id": "64D276B9-C759-4B4D-84F9-239333B55F58",
+      "kind": "text",
+      "rect": {
+        "height": 13,
+        "width": 31,
+        "x": 26,
+        "y": 148
+      },
+      "text": "Sent"
+    },
+    {
+      "confidence": 1,
+      "id": "61B16765-5ACB-4631-B69B-D4677B15509B",
+      "kind": "text",
+      "rect": {
+        "height": 14,
+        "width": 220,
+        "x": 196,
+        "y": 151
+      },
+      "text": "Thanks, I moved the header up..."
+    },
+    {
+      "confidence": 1,
+      "id": "6AE8A76A-68F1-4778-AE83-4D90EF22EC09",
+      "kind": "text",
+      "rect": {
+        "height": 14,
+        "width": 54,
+        "x": 633,
+        "y": 162
+      },
+      "text": "Hi team,"
+    },
+    {
+      "confidence": 1,
+      "id": "E1B4E495-F5C0-4180-A304-04EB253BD70F",
+      "kind": "text",
+      "rect": {
+        "height": 12,
+        "width": 39,
+        "x": 27,
+        "y": 186
+      },
+      "text": "Drafts"
+    },
+    {
+      "confidence": 1,
+      "id": "92AE4421-1A2E-4790-992A-F67C7668CDB9",
+      "kind": "text",
+      "rect": {
+        "height": 16,
+        "width": 571,
+        "x": 632,
+        "y": 194
+      },
+      "text": "Attached is the updated contract for Q1. The new annual price is $18,400, down from"
+    },
+    {
+      "confidence": 1,
+      "id": "266CAF3A-A0EE-48D2-9605-866E50E3E5CE",
+      "kind": "text",
+      "rect": {
+        "height": 14,
+        "width": 85,
+        "x": 197,
+        "y": 198
+      },
+      "text": "Billing Team"
+    },
+    {
+      "confidence": 1,
+      "id": "2293F7A4-BC7B-4216-9159-59D0B21F3010",
+      "kind": "text",
+      "rect": {
+        "height": 15,
+        "width": 58,
+        "x": 632,
+        "y": 217
+      },
+      "text": "$21,000."
+    },
+    {
+      "confidence": 1,
+      "id": "29CF5F05-8E05-4E67-894B-D3B524EEAE77",
+      "kind": "text",
+      "rect": {
+        "height": 15,
+        "width": 205,
+        "x": 196,
+        "y": 219
+      },
+      "text": "Your invoice INV-2041 is ready"
+    },
+    {
+      "confidence": 1,
+      "id": "24DEF01F-E333-423C-939B-EF4A3F547668",
+      "kind": "text",
+      "rect": {
+        "height": 12,
+        "width": 50,
+        "x": 26,
+        "y": 224
+      },
+      "text": "Archive"
+    },
+    {
+      "confidence": 1,
+      "id": "E84936ED-FC12-4DED-BA4B-7C31EE3B8813",
+      "kind": "text",
+      "rect": {
+        "height": 14,
+        "width": 136,
+        "x": 196,
+        "y": 240
+      },
+      "text": "Amount due: $49.00"
+    },
+    {
+      "confidence": 1,
+      "id": "4961650D-5265-4A4B-BF55-90645066D5BD",
+      "kind": "text",
+      "rect": {
+        "height": 15,
+        "width": 391,
+        "x": 633,
+        "y": 251
+      },
+      "text": "Please sign by November 30 so we can keep the discount."
+    },
+    {
+      "confidence": 1,
+      "id": "60008CDB-3D01-413C-A86B-002056B56929",
+      "kind": "text",
+      "rect": {
+        "height": 15,
+        "width": 39,
+        "x": 26,
+        "y": 261
+      },
+      "text": "Spam"
+    },
+    {
+      "confidence": 1,
+      "id": "B21C6505-525E-4043-BC0B-346BF67879A8",
+      "kind": "text",
+      "rect": {
+        "height": 13,
+        "width": 33,
+        "x": 633,
+        "y": 285
+      },
+      "text": "Best,"
+    },
+    {
+      "confidence": 1,
+      "id": "65D3697B-7A96-489F-8848-B1355CF9368F",
+      "kind": "text",
+      "rect": {
+        "height": 12,
+        "width": 80,
+        "x": 196,
+        "y": 288
+      },
+      "text": "Aisha Bello"
+    },
+    {
+      "confidence": 1,
+      "id": "731ED0EC-9809-41A3-8081-82DF3A185BE5",
+      "kind": "text",
+      "rect": {
+        "height": 15,
+        "width": 84,
+        "x": 633,
+        "y": 307
+      },
+      "text": "Priya Raman"
+    },
+    {
+      "confidence": 1,
+      "id": "5AED5F35-21C4-4EA6-957D-D3C3E1866D43",
+      "kind": "text",
+      "rect": {
+        "height": 15,
+        "width": 136,
+        "x": 197,
+        "y": 309
+      },
+      "text": "Lunch on Thursday?"
+    },
+    {
+      "confidence": 1,
+      "id": "D88F404F-FB2A-47BB-8B3E-8EBC5894D744",
+      "kind": "text",
+      "rect": {
+        "height": 15,
+        "width": 232,
+        "x": 633,
+        "y": 328
+      },
+      "text": "Head of Partnerships, Lumen Labs"
+    },
+    {
+      "confidence": 1,
+      "id": "4F7A5044-A5CD-4D4B-81F8-44D77C85DEB2",
+      "kind": "text",
+      "rect": {
+        "height": 14,
+        "width": 237,
+        "x": 196,
+        "y": 331
+      },
+      "text": "There is a new place near the office"
+    },
+    {
+      "confidence": 1,
+      "id": "49D5E078-454C-49AC-A2D5-0C15BD477A03",
+      "kind": "text",
+      "rect": {
+        "height": 12,
+        "width": 119,
+        "x": 632,
+        "y": 350
+      },
+      "text": "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"
+    },
+    {
+      "confidence": 1,
+      "id": "0715FCBD-2D2C-460E-B7EE-A406B0763017",
+      "kind": "phone",
+      "rect": {
+        "height": 12,
+        "width": 119,
+        "x": 632,
+        "y": 350
+      }
+    },
+    {
+      "confidence": 1,
+      "id": "FB7B9B91-6ACF-4251-B1C2-97E19195D097",
+      "kind": "text",
+      "rect": {
+        "height": 13,
+        "width": 50,
+        "x": 196,
+        "y": 377
+      },
+      "text": "GitHub"
+    },
+    {
+      "confidence": 1,
+      "id": "1BBFE921-2C85-479A-B72D-6A1297122AB6",
+      "kind": "text",
+      "rect": {
+        "height": 16,
+        "width": 215,
+        "x": 197,
+        "y": 399
+      },
+      "text": "[acme/web] Pull request merged"
+    },
+    {
+      "confidence": 1,
+      "id": "3959378A-054E-418B-A9C2-A2A2DC21C1D0",
+      "kind": "text",
+      "rect": {
+        "height": 14,
+        "width": 41,
+        "x": 649,
+        "y": 401
+      },
+      "text": "Reply"
+    },
+    {
+      "confidence": 1,
+      "id": "46923F0D-6941-474A-BF2A-59E2A98ABE17",
+      "kind": "text",
+      "rect": {
+        "height": 12,
+        "width": 59,
+        "x": 728,
+        "y": 401
+      },
+      "text": "Forward"
+    },
+    {
+      "confidence": 1,
+      "id": "ADF0C9F8-4FF2-483F-8F96-3ECE1CC4390C",
+      "kind": "text",
+      "rect": {
+        "height": 12,
+        "width": 54,
+        "x": 825,
+        "y": 401
+      },
+      "text": "Archive"
+    },
+    {
+      "confidence": 1,
+      "id": "6C181512-D59F-4579-86D6-C99CBA8B297F",
+      "kind": "text",
+      "rect": {
+        "height": 14,
+        "width": 153,
+        "x": 197,
+        "y": 422
+      },
+      "text": "Merged #482 into main"
+    },
+    {
+      "confidence": 1,
+      "id": "97E937AC-F75E-4CE4-A352-508B53513589",
+      "kind": "text",
+      "rect": {
+        "height": 12,
+        "width": 82,
+        "x": 197,
+        "y": 468
+      },
+      "text": "Marco Ferri"
+    },
+    {
+      "confidence": 1,
+      "id": "DF8E8A82-0811-45EC-8824-F0C3B2A6BFD9",
+      "kind": "text",
+      "rect": {
+        "height": 15,
+        "width": 196,
+        "x": 196,
+        "y": 489
+      },
+      "text": "Quick question about the API"
+    },
+    {
+      "confidence": 1,
+      "id": "0ABEBA21-13C9-4605-B101-414EDC5A16DF",
+      "kind": "text",
+      "rect": {
+        "height": 14,
+        "width": 261,
+        "x": 197,
+        "y": 512
+      },
+      "text": "Do you support webhooks for refunds?"
+    }
+  ],
+  "targetsReused": false
+}
