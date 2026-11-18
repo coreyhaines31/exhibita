@@ -41,11 +41,9 @@ extension MarkPainter {
 
         if let label, !label.isEmpty {
             // Place the caption beyond the tail, on the far side from the head.
-            let size = labelSize(label)
-            let reach = abs(dirX) * size.width / 2 + abs(dirY) * size.height / 2 + metrics.labelGap
-            let center = CGPoint(x: tail.x - dirX * reach, y: tail.y - dirY * reach)
+            let box = MarkLayout.captionRect(tail: tail, tip: tip, size: labelSize(label), gap: metrics.labelGap)
             context.setShadow(offset: .zero, blur: 0, color: nil)
-            drawLabel(label, topLeft: CGPoint(x: center.x - size.width / 2, y: center.y - size.height / 2), color: color)
+            drawLabel(label, topLeft: box.origin, color: color)
         }
     }
 
@@ -67,9 +65,7 @@ extension MarkPainter {
     }
 
     func labelSize(_ text: String) -> CGSize {
-        let bounds = LineBounds(makeLine(text, size: metrics.labelFontSize, color: RGB(1, 1, 1)))
-        let pad = metrics.labelPadding
-        return CGSize(width: bounds.width + pad.width * 2, height: bounds.ascent + bounds.descent + pad.height * 2)
+        MarkLayout.labelSize(text, metrics: metrics)
     }
 
     func drawStep(_ number: Int, center: CGPoint, color: MarkColor) {
@@ -96,18 +92,11 @@ extension MarkPainter {
     }
 
     func labelFont(size: Double) -> CTFont {
-        CTFontCreateUIFontForLanguage(.emphasizedSystem, size, nil)
-            ?? CTFontCreateWithName("Helvetica-Bold" as CFString, size, nil)
+        MarkLayout.labelFont(size: size)
     }
 
     func makeLine(_ text: String, size: Double, color: RGB) -> CTLine {
-        // One line only: newlines become spaces.
-        let singleLine = text.replacingOccurrences(of: "\n", with: " ")
-        let attributes: [NSAttributedString.Key: Any] = [
-            NSAttributedString.Key(kCTFontAttributeName as String): labelFont(size: size),
-            NSAttributedString.Key(kCTForegroundColorAttributeName as String): srgb(color)
-        ]
-        return CTLineCreateWithAttributedString(NSAttributedString(string: singleLine, attributes: attributes))
+        MarkLayout.makeLine(text, size: size, color: color)
     }
 
     /// Draws `line` with its baseline starting at `origin`, in the flipped context.
