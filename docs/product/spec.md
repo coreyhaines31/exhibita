@@ -6,9 +6,32 @@ A Mac menu bar screenshot tool where marking up takes single keystrokes, a spoke
 
 ## Open decisions
 
-1. **Where spoken instructions get interpreted.** Recommended (assumed until confirmed): on the Mac only by default. A fixed grammar handles common commands with no model. Free-form sentences go to Apple's on-device model where the Mac has one. A bring-your-own-key Claude tier is opt-in and receives the transcript plus target labels as text, never the image, with detected secrets replaced by placeholders such as "email 3". Unit 0 measures this before any voice UI is built.
-2. **Whether originals are kept.** Recommended (assumed until confirmed): keep unredacted originals for 30 days so marks stay editable, outside Time Machine, with a one-click purge. Alternative: discard the original on copy or export.
-3. **Licence and visibility.** Assumed MIT and public at release, like On Hand and Spare. The repo is private until then.
+1. **Whether originals are kept.** Recommended (assumed until confirmed): keep unredacted originals for 30 days so marks stay editable, outside Time Machine, with a one-click purge. Alternative: discard the original on copy or export.
+2. **Which licence.** The app is open and free; a paid tier is planned (see Free and paid). Recommended: FSL-1.1-MIT with a separately licensed `ee/` directory, as Midnight Oil does, so the paid parts cannot be resold. Alternative: plain MIT like On Hand. The repo is private until release.
+3. **Whether free users may point the interpreter at a cloud model with their own key.** Assumed no for v1: free means on-device or a local model the user runs. Hosted interpretation is a paid cloud feature.
+
+Decided 2026-11-18: spoken instructions are interpreted on the Mac. A fixed grammar handles common commands with no model, and free-form sentences go to Apple's on-device model or a local model the user runs. Unit 0 measures which of these is good enough.
+
+## Free and paid
+
+Same shape as Midnight Oil and Kill Cord: the app is free and open, and money comes from teams and cloud.
+
+| | Free, open, local | Paid, later |
+|---|---|---|
+| Capture, all seven marks, redaction, history | Yes | |
+| CLI and MCP for agents | Yes | |
+| Voice with the built-in grammar | Yes | |
+| Free-form instructions | Apple's on-device model, or a local model the user runs (an Ollama or LM Studio endpoint) | Hosted interpretation, no setup |
+| Cloud | | Share links, synced history across Macs |
+| Teams | | Shared library, team-wide never-capture and auto-redact rules, shared mark styles, managed deployment |
+
+Nothing paid is built in v1, and v1 has no account. What v1 does so the paid tier is not a retrofit:
+
+- The interpreter sits behind one interface, so a hosted one is a new implementation, not a rewrite.
+- Captures have stable IDs and a documented on-disk format, so they can sync or upload later.
+- Never-capture and auto-redact rules live in one policy file, so a team or MDM profile can supply it later.
+- An `ee/` directory is reserved for paid code under its own licence.
+- When accounts arrive they use Better Auth with the organization plugin, so a person can belong to several teams from the start.
 
 ## Brief
 
@@ -30,7 +53,7 @@ A Mac menu bar screenshot tool where marking up takes single keystrokes, a spoke
 
 **In:** region, window and full-screen capture. Seven marks: arrow, circle, blur, highlight, text, box, numbered step. One-key redaction of detected secrets. Push-to-talk dictation. History with editable marks. CLI on captures and plain image files. Thin MCP server. Sparkle, notarized DMG, Homebrew cask.
 
-**Out:** video and GIF recording, scrolling capture, cloud upload and share links, backgrounds and device frames, accessibility-tree targeting (first thing after v1), Windows and iOS.
+**Out:** video and GIF recording, scrolling capture, accounts and every paid cloud or Teams feature (share links, sync, hosted interpretation), backgrounds and device frames, accessibility-tree targeting (first thing after v1), Windows and iOS.
 
 ### Better-model test
 
@@ -138,7 +161,7 @@ Purge history and "discard original" ask for confirmation. Everything else is un
 | Users, orgs, roles | N/A | Single user, local app |
 | Feedback to the builder | Yes | "Report a problem" opens a prefilled GitHub issue; nothing attached or sent automatically |
 | Security | Yes | Controls below |
-| Analytics | N/A | Zero telemetry. Network calls: Sparkle update check, one-time speech model download, opt-in cloud interpreter |
+| Analytics | N/A | Zero telemetry. Network calls: Sparkle update check and a one-time speech model download. A local model endpoint, if the user sets one, stays on their machine |
 | Agent access | Yes | CLI and MCP share the app's capture rules |
 
 Controls:
@@ -148,7 +171,7 @@ Controls:
 - **Never-capture list.** Password managers and Keychain Access by default, editable. Applies to people and agents.
 - **Agent captures are visible.** Flash, history tag, and auto-blur of detected secrets before the agent receives the image, on by default.
 - **Screen text is untrusted.** `targets` output is labelled as on-screen content so agents treat it as data.
-- **Cloud tier, if enabled.** Key in the Keychain; payload is transcript and target labels with secrets as placeholders; never the image.
+- **Models only see labels.** Any model, local or (later) hosted, receives the transcript and target labels with secrets as placeholders; never the image. The local endpoint setting accepts loopback addresses only in v1.
 
 Residual risks: secret detection is pattern matching and will miss things; anything that can run the CLI as the user can already read the screen by other means.
 
