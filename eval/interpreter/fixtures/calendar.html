@@ -1,0 +1,44 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="base.css">
+<style>
+.grid{display:grid;grid-template-columns:56px repeat(5,1fr);border:1px solid #e1e4ea;border-radius:10px;background:#fff;overflow:hidden}
+.grid .h{padding:10px 8px;font-weight:600;border-bottom:1px solid #e1e4ea;font-size:14px}
+.grid .t{padding:4px 6px;font-size:12px;color:#6b7180;height:62px;border-bottom:1px solid #f0f1f4}
+.grid .c{height:62px;border-bottom:1px solid #f0f1f4;border-left:1px solid #f0f1f4;position:relative}
+.ev{position:absolute;left:4px;right:4px;top:4px;border-radius:6px;padding:4px 7px;font-size:13px;line-height:1.3}
+.b{background:#dfe7ff;color:#1e3a9e}.g{background:#dcf3e6;color:#1b6b40}.o{background:#ffe9d6;color:#8a4210}.r{background:#fde0e0;color:#9e1f1f}
+.panel{width:300px;margin-left:18px}
+</style></head>
+<body><div class="app">
+<div class="side"><h2>Kestrel Calendar</h2><a class="on">Week</a><a>Month</a><a>Agenda</a><a>Rooms</a><a>Settings</a></div>
+<div class="main" style="display:flex;padding:24px 24px">
+<div style="flex:1">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><h1 style="margin:0">November 16 to 20, 2026</h1><span><span class="btn">Today</span> <span class="btn primary">New event</span></span></div>
+<div class="grid">
+<div class="h"></div><div class="h">Mon 16</div><div class="h">Tue 17</div><div class="h">Wed 18</div><div class="h">Thu 19</div><div class="h">Fri 20</div>
+<div class="t">9 AM</div><div class="c"><div class="ev b">Weekly planning</div></div><div class="c"></div><div class="c"><div class="ev b">Weekly planning</div></div><div class="c"></div><div class="c"><div class="ev g">Focus time</div></div>
+<div class="t">10 AM</div><div class="c"></div><div class="c"><div class="ev o">1:1 Rafael Ortiz</div></div><div class="c"></div><div class="c"><div class="ev r">Board prep</div></div><div class="c"></div>
+<div class="t">11 AM</div><div class="c"><div class="ev g">Design review</div></div><div class="c"></div><div class="c"><div class="ev o">Interview Talia Brooks</div></div><div class="c"></div><div class="c"></div>
+<div class="t">12 PM</div><div class="c"></div><div class="c"><div class="ev g">Lunch</div></div><div class="c"></div><div class="c"><div class="ev g">Lunch</div></div><div class="c"></div>
+<div class="t">1 PM</div><div class="c"></div><div class="c"></div><div class="c"><div class="ev b">Q1 roadmap sync</div></div><div class="c"></div><div class="c"><div class="ev o">1:1 Rafael Ortiz</div></div>
+<div class="t">2 PM</div><div class="c"><div class="ev r">Vendor call</div></div><div class="c"></div><div class="c"></div><div class="c"><div class="ev b">All hands</div></div><div class="c"></div>
+<div class="t">3 PM</div><div class="c"></div><div class="c"><div class="ev g">Dentist</div></div><div class="c"></div><div class="c"></div><div class="c"><div class="ev r">Release go/no-go</div></div>
+</div>
+</div>
+<div class="panel">
+<div class="card">
+<h3>Interview Talia Brooks</h3>
+<div class="muted">Wed, Nov 18, 11:00 to 11:45 AM</div>
+<div style="margin-top:10px">Room: Harbor 3</div>
+<div>Organizer: Rafael Ortiz</div>
+<div>talia.brooks@example.com</div>
+<div>Dial in: +1 (628) 555-0172</div>
+<div>Meeting ID 482 991 0375</div>
+<div class="muted" style="margin-top:10px">Guests</div>
+<div>Rafael Ortiz</div>
+<div>Naomi Feld</div>
+<div>Talia Brooks</div>
+<div style="margin-top:12px"><span class="btn primary">Join call</span> <span class="btn">Reschedule</span></div>
+<div style="margin-top:8px"><span class="btn danger">Cancel event</span></div>
+</div>
+</div>
+</div></div></body></html>
