@@ -37,9 +37,10 @@ enum Words {
         return joined
     }
 
-    /// Two words are the same when they differ only by a trailing "s".
+    /// Two words are the same when they differ only by a plural ending: "button" and "buttons", "address" and
+    /// "addresses".
     static func same(_ lhs: String, _ rhs: String) -> Bool {
-        lhs == rhs || lhs + "s" == rhs || lhs == rhs + "s"
+        lhs == rhs || lhs + "s" == rhs || lhs == rhs + "s" || lhs + "es" == rhs || lhs == rhs + "es"
     }
 
     static func equal(_ lhs: [String], _ rhs: [String]) -> Bool {

@@ -35,6 +35,11 @@ struct GrammarTests {
         #expect(ops?.first?.picks == [.id(Screen.pricing.id)])
     }
 
+    @Test func readsPluralKinds() {
+        #expect(Screen.interpret("blur all the email addresses").interpretation?.operations.first?.picks
+                == [.kind(.email)])
+    }
+
     @Test func joinsASpelledOutEmail() {
         #expect(Screen.interpret("blur the e mails").interpretation?.operations.first?.picks == [.kind(.email)])
     }
