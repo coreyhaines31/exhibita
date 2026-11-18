@@ -133,10 +133,10 @@ extension GrammarParser {
         var missing: [String] = []
         for item in items {
             switch item {
-            case .targets(let targets): picks += targets.map { .id($0.id) }
+            case .targets(let targets, let phrase): picks += targets.map { matcher.pick($0, phrase: phrase, for: mark) }
             case .kinds(let kinds): picks += kinds.map(TargetPick.kind)
             case .notFound(let phrase): missing.append(phrase)
-            case .ambiguous(let found): return .failure(Decline(message: "\(found.count) equal matches"))
+            case .ambiguous(let found, _): return .failure(Decline(message: "\(found.count) equal matches"))
             case .unmatched(let phrase): return .failure(Decline(message: "\"\(phrase)\" is not on the screen as text"))
             case .decline(let reason): return .failure(Decline(message: reason))
             }
@@ -171,18 +171,18 @@ extension GrammarParser {
     /// candidate is clearly nearest: "number reply forward and archive" takes the Archive button beside Forward.
     private func breakTies(_ items: inout [ItemResult]) {
         let anchors = items.flatMap { item -> [Target] in
-            if case .targets(let targets) = item { return targets }
+            if case .targets(let targets, _) = item { return targets }
             return []
         }
         guard !anchors.isEmpty else { return }
         let centre = PixelPoint(x: anchors.map(\.rect.midX).reduce(0, +) / Double(anchors.count),
                                 y: anchors.map(\.rect.midY).reduce(0, +) / Double(anchors.count))
         for (index, item) in items.enumerated() {
-            guard case .ambiguous(let found) = item else { continue }
+            guard case .ambiguous(let found, let phrase) = item else { continue }
             let ranked = found.map { (target: $0, distance: hypot($0.rect.midX - centre.x, $0.rect.midY - centre.y)) }
                 .sorted { $0.distance < $1.distance }
             if ranked.count >= 2, ranked[0].distance * 2 < ranked[1].distance {
-                items[index] = .targets([ranked[0].target])
+                items[index] = .targets([ranked[0].target], phrase: phrase)
             }
         }
     }
