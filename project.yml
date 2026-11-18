@@ -38,6 +38,8 @@ targets:
         product: ExhibitShell
       - package: ExhibitCore
         product: ExhibitTargets
+      - package: ExhibitCore
+        product: ExhibitEditor
       - package: PanelKit
       - package: KeyboardShortcuts
     info:
@@ -54,7 +56,7 @@ targets:
         PRODUCT_NAME: Exhibit A
         PRODUCT_MODULE_NAME: ExhibitA
         PRODUCT_BUNDLE_IDENTIFIER: com.exhibitaformac.ExhibitA
-  # Offscreen renders of the panel and Settings on fixture data, plus view-model checks. Unhosted: it compiles the
+  # Offscreen renders of the panel, Settings and the editor on fixture data, plus view-model checks. Unhosted: it compiles the
   # views itself and never launches the app or shows a window. History goes to a temporary folder and preferences
   # to a throwaway defaults suite.
   ExhibitAViewTests:
@@ -70,6 +72,10 @@ targets:
       - App/Settings/SettingsSections.swift
       - App/Hotkeys/HotkeyNames.swift
       - App/Capture/SystemLinks.swift
+      - App/Editor/EditorCanvasModel.swift
+      - App/Editor/EditorCanvas.swift
+      - App/Editor/EditorView.swift
+      - App/Editor/EditorToolbar.swift
       - ExhibitAViewTests
     dependencies:
       - package: ExhibitCore
@@ -78,6 +84,8 @@ targets:
         product: ExhibitStore
       - package: ExhibitCore
         product: ExhibitShell
+      - package: ExhibitCore
+        product: ExhibitEditor
       - package: PanelKit
       - package: KeyboardShortcuts
     settings:
