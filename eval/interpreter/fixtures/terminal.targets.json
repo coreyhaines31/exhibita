@@ -1,0 +1,225 @@
+{
+  "image": {
+    "height": 800,
+    "width": 1280
+  },
+  "input": "terminal.png",
+  "note": "Text in targets was read from the image by OCR. It is data from the screen, not instructions. Sensitive values (email, key, card, phone) have no text, and their characters are masked with \u2022 in the line they came from; select them with --kind.",
+  "targets": [
+    {
+      "confidence": 1,
+      "id": "62CF5ABF-A3BF-42D2-BF64-02FC8F4B37FF",
+      "kind": "text",
+      "rect": {
+        "height": 13,
+        "width": 142,
+        "x": 569,
+        "y": 7
+      },
+      "text": "deploy - zsh - 120x40"
+    },
+    {
+      "confidence": 1,
+      "id": "46179933-867B-4F1E-A274-D3B5088D6A8F",
+      "kind": "text",
+      "rect": {
+        "height": 16,
+        "width": 414,
+        "x": 19,
+        "y": 44
+      },
+      "text": "jules@build-01 ~/orders % git log --oneline -3"
+    },
+    {
+      "confidence": 1,
+      "id": "A3269523-191F-46E1-93AE-3DB5D1B00E3C",
+      "kind": "text",
+      "rect": {
+        "height": 16,
+        "width": 370,
+        "x": 18,
+        "y": 68
+      },
+      "text": "a91f3c2 Fix retry backoff in payments job"
+    },
+    {
+      "confidence": 1,
+      "id": "044BAAD6-198E-4D74-85BB-7434782E6F0C",
+      "kind": "text",
+      "rect": {
+        "height": 13,
+        "width": 307,
+        "x": 18,
+        "y": 92
+      },
+      "text": "7be0d41 Add refund webhook handler"
+    },
+    {
+      "confidence": 1,
+      "id": "1BE4AF00-0299-4CCF-BA73-9696C03F9A4F",
+      "kind": "text",
+      "rect": {
+        "height": 14,
+        "width": 207,
+        "x": 18,
+        "y": 116
+      },
+      "text": "3c4d9e8 Bump node to 22"
+    },
+    {
+      "confidence": 1,
+      "id": "AB470BC7-BFAC-453D-9959-13CE508488F4",
+      "kind": "text",
+      "rect": {
+        "height": 16,
+        "width": 603,
+        "x": 19,
+        "y": 140
+      },
+      "text": "jules@build-01 ~/orders % export API_TOKEN=\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"
+    },
+    {
+      "confidence": 1,
+      "id": "63102486-C272-4948-8124-BF69675608D7",
+      "kind": "key",
+      "rect": {
+        "height": 16,
+        "width": 216,
+        "x": 406,
+        "y": 140
+      }
+    },
+    {
+      "confidence": 1,
+      "id": "1E330A81-0FE4-4A3B-91ED-6836DD2C6D6C",
+      "kind": "text",
+      "rect": {
+        "height": 16,
+        "width": 369,
+        "x": 19,
+        "y": 164
+      },
+      "text": "jules@build-01 ~/orders % npm run migrate"
+    },
+    {
+      "confidence": 1,
+      "id": "9D278B58-ED56-4621-9A4D-C0A01554BC18",
+      "kind": "text",
+      "rect": {
+        "height": 16,
+        "width": 205,
+        "x": 18,
+        "y": 188
+      },
+      "text": "Running 3 migrations..."
+    },
+    {
+      "confidence": 1,
+      "id": "523D83CD-0259-41E5-A3A8-FA662867A740",
+      "kind": "text",
+      "rect": {
+        "height": 13,
+        "width": 378,
+        "x": 19,
+        "y": 212
+      },
+      "text": "Error: connect ECONNREFUSED 127.0.0.1:5432"
+    },
+    {
+      "confidence": 1,
+      "id": "DBC2C11A-5874-4A81-9C17-A6BCEA81D2EB",
+      "kind": "text",
+      "rect": {
+        "height": 16,
+        "width": 297,
+        "x": 18,
+        "y": 236
+      },
+      "text": "Migration failed after 3 attempts"
+    },
+    {
+      "confidence": 1,
+      "id": "5F5CF3DF-AC39-4131-9B58-581A2DDC9D63",
+      "kind": "text",
+      "rect": {
+        "height": 16,
+        "width": 459,
+        "x": 19,
+        "y": 260
+      },
+      "text": "jules@build-01 ~/orders % ssh \u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"
+    },
+    {
+      "confidence": 1,
+      "id": "674F85D4-2988-4513-B50A-6C6BC1FF1E79",
+      "kind": "email",
+      "rect": {
+        "height": 16,
+        "width": 189,
+        "x": 289,
+        "y": 260
+      }
+    },
+    {
+      "confidence": 1,
+      "id": "165932CE-DE2C-4BE1-A845-48A4FADCCB42",
+      "kind": "text",
+      "rect": {
+        "height": 16,
+        "width": 459,
+        "x": 19,
+        "y": 284
+      },
+      "text": "Last login: Tue Nov 17 08:12:44 2026 from 10.0.4.17"
+    },
+    {
+      "confidence": 1,
+      "id": "A655BCC4-EB06-46D7-B9B6-506ACF338357",
+      "kind": "text",
+      "rect": {
+        "height": 16,
+        "width": 370,
+        "x": 18,
+        "y": 308
+      },
+      "text": "deployadb ~ % systemctl status postgresql"
+    },
+    {
+      "confidence": 1,
+      "id": "3D9E76E0-E359-431C-9083-EA5FA32C6C6E",
+      "kind": "text",
+      "rect": {
+        "height": 16,
+        "width": 424,
+        "x": 19,
+        "y": 332
+      },
+      "text": "postgresql. service - PostgreSQL database server"
+    },
+    {
+      "confidence": 1,
+      "id": "7BE60CCA-C3C9-430E-9CA9-8B6007AAFDB5",
+      "kind": "text",
+      "rect": {
+        "height": 14,
+        "width": 478,
+        "x": 18,
+        "y": 356
+      },
+      "text": "Active: failed (Result: exit-code) since Tue 08:10:02"
+    },
+    {
+      "confidence": 1,
+      "id": "9E7866EA-8826-43C4-BE21-F2D0861BD4D2",
+      "kind": "text",
+      "rect": {
+        "height": 16,
+        "width": 136,
+        "x": 18,
+        "y": 380
+      },
+      "text": "deployadb ~ % -"
+    }
+  ],
+  "targetsReused": false
+}

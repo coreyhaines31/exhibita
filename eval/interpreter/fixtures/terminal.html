@@ -1,0 +1,19 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="base.css">
+<style>body{background:#111317;color:#d5d8de;font:15px/1.6 Menlo,Monaco,monospace}.t{padding:14px 18px}.bar{background:#2a2c31;color:#9aa0ab;text-align:center;padding:5px;font:13px -apple-system,sans-serif}.p{color:#7fd17f}.e{color:#ff6b6b}.y{color:#e5c07b}</style></head>
+<body><div class="bar">deploy — zsh — 120x40</div><div class="t">
+<div><span class="p">jules@build-01 ~/orders %</span> git log --oneline -3</div>
+<div><span class="y">a91f3c2</span> Fix retry backoff in payments job</div>
+<div><span class="y">7be0d41</span> Add refund webhook handler</div>
+<div><span class="y">3c4d9e8</span> Bump node to 22</div>
+<div><span class="p">jules@build-01 ~/orders %</span> export API_TOKEN=Mt5Wq8ZrK3pLx7Nv2BcD9sFh</div>
+<div><span class="p">jules@build-01 ~/orders %</span> npm run migrate</div>
+<div>Running 3 migrations...</div>
+<div class="e">Error: connect ECONNREFUSED 127.0.0.1:5432</div>
+<div class="e">Migration failed after 3 attempts</div>
+<div><span class="p">jules@build-01 ~/orders %</span> ssh deploy@db.example.com</div>
+<div>Last login: Tue Nov 17 08:12:44 2026 from 10.0.4.17</div>
+<div><span class="p">deploy@db ~ %</span> systemctl status postgresql</div>
+<div>postgresql.service - PostgreSQL database server</div>
+<div>Active: <span class="e">failed</span> (Result: exit-code) since Tue 08:10:02</div>
+<div><span class="p">deploy@db ~ %</span> _</div>
+</div></body></html>

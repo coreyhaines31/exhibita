@@ -1,0 +1,102 @@
+[
+  {
+    "audioSeconds" : 0.896281179138322,
+    "heard" : "Blur the emails.",
+    "id" : "billing-01",
+    "said" : "Blur the emails",
+    "sameInterpretation" : true,
+    "transcribeMilliseconds" : 291.173125,
+    "wordErrors" : 0,
+    "words" : 3
+  },
+  {
+    "audioSeconds" : 2.5681179138321997,
+    "heard" : "Appointed update plan and circle cancel plan.",
+    "id" : "billing-04",
+    "said" : "Point at Update plan and circle Cancel plan.",
+    "sameInterpretation" : false,
+    "transcribeMilliseconds" : 92.056041,
+    "wordErrors" : 2,
+    "words" : 8
+  },
+  {
+    "audioSeconds" : 1.1878458049886622,
+    "heard" : "Box the reply button.",
+    "id" : "inbox-03",
+    "said" : "box the reply button",
+    "sameInterpretation" : true,
+    "transcribeMilliseconds" : 72.956208,
+    "wordErrors" : 0,
+    "words" : 4
+  },
+  {
+    "audioSeconds" : 1.1910204081632654,
+    "heard" : "Blur Kenji Wadanabi.",
+    "id" : "chat-06",
+    "said" : "blur kenji watanabe",
+    "sameInterpretation" : true,
+    "transcribeMilliseconds" : 78.6975,
+    "wordErrors" : 1,
+    "words" : 3
+  },
+  {
+    "audioSeconds" : 1.9468934240362812,
+    "heard" : "Blur Grace Holloway and her email.",
+    "id" : "table-04",
+    "said" : "blur grace holloway and her email",
+    "sameInterpretation" : true,
+    "transcribeMilliseconds" : 76.858708,
+    "wordErrors" : 0,
+    "words" : 6
+  },
+  {
+    "audioSeconds" : 1.5593197278911564,
+    "heard" : "Highlight the database URL.",
+    "id" : "editor-02",
+    "said" : "highlight the database url",
+    "sameInterpretation" : true,
+    "transcribeMilliseconds" : 82.743167,
+    "wordErrors" : 0,
+    "words" : 4
+  },
+  {
+    "audioSeconds" : 0.9400907029478458,
+    "heard" : "Circle pricing.",
+    "id" : "pricing-01",
+    "said" : "Circle Pricing",
+    "sameInterpretation" : true,
+    "transcribeMilliseconds" : 66.386792,
+    "wordErrors" : 0,
+    "words" : 2
+  },
+  {
+    "audioSeconds" : 1.9514285714285715,
+    "heard" : "Box the start free trial buttons.",
+    "id" : "pricing-05",
+    "said" : "box the start free trial buttons",
+    "sameInterpretation" : true,
+    "transcribeMilliseconds" : 77.724959,
+    "wordErrors" : 0,
+    "words" : 6
+  },
+  {
+    "audioSeconds" : 2.521904761904762,
+    "heard" : "Point it open tickets and label it needs triage.",
+    "id" : "dashboard-03",
+    "said" : "point at open tickets and label it needs triage",
+    "sameInterpretation" : false,
+    "transcribeMilliseconds" : 86.782125,
+    "wordErrors" : 1,
+    "words" : 9
+  },
+  {
+    "audioSeconds" : 1.4058956916099774,
+    "heard" : "Arrow to forgot Password.",
+    "id" : "login-02",
+    "said" : "arrow to forgot password",
+    "sameInterpretation" : true,
+    "transcribeMilliseconds" : 71.817042,
+    "wordErrors" : 0,
+    "words" : 4
+  }
+]

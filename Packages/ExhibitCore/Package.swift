@@ -8,6 +8,7 @@ let package = Package(
         .library(name: "ExhibitCore", targets: ["ExhibitCore"]),
         .library(name: "ExhibitTargets", targets: ["ExhibitTargets"]),
         .library(name: "ExhibitCLI", targets: ["ExhibitCLI"]),
+        .library(name: "ExhibitInterpret", targets: ["ExhibitInterpret"]),
         .executable(name: "exhibit", targets: ["exhibit"])
     ],
     dependencies: [
@@ -22,13 +23,20 @@ let package = Package(
             "ExhibitCore", "ExhibitTargets", .product(name: "ArgumentParser", package: "swift-argument-parser")
         ]),
         .executableTarget(name: "exhibit", dependencies: ["ExhibitCLI"]),
+        // Instructions to operations: the interpreter contract and the grammar. Text in, no image, no model.
+        .target(name: "ExhibitInterpret", dependencies: ["ExhibitCore"]),
+        // The interpreter and speech spike (issue 3): `swift run exhibit-eval`. Not shipped. Uses FoundationModels
+        // and SpeechAnalyzer behind macOS 26 availability checks.
+        .executableTarget(name: "exhibit-eval", dependencies: ["ExhibitInterpret", "ExhibitCore"], path: "Sources/ExhibitEval"),
         // Synthetic screenshots shared by the test targets. Not a product.
         .target(name: "ExhibitFixtures", dependencies: ["ExhibitCore"]),
         // Goldens are read and written through #filePath, so they are not bundled as resources.
         .testTarget(name: "ExhibitCoreTests", dependencies: ["ExhibitCore", "ExhibitFixtures"], exclude: ["Goldens"]),
+        .testTarget(name: "ExhibitInterpretTests", dependencies: ["ExhibitInterpret", "ExhibitCore"]),
         .testTarget(name: "ExhibitTargetsTests", dependencies: ["ExhibitTargets", "ExhibitCore", "ExhibitFixtures"]),
         // Depends on the executable so `swift test` builds the real binary for the end-to-end tests.
         .testTarget(name: "ExhibitCLITests",
-                    dependencies: ["ExhibitCLI", "exhibit", "ExhibitCore", "ExhibitTargets", "ExhibitFixtures"])
+                    dependencies: ["ExhibitCLI", "exhibit", "ExhibitCore", "ExhibitTargets", "ExhibitFixtures",
+                                   "ExhibitInterpret"])
     ]
 )
