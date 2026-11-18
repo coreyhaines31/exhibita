@@ -1,5 +1,6 @@
 import AppKit
 import ExhibitCore
+import ExhibitEditor
 import ExhibitShell
 import ExhibitStore
 import ExhibitTargets
@@ -12,13 +13,15 @@ final class CaptureController {
     private nonisolated static let logger = Logger(subsystem: Brand.bundleIdentifier, category: "Capture")
 
     private let model: AppModel
+    private let editors: EditorWindows
     private let overlay = SelectionOverlay()
     private let policy = CapturePolicy()
     /// Opens the panel: to explain the permission, or with a new capture selected.
     var showPanel: () -> Void = {}
 
-    init(model: AppModel) {
+    init(model: AppModel, editors: EditorWindows) {
         self.model = model
+        self.editors = editors
     }
 
     func start(_ action: HotkeyAction) {
@@ -58,8 +61,9 @@ final class CaptureController {
     private func save(_ captured: CapturedImage, action: HotkeyAction) async {
         let store = model.store
         let id = UUID()
+        let item: HistoryItem
         do {
-            _ = try await Task.detached(priority: .userInitiated) {
+            item = try await Task.detached(priority: .userInitiated) {
                 try store.create(image: captured.image, scale: captured.scale, capturedBy: .person,
                                  appName: captured.appName, windowTitle: captured.windowTitle, id: id)
             }.value
@@ -68,28 +72,41 @@ final class CaptureController {
             NSSound.beep()
             return
         }
+        // Before the editor opens, so it shows "reading text" until the result arrives.
+        editors.captures.beginFinding(id)
         switch action {
         case .captureToClipboard:
             copyToClipboard(captured.image)
-            await model.reload()
         case .captureAndEdit:
-            // The editor is unit 5. Until then the panel opens with the new capture selected.
-            model.selected = id
-            await model.reload()
-            showPanel()
+            // The same document `create` wrote, so the editor opens without reading it back.
+            let document = CaptureDocument(id: id, createdAt: item.createdAt, size: item.size, scale: captured.scale,
+                                           source: CaptureSource(appName: captured.appName,
+                                                                 windowTitle: captured.windowTitle,
+                                                                 capturedBy: .person))
+            editors.open(document: document, original: captured.image, on: Self.screen(for: captured.displayID))
         }
         findTargets(in: captured, id: id)
+        await model.reload()
     }
 
-    /// OCR and detectors run in the background and are saved into the bundle when done.
+    private static func screen(for displayID: CGDirectDisplayID?) -> NSScreen? {
+        guard let displayID else { return NSScreen.main }
+        let key = NSDeviceDescriptionKey("NSScreenNumber")
+        return NSScreen.screens.first { ($0.deviceDescription[key] as? NSNumber)?.uint32Value == displayID }
+            ?? NSScreen.main
+    }
+
+    /// OCR and detectors run in the background. The result goes through `OpenCaptures`, which merges it into
+    /// an open editor's document or writes it to the bundle, so it never overwrites marks.
     private func findTargets(in captured: CapturedImage, id: UUID) {
-        let store = model.store
+        let captures = editors.captures
         Task.detached(priority: .utility) {
             do {
                 let targets = try await TargetFinder().findTargets(in: captured.image)
-                try store.updateTargets(targets, for: id)
+                await MainActor.run { captures.targetsFound(targets, for: id) }
             } catch {
                 Self.logger.error("Finding targets failed: \(error.localizedDescription)")
+                await MainActor.run { captures.findingFailed(id) }
             }
         }
     }

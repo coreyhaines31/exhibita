@@ -1,5 +1,5 @@
 import CoreGraphics
-@testable import ExhibitCLI
+@testable import ExhibitCore
 import ExhibitFixtures
 import Testing
 

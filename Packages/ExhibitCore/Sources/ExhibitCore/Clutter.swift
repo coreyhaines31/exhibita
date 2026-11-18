@@ -3,7 +3,7 @@ import Foundation
 
 /// A coarse luminance map of the image, so placement can tell plain background from busy pixels that no target
 /// covers: a blur baked into a chained file, icons, photos, borders.
-struct Clutter {
+public struct Clutter: Sendable {
     /// Pixels per cell side.
     let cell: Double
     let columns: Int
@@ -14,7 +14,7 @@ struct Clutter {
     /// Spread of luminance above which an area counts as busy. Flat backgrounds measure about 0.
     static let busyDeviation = 6.0
 
-    init?(image: CGImage, cell: Double) {
+    public init?(image: CGImage, cell: Double) {
         let columns = max(1, Int((Double(image.width) / cell).rounded(.up)))
         let rows = max(1, Int((Double(image.height) / cell).rounded(.up)))
         var luma = [UInt8](repeating: 0, count: columns * rows)
@@ -34,7 +34,7 @@ struct Clutter {
     }
 
     /// Whether the cells inside `rect` vary more than a flat background does.
-    func isBusy(_ rect: CGRect) -> Bool {
+    public func isBusy(_ rect: CGRect) -> Bool {
         let minColumn = max(0, Int((rect.minX / cell).rounded(.down)))
         let maxColumn = min(columns - 1, Int((rect.maxX / cell).rounded(.up)) - 1)
         let minRow = max(0, Int((rect.minY / cell).rounded(.down)))
@@ -48,7 +48,7 @@ struct Clutter {
     }
 
     /// Whether the cells along a line vary more than a flat background does.
-    func isBusy(from start: CGPoint, to end: CGPoint) -> Bool {
+    public func isBusy(from start: CGPoint, to end: CGPoint) -> Bool {
         let length = hypot(end.x - start.x, end.y - start.y)
         let steps = max(2, Int(length / cell))
         let values = (0...steps).compactMap { step -> Double? in
