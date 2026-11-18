@@ -12,6 +12,7 @@ let package = Package(
         .library(name: "ExhibitStore", targets: ["ExhibitStore"]),
         .library(name: "ExhibitShell", targets: ["ExhibitShell"]),
         .library(name: "ExhibitEditor", targets: ["ExhibitEditor"]),
+        .library(name: "ExhibitBridge", targets: ["ExhibitBridge"]),
         .executable(name: "exhibit", targets: ["exhibit"])
     ],
     dependencies: [
@@ -41,6 +42,9 @@ let package = Package(
         // The editor's brain: tools, keys, gestures, snapping, selection, undo, and the one owner of an open
         // capture's document. No AppKit, so all of it is tested here; the app draws it and forwards events.
         .target(name: "ExhibitEditor", dependencies: ["ExhibitCore", "ExhibitStore", "ExhibitShell"]),
+        // The capture bridge: the CLI asks the running app for live captures over a Unix socket. The protocol, the
+        // socket server and client, and the agent capture pipeline behind a capture provider. No AppKit.
+        .target(name: "ExhibitBridge", dependencies: ["ExhibitCore", "ExhibitStore", "ExhibitShell", "ExhibitTargets"]),
         // Synthetic screenshots shared by the test targets. Not a product.
         .target(name: "ExhibitFixtures", dependencies: ["ExhibitCore"]),
         // Goldens are read and written through #filePath, so they are not bundled as resources.
@@ -49,6 +53,8 @@ let package = Package(
         .testTarget(name: "ExhibitShellTests", dependencies: ["ExhibitShell", "ExhibitStore", "ExhibitCore"]),
         .testTarget(name: "ExhibitEditorTests",
                     dependencies: ["ExhibitEditor", "ExhibitCore", "ExhibitStore", "ExhibitShell", "ExhibitFixtures"]),
+        .testTarget(name: "ExhibitBridgeTests",
+                    dependencies: ["ExhibitBridge", "ExhibitShell", "ExhibitStore", "ExhibitCore", "ExhibitFixtures"]),
         .testTarget(name: "ExhibitInterpretTests", dependencies: ["ExhibitInterpret", "ExhibitCore"]),
         .testTarget(name: "ExhibitTargetsTests", dependencies: ["ExhibitTargets", "ExhibitCore", "ExhibitFixtures"]),
         // Depends on the executable so `swift test` builds the real binary for the end-to-end tests.
