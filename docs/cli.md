@@ -236,6 +236,8 @@ exhibit say shot.png "box the cheapest plan" --model qwen3:8b --model-endpoint h
 exhibit say shot.png "blur this" --pointer 420,310
 ```
 
+When the words named are only part of a line ("circle pricing" on a footer reading "Pricing · Docs · Sign out"), circle, box, arrow, highlight, text and step go on those words, as `--to` would place them, and the mark stays attached to the line in a bundle. Blur always covers the whole line: a redaction may cover too much, never too little.
+
 ### Output
 
 The same JSON as other mark commands (`output`, `input`, `bundle`, `image`, `targetsReused`, `marks`, `selectors`), plus:

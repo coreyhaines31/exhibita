@@ -3,12 +3,13 @@ import Foundation
 
 /// What one object phrase ("the emails", "pricing", "this") resolved to.
 enum ItemResult: Equatable {
-    case targets([Target])
+    /// Text lines, and the words that were looked for in them, so a mark can go on just those words.
+    case targets([Target], phrase: [String]? = nil)
     case kinds([TargetKind])
     /// A kind the screen has none of: reported, not guessed.
     case notFound(String)
     /// Several lines match and the mark draws one: the grammar does not guess.
-    case ambiguous([Target])
+    case ambiguous([Target], phrase: [String]? = nil)
     /// No lookup answers it.
     case unmatched(String)
     case decline(String)
@@ -80,9 +81,9 @@ struct GrammarMatcher {
             return found.isEmpty ? .notFound(words.joined(separator: " ")) : .kinds(kinds)
         }
         if mark == .blur || mark == .highlight { return lookUpEvery(words, redacting: mark == .blur) }
-        if let result = choose(exact, for: mark, every: every) { return result }
+        if let result = choose(exact, for: mark, every: every, phrase: words) { return result }
         let containing = lines.filter { Words.contains($0.words, words) }.map(\.target)
-        if let result = choose(containing, for: mark, every: every) { return result }
+        if let result = choose(containing, for: mark, every: every, phrase: words) { return result }
         if let near = closeMatch(words) { return .targets([near]) }
         return unplaced(words)
     }
@@ -98,7 +99,7 @@ struct GrammarMatcher {
             return redacting && phrase.count >= 3 && line.words.joined(separator: " ").contains(phrase)
         }.map(\.target)
         let wrapped = wrappedLines(words)
-        if !found.isEmpty || !wrapped.isEmpty { return .targets(inReadingOrder(found + wrapped)) }
+        if !found.isEmpty || !wrapped.isEmpty { return .targets(inReadingOrder(found + wrapped), phrase: words) }
         if redacting {
             switch closeWindows(words) {
             case .some(.success(let near)): return .targets(near)
@@ -119,10 +120,25 @@ struct GrammarMatcher {
     }
 
     /// One mark per target for blur and highlight, or when the phrase was plural; otherwise exactly one target.
-    private func choose(_ found: [Target], for mark: MarkKind, every: Bool) -> ItemResult? {
+    private func choose(_ found: [Target], for mark: MarkKind, every: Bool, phrase: [String]) -> ItemResult? {
         if found.isEmpty { return nil }
-        if found.count == 1 || every || mark == .blur || mark == .highlight { return .targets(found) }
-        return .ambiguous(found)
+        if found.count == 1 || every || mark == .blur || mark == .highlight { return .targets(found, phrase: phrase) }
+        return .ambiguous(found, phrase: phrase)
+    }
+
+    /// The pick for a mark on `target`: the phrase's own words when they are only part of the line and appear in
+    /// it once, as `--to` would narrow; otherwise the whole target. A blur always takes the whole line, because a
+    /// redaction may cover too much but never too little.
+    func pick(_ target: Target, phrase: [String]?, for mark: MarkKind) -> TargetPick {
+        guard mark != .blur, let phrase, !phrase.isEmpty, let text = target.text,
+              let line = lines.first(where: { $0.target.id == target.id }),
+              phrase.count < line.words.count, let ranges = Words.ranges(in: text) else { return .id(target.id) }
+        let starts = (0...(line.words.count - phrase.count)).filter { start in
+            zip(line.words[start..<(start + phrase.count)], phrase).allSatisfy(Words.same)
+        }
+        guard starts.count == 1, let start = starts.first else { return .id(target.id) }
+        let first = ranges[start], last = ranges[start + phrase.count - 1]
+        return .part(target.id, start: first.location, length: NSMaxRange(last) - first.location)
     }
 
     /// A whole line that differs from the phrase by a mis-hearing: "prising" for "Pricing", "in voices" for
@@ -205,6 +221,11 @@ struct GrammarMatcher {
     private func inReadingOrder(_ found: [Target]) -> [Target] {
         let ids = Set(found.map(\.id))
         return targets.filter { ids.contains($0.id) }
+    }
+
+    /// Lines that read exactly `words`.
+    func wholeLines(_ words: [String]) -> [Target] {
+        lines.filter { Words.equal($0.words, words) }.map(\.target)
     }
 
     /// Whole lines that equal a run of words, longest first: "reply forward" as "Reply", then "Forward".
