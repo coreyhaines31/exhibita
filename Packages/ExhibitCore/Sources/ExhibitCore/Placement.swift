@@ -1,5 +1,4 @@
 import CoreGraphics
-import ExhibitCore
 import Foundation
 
 /// Picks where arrows start and where text labels and step discs go, so they point at or sit beside a target
@@ -8,24 +7,30 @@ import Foundation
 /// Every choice is a short list of candidates scored the same way: candidates that leave the image are dropped,
 /// then the fewest collisions with obstacles (words and marks) wins, then plain background over busy pixels, then
 /// the earlier (preferred) candidate. Deterministic.
-struct Placement {
-    let imageSize: PixelSize
-    let layout: MarkLayout
+public struct Placement: Sendable {
+    public let imageSize: PixelSize
+    public let layout: MarkLayout
     /// Busy pixels no target covers, such as a blur from an earlier call on a chained file.
-    var clutter: Clutter?
+    public var clutter: Clutter?
 
-    var unit: Double { layout.unit }
+    public init(imageSize: PixelSize, layout: MarkLayout, clutter: Clutter? = nil) {
+        self.imageSize = imageSize
+        self.layout = layout
+        self.clutter = clutter
+    }
+
+    public var unit: Double { layout.unit }
     /// Space kept between a mark and the thing it points at or sits beside.
-    var gap: Double { 6 * unit }
+    public var gap: Double { 6 * unit }
     /// Space kept between a mark and the image edge.
-    var margin: Double { 4 * unit }
+    public var margin: Double { 4 * unit }
 
     // MARK: Arrows
 
-    struct Arrow: Equatable {
-        var from: PixelPoint
-        var to: PixelPoint
-        var caption: PixelRect?
+    public struct Arrow: Equatable, Sendable {
+        public var from: PixelPoint
+        public var to: PixelPoint
+        public var caption: PixelRect?
     }
 
     /// Tail directions, as unit vectors from the target out to the tail, most preferred first: from below left,
@@ -41,7 +46,7 @@ struct Placement {
 
     /// An arrow whose head stops just outside `target`. With `from`, the tail is fixed and the head lands on the
     /// target's edge facing it; without, the tail is chosen from `tailDirections` and `arrowLengths`.
-    func arrow(to target: PixelRect, from: PixelPoint?, label: String?, obstacles: [PixelRect]) -> Arrow {
+    public func arrow(to target: PixelRect, from: PixelPoint?, label: String?, obstacles: [PixelRect]) -> Arrow {
         let padded = target.cgRect.insetBy(dx: -gap, dy: -gap)
         let center = CGPoint(x: padded.midX, y: padded.midY)
         if let from {
@@ -123,7 +128,7 @@ struct Placement {
     // MARK: Labels and steps
 
     /// The top-left corner for a label of `size` beside `target`: right, below, above, then left.
-    func label(size: CGSize, beside target: PixelRect, obstacles: [PixelRect]) -> PixelRect {
+    public func label(size: CGSize, beside target: PixelRect, obstacles: [PixelRect]) -> PixelRect {
         let box = target.cgRect
         let space = 2 * gap
         let middleY = box.midY - size.height / 2
@@ -140,7 +145,7 @@ struct Placement {
     }
 
     /// The centre of a step disc beside `target`: left, then above left, right, above and below.
-    func step(beside target: PixelRect, obstacles: [PixelRect]) -> PixelPoint {
+    public func step(beside target: PixelRect, obstacles: [PixelRect]) -> PixelPoint {
         let box = target.cgRect
         let diameter = layout.stepDiameter
         let radius = diameter / 2
