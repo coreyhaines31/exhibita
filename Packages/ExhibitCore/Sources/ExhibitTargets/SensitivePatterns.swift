@@ -27,7 +27,11 @@ public enum SensitivePatterns {
     /// Every match in `text`, ordered by position. A match inside a larger match of the same kind is dropped,
     /// and an email or phone number that overlaps a card or key is dropped: digit runs read as phone numbers,
     /// and `user:password@host` reads as an email.
+    ///
+    /// Look-alike letters from other scripts are folded to Latin first (`Confusables`), so a key OCR read with a
+    /// Cyrillic `А` is still found. Ranges refer to `text` as given; folding keeps every offset.
     public static func matches(in text: String) -> [SensitiveMatch] {
+        let text = Confusables.fold(text)
         let whole = NSRange(text.startIndex..., in: text)
         var found = cards(in: text, range: whole) + socialSecurityNumbers(in: text, range: whole)
         for (name, pattern) in keyPatterns {
