@@ -1,20 +1,7 @@
 import CoreGraphics
 @testable import ExhibitCore
+import ExhibitFixtures
 import Foundation
-
-/// An RGBA8 sRGB image drawn by `draw` in a context flipped to top-left coordinates.
-func makeImage(width: Int, height: Int, draw: (CGContext) -> Void) -> CGImage {
-    guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
-                                  space: CGColorSpace(name: CGColorSpace.sRGB)!,
-                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
-        fatalError("Could not create a test context")
-    }
-    context.translateBy(x: 0, y: CGFloat(height))
-    context.scaleBy(x: 1, y: -1)
-    draw(context)
-    guard let image = context.makeImage() else { fatalError("Could not make a test image") }
-    return image
-}
 
 func solidImage(width: Int, height: Int, gray: CGFloat) -> CGImage {
     makeImage(width: width, height: height) { context in

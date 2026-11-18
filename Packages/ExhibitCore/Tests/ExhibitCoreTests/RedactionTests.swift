@@ -1,5 +1,6 @@
 import CoreGraphics
 @testable import ExhibitCore
+import ExhibitFixtures
 import Foundation
 import ImageIO
 import Testing

@@ -24,7 +24,8 @@ Judge build, test and lint by exit code, never by grepping output.
   - `PNG.swift`: encode (metadata chunks stripped) and decode; `ExhibitError`.
   - `Renderer.swift`: `Renderer.render(original:marks:scale:)`; `MarkPainter.swift` and `LabelledMarks.swift` draw the marks.
   - `Redaction.swift`: blur fills built only from pixels outside every blur region.
-- Tests use Swift Testing. Goldens live in `Tests/ExhibitCoreTests/Goldens`, drawn over synthetic fixtures in `Fixtures.swift` and `SampleFixture.swift`.
+- `Sources/ExhibitFixtures` (not a product): synthetic screenshots drawn with CoreText (`FakeUI.swift`, `SampleFixture.swift`), shared by the test targets and sample generators.
+- Tests use Swift Testing. Goldens live in `Tests/ExhibitCoreTests/Goldens`, drawn over the shared fixtures.
 
 ## Rules
 

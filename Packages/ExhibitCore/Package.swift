@@ -9,7 +9,9 @@ let package = Package(
     ],
     targets: [
         .target(name: "ExhibitCore"),
+        // Synthetic screenshots shared by the test targets. Not a product.
+        .target(name: "ExhibitFixtures", dependencies: ["ExhibitCore"]),
         // Goldens are read and written through #filePath, so they are not bundled as resources.
-        .testTarget(name: "ExhibitCoreTests", dependencies: ["ExhibitCore"], exclude: ["Goldens"])
+        .testTarget(name: "ExhibitCoreTests", dependencies: ["ExhibitCore", "ExhibitFixtures"], exclude: ["Goldens"])
     ]
 )
