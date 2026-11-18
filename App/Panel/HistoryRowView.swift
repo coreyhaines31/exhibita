@@ -4,7 +4,7 @@ import PanelKit
 import SwiftUI
 
 /// One capture: thumbnail, where it came from, when and how big, "by agent" for agent captures. Selecting a row
-/// shows its actions. The editor (unit 5) will open from here.
+/// shows its actions; Open or a double-click opens it in the editor.
 struct HistoryRowView: View {
     let row: HistoryRow
     let thumbnail: CGImage?
@@ -39,6 +39,8 @@ struct HistoryRowView: View {
             }
             if row.isSelected {
                 HStack(spacing: 8) {
+                    Button("Open") { actions.open(row.id) }
+                        .buttonStyle(PanelButtonStyle(.primary, size: .compact))
                     Button("Copy") { actions.copy(row.id) }
                     Button("Show in Finder") { actions.reveal(row.id) }
                     Spacer()
@@ -52,10 +54,12 @@ struct HistoryRowView: View {
         .padding(.vertical, 7)
         .background(row.isSelected ? theme.field : Color.clear)
         .contentShape(Rectangle())
+        .onTapGesture(count: 2) { actions.open(row.id) }
         .onTapGesture(perform: select)
         .accessibilityElement(children: .combine)
         .accessibilityLabel([row.title, row.tag, row.subtitle, row.expiry].compactMap { $0 }.joined(separator: ", "))
         .accessibilityAddTraits(row.isSelected ? [.isButton, .isSelected] : .isButton)
+        .accessibilityAction(named: "Open") { actions.open(row.id) }
     }
 }
 
