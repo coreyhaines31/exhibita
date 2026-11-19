@@ -225,7 +225,7 @@ Targets (assumed), not measurements. Baselines are taken once units 4 and 5 exis
 | Agent capture rules | built, not verified live | Unit 6: bridge, never-capture list, tagging and auto-blur tested with a fake capture provider; focus, flash and blackout on a real screen in `docs/product/unit6-live-checklist.md` |
 | Dictation accuracy | not assessed | Measured on synthetic speech only (8% word errors); real voices not assessed |
 | Performance | not assessed | No baseline |
-| Notarization and update path | not assessed, blocking | Never run for this app |
+| Notarization and update path | built, not verified live, blocking | Unit 10: Sparkle, `Scripts/release.sh` and the cask draft exist; only `--dry-run` has run. Needs the Sparkle key, a public home for the appcast and `docs/product/unit10-live-checklist.md` |
 | Orgs, billing, backend, analytics | justified N/A | Local single-user utility, zero telemetry |
 
 ### Not verified yet
