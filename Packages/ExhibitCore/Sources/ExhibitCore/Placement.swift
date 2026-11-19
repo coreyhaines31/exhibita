@@ -67,9 +67,12 @@ public struct Placement: Sendable {
                 guard inside(CGRect(origin: tail, size: .zero)), arrow.caption.map({ inside($0.cgRect) }) ?? true else {
                     continue
                 }
-                let hits = shaftHits(from: tail, to: head, blockers) + (arrow.caption.map { hits($0.cgRect, blockers) } ?? 0)
+                // Not named `hits`: a local shadowing the `hits` method inside its own initializer fails to compile
+                // with Swift 6.3's whole-module release builds.
+                let blocked = shaftHits(from: tail, to: head, blockers)
+                    + (arrow.caption.map { hits($0.cgRect, blockers) } ?? 0)
                 let busy = isBusy(tail: tail, head: head, caption: arrow.caption)
-                let score = hits * 1000 + (busy ? 300 : 0) + rank
+                let score = blocked * 1000 + (busy ? 300 : 0) + rank
                 if best == nil || score < best!.score { best = (score, arrow) }
             }
         }
