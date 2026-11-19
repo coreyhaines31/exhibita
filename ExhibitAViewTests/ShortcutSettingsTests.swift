@@ -91,4 +91,17 @@ final class ShortcutSettingsTests: XCTestCase {
         XCTAssertNil(UserDefaults.standard.data(forKey: Preferences.customEditorKeysKey),
                      "never the real app's settings")
     }
+
+    func testSwapExchangesTheHotkeys() throws {
+        let model = try makeModel()
+        var applied: [HotkeyBindings] = []
+        model.onBindingsChanged = { applied.append($0) }
+        model.swapHotkeys()
+        XCTAssertEqual(model.bindings.combo(for: .captureAndEdit).display, "⌃⌥⇧4")
+        XCTAssertEqual(model.bindings.combo(for: .captureToClipboard).display, "⌥⇧4")
+        XCTAssertEqual(applied.count, 1, "registered again")
+        XCTAssertEqual(Preferences.customHotkeys.count, 2)
+        model.swapHotkeys()
+        XCTAssertTrue(Preferences.customHotkeys.isEmpty)
+    }
 }

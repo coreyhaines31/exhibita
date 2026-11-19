@@ -153,6 +153,14 @@ final class AppModel {
         hotkeyMessages[action] ?? bindings.issue(for: action)?.message
     }
 
+    /// Exchanges the two hotkeys' keys, for anyone who has them the wrong way round in their head.
+    func swapHotkeys() {
+        bindings.swap()
+        hotkeyMessages = [:]
+        Preferences.customHotkeys = bindings.custom
+        onBindingsChanged(bindings)
+    }
+
     // MARK: - Editor keys
 
     /// A key pressed in a Shortcuts row's recorder. Refused keys leave the row as it was and say why.
