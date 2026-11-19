@@ -15,6 +15,8 @@ final class CaptureController {
     private let model: AppModel
     private let editors: EditorWindows
     let overlay = SelectionOverlay()
+    /// Confirms a capture that went straight to the clipboard, which opens no window.
+    let copiedNote = CopiedNote()
     /// The never-capture list and auto-blur, read fresh for every capture.
     var policy: () -> CapturePolicy = { CapturePolicy() }
     /// Opens the panel: to explain the permission, or why a window pick was refused.
@@ -135,7 +137,13 @@ final class CaptureController {
         editors.captures.beginFinding(id)
         switch action {
         case .captureToClipboard:
-            copyToClipboard(captured.image)
+            if copyToClipboard(captured.image) {
+                copiedNote.show(on: Self.screen(for: captured.displayID))
+                Self.logger.info("Captured to the clipboard")
+            } else {
+                Self.logger.error("Copying the capture failed")
+                NSSound.beep()
+            }
         case .captureAndEdit:
             // The same document `create` wrote, so the editor opens without reading it back.
             let document = CaptureDocument(id: id, createdAt: item.createdAt, size: item.size, scale: captured.scale,
@@ -143,6 +151,7 @@ final class CaptureController {
                                                                  windowTitle: captured.windowTitle,
                                                                  capturedBy: .person))
             editors.open(document: document, original: captured.image, on: Self.screen(for: captured.displayID))
+            Self.logger.info("Captured and opened the editor")
         }
         findTargets(in: captured, id: id)
         await model.reload()
@@ -170,11 +179,13 @@ final class CaptureController {
         }
     }
 
-    func copyToClipboard(_ image: CGImage) {
-        guard let png = try? PNG.encode(image) else { return }
+    /// False when the image could not be encoded or the clipboard refused it.
+    @discardableResult
+    func copyToClipboard(_ image: CGImage) -> Bool {
+        guard let png = try? PNG.encode(image) else { return false }
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        pasteboard.setData(png, forType: .png)
+        return pasteboard.setData(png, forType: .png)
     }
 
     func copyCapture(_ id: UUID) {
