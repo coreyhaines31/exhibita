@@ -61,7 +61,7 @@ Runs everything local: the preflight (branch, clean tree and Sparkle key become 
 - **Where the appcast is served.** The app checks `https://github.com/coreyhaines31/exhibita/releases/latest/download/appcast.xml`. GitHub serves release assets anonymously only from public repos, and `coreyhaines31/exhibita` is private, so before the first release either make the repo public (as every sibling is; the license is FSL-1.1-MIT, free and source available) or choose another public host for the DMG and appcast and change `SUFeedURL`, the cask `url` and the script's `--download-url-prefix` together. The Homebrew cask has the same need.
 - **GitHub CLI.** `gh` signed in with push access to this repo and `coreyhaines31/homebrew-tap`.
 - **Branch protection.** None: no sibling protects `main`. Releases come from `main`, which only takes merges from `development`.
-- **App icon.** Not in this repo yet (mac-app-kit assigns it). Releasing without one ships the generic icon.
+- **App icon.** `App/Assets.xcassets/AppIcon`, the exhibit plate, rendered from mac-app-kit's `icons/exhibit`. The menu bar glyph is drawn in code (`App/Shell/Glyph.swift`) from mac-app-kit's `glyphs/exhibit`.
 
 ## Updates
 
