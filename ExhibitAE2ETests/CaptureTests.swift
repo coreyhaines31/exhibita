@@ -193,6 +193,8 @@ final class CaptureTests: XCTestCase {
     /// The overlay shows a still of every display at its own pixel size, Exhibit A's own window is in it, and
     /// what changes after the hotkey is not: the window is gone before the drag, and the capture still holds it.
     func testTheStillHoldsOwnWindowsAndNothingAfterTheHotkey() async throws {
+        let restore = try clearNeverCapture()
+        defer { restore() }
         let screen = LiveCapture.mainScreen
         let scale = Double(screen.backingScaleFactor)
         let window = LiveCapture.solidWindow(at: CGRect(x: screen.frame.minX + 200, y: screen.frame.minY + 200,
@@ -218,11 +220,14 @@ final class CaptureTests: XCTestCase {
         XCTAssertEqual(Double(image.height), 260 * scale, accuracy: 1)
         let solid = LiveCapture.solidFraction(image)
         XCTAssertGreaterThan(solid, 0.98, "Exhibit A's own window, as it was at the hotkey")
-        print("E2E: frozen region of an own window closed after the hotkey: \(String(format: "%.3f", solid)) solid")
+        print("E2E: frozen region of an own window closed after the hotkey: \(String(format: "%.3f", solid)) solid, "
+              + "mean \(LiveCapture.meanColour(image))")
     }
 
     /// Space picks Exhibit A's own window too, cut out of the still at the window's frame.
     func testSpacePicksOwnWindowFromTheStill() async throws {
+        let restore = try clearNeverCapture()
+        defer { restore() }
         let screen = LiveCapture.mainScreen
         let scale = Double(screen.backingScaleFactor)
         let frame = CGRect(x: screen.frame.minX + 240, y: screen.frame.minY + 160, width: 400, height: 300)
@@ -243,7 +248,18 @@ final class CaptureTests: XCTestCase {
         XCTAssertEqual(Double(image.height), 300 * scale, accuracy: 1)
         let solid = LiveCapture.solidFraction(image)
         XCTAssertGreaterThan(solid, 0.98, "the window's own pixels")
-        print("E2E: own window pick \(image.width)x\(image.height) px, \(String(format: "%.3f", solid)) solid")
+        print("E2E: own window pick \(image.width)x\(image.height) px, \(String(format: "%.3f", solid)) solid, mean "
+              + "\(LiveCapture.meanColour(image))")
+    }
+
+    /// Empties the never-capture list until the returned closure puts it back. A listed app's window is blacked
+    /// out over its whole frame even where windows in front cover it (`Blackout`), so a password manager open
+    /// anywhere behind a test window would turn it black; these tests are about the freeze, not the list.
+    private func clearNeverCapture() throws -> () -> Void {
+        let policy = try XCTUnwrap(E2E.app.policy)
+        let listed = policy.policy.neverCapture
+        for app in listed { policy.remove(app) }
+        return { for app in listed { policy.add(app) } }
     }
 
     /// The panel stays open through the hotkey, a click on the overlay and Esc, and closes once a capture is taken.

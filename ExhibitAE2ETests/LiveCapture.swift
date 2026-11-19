@@ -205,6 +205,19 @@ enum LiveCapture {
         return Double(solid) / Double(bytes.count / 4)
     }
 
+    /// The mean sRGB colour of `image`, as "r g b" in 0 to 255: a statistic, never the picture.
+    static func meanColour(_ image: CGImage) -> String {
+        let bytes = Pixels(image).bytes
+        var sums = [0, 0, 0]
+        var index = 0
+        while index + 3 < bytes.count {
+            for channel in 0..<3 { sums[channel] += Int(bytes[index + channel]) }
+            index += 4
+        }
+        let count = max(1, bytes.count / 4)
+        return sums.map { String($0 / count) }.joined(separator: " ")
+    }
+
     // MARK: - What was captured
 
     static func newCaptures(since before: Set<UUID>) -> [HistoryItem] {
