@@ -14,6 +14,9 @@ settings:
     CODE_SIGN_STYLE: Automatic
     DEAD_CODE_STRIPPING: YES
     ARCHS: "arm64 x86_64"
+    # Sparkle's EdDSA public key for this app. The private key stays in the release Mac's login Keychain under the
+    # "exhibita" account (docs/release/RELEASING.md); Scripts/release.sh refuses to run while this is a placeholder.
+    SPARKLE_PUBLIC_ED_KEY: REPLACE_WITH_SPARKLE_PUBLIC_ED_KEY
 packages:
   ExhibitCore:
     path: Packages/ExhibitCore
@@ -23,6 +26,9 @@ packages:
   KeyboardShortcuts:
     url: https://github.com/sindresorhus/KeyboardShortcuts
     exactVersion: "2.4.0"
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    exactVersion: "2.10.0"
 targets:
   ExhibitA:
     type: application
@@ -46,6 +52,12 @@ targets:
         product: ExhibitInterpret
       - package: PanelKit
       - package: KeyboardShortcuts
+      - package: Sparkle
+      # The `exhibit` command, in Contents/MacOS; the Homebrew cask and Settings link it onto the PATH.
+      - target: ExhibitCLI
+        copy:
+          destination: executables
+        codeSignOnCopy: true
     info:
       path: App/Info.plist
       properties:
@@ -61,6 +73,9 @@ targets:
         NSSpeechRecognitionUsageDescription: >-
           Exhibit A turns what you say while holding D into text, on this Mac only, to mark up your capture. Audio
           is never sent anywhere or saved.
+        SUFeedURL: https://github.com/coreyhaines31/exhibita/releases/latest/download/appcast.xml
+        SUPublicEDKey: $(SPARKLE_PUBLIC_ED_KEY)
+        SUEnableAutomaticChecks: true
     entitlements:
       path: App/ExhibitA.entitlements
       properties:
@@ -70,6 +85,23 @@ targets:
         PRODUCT_NAME: Exhibit A
         PRODUCT_MODULE_NAME: ExhibitA
         PRODUCT_BUNDLE_IDENTIFIER: com.exhibitaformac.ExhibitA
+  # The `exhibit` CLI, compiled from the package's own entry point so it is the same program `swift build` makes,
+  # built universal with the hardened runtime like the app and signed on copy into it.
+  ExhibitCLI:
+    type: tool
+    platform: macOS
+    sources:
+      - Packages/ExhibitCore/Sources/exhibit
+    dependencies:
+      - package: ExhibitCore
+        product: ExhibitCLI
+    settings:
+      base:
+        PRODUCT_NAME: exhibit
+        PRODUCT_BUNDLE_IDENTIFIER: com.exhibitaformac.ExhibitA.CLI
+        SKIP_INSTALL: YES
+        GENERATE_INFOPLIST_FILE: YES
+        CREATE_INFOPLIST_SECTION_IN_BINARY: YES
   # Offscreen renders of the panel, Settings and the editor on fixture data, plus view-model checks. Unhosted: it compiles the
   # views itself and never launches the app or shows a window. History goes to a temporary folder and preferences
   # to a throwaway defaults suite.
@@ -88,6 +120,8 @@ targets:
       - App/Settings/CapturePolicyModel.swift
       - App/Settings/FreeFormSettings.swift
       - App/Settings/FreeFormSection.swift
+      - App/Settings/UpdateSettings.swift
+      - App/Settings/CommandLineSection.swift
       - App/Hotkeys/HotkeyNames.swift
       - App/Capture/SystemLinks.swift
       - App/Editor/EditorCanvasModel.swift

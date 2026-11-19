@@ -135,9 +135,17 @@ struct HistorySection: View {
     }
 }
 
-/// Launch at login, and what Exhibit A does not do.
+/// Launch at login, updates, and what Exhibit A does not do.
 struct GeneralSection: View {
     let model: AppModel
+    let updates: UpdateSettings
+    @State private var checksForUpdates: Bool
+
+    init(model: AppModel, updates: UpdateSettings) {
+        self.model = model
+        self.updates = updates
+        _checksForUpdates = State(initialValue: updates.checksAutomatically)
+    }
 
     var body: some View {
         Section {
@@ -145,11 +153,21 @@ struct GeneralSection: View {
                 Text("Launch at login")
                 Text("The hotkeys work only while Exhibit A is running.")
             }
+            Toggle(isOn: $checksForUpdates) {
+                Text("Check for updates automatically")
+                Text("Exhibit A asks GitHub once a day for a newer version.")
+            }
+            .onChange(of: checksForUpdates) { _, enabled in updates.setChecksAutomatically(enabled) }
+            .disabled(!updates.isConfigured)
+            LabeledContent("Version \(updates.version)") {
+                Button("Check for Updates…", action: updates.checkNow)
+                    .disabled(!updates.isConfigured)
+            }
         } header: {
             Text("General")
         } footer: {
-            Label("Exhibit A sends nothing off this Mac: no telemetry, no account. Captures stay here.",
-                  systemImage: "lock.fill")
+            Label("Exhibit A goes online only to check for updates: no telemetry, no account. Captures stay on "
+                  + "this Mac.", systemImage: "lock.fill")
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }

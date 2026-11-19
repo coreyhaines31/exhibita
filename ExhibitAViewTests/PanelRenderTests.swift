@@ -187,6 +187,21 @@ final class PanelRenderTests: XCTestCase {
         try renderSettings(model, name: "settings-free-form-not-loopback", schemes: [.light], freeForm: remote)
     }
 
+    /// The command line row unlinked and the updater configured. The fake app bundle sits at a fixed /tmp path so
+    /// the MCP line in the sample is the same on every Mac.
+    func testRendersCommandLineAndUpdateSettings() throws {
+        let model = try makeModel()
+        let macOS = URL(fileURLWithPath: "/tmp/exhibita-render/Exhibit A.app/Contents/MacOS")
+        try FileManager.default.createDirectory(at: macOS, withIntermediateDirectories: true)
+        let bundled = macOS.appendingPathComponent("exhibit").path
+        FileManager.default.createFile(atPath: bundled, contents: Data())
+        let tool = CommandLineTool(bundled: bundled, directories: [], userDirectory: "/nonexistent")
+        XCTAssertEqual(tool.state, .notLinked)
+        let updates = UpdateSettings(isConfigured: true, version: "0.1.0", checksAutomatically: true)
+        try renderSettings(model, name: "settings-command-line", updates: updates, commandLine: tool)
+        try? FileManager.default.removeItem(atPath: "/tmp/exhibita-render")
+    }
+
     func testFreeFormIsOffByDefaultAndSavesWhatChanges() throws {
         let settings = FreeFormSettings()
         XCTAssertFalse(settings.settings.enabled)
@@ -225,11 +240,15 @@ final class PanelRenderTests: XCTestCase {
     /// hosting view's display cache instead. Still no window.
     private func renderSettings(_ model: AppModel, name: String, schemes: [ColorScheme] = [.light, .dark],
                                 policy: CapturePolicyModel? = nil,
-                                freeForm: FreeFormSettings = FreeFormSettings(settings: ModelSettings())) throws {
+                                freeForm: FreeFormSettings = FreeFormSettings(settings: ModelSettings()),
+                                updates: UpdateSettings = UpdateSettings(version: "0.1.0"),
+                                commandLine: CommandLineTool = CommandLineTool(bundled: nil, directories: [],
+                                                                               userDirectory: "/nonexistent")) throws {
         for scheme in schemes {
             let hosting = NSHostingView(rootView: SettingsView(model: model, actions: SettingsActions(),
                                                                drawsRecorders: false, policy: policy,
-                                                               freeForm: freeForm)
+                                                               freeForm: freeForm, updates: updates,
+                                                               commandLine: commandLine)
                 .background(Color(nsColor: .windowBackgroundColor)))
             hosting.appearance = NSAppearance(named: scheme == .dark ? .darkAqua : .aqua)
             hosting.frame = NSRect(origin: .zero, size: hosting.fittingSize)

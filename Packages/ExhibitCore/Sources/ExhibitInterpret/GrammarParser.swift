@@ -4,11 +4,16 @@ import Foundation
 /// Turns clauses into operations. Each `add` returns a reason to decline, or nil.
 struct GrammarParser {
     let matcher: GrammarMatcher
+    /// Whether a plain name the screen does not show is reported as not found instead of declining.
+    let reportsUnknownNames: Bool
     private(set) var operations: [InterpretedOperation] = []
     private(set) var notFound: [String] = []
+    /// The names in `notFound` that are unknown text rather than a kind the screen has none of.
+    private(set) var unknownNames: [String] = []
 
-    init(matcher: GrammarMatcher) {
+    init(matcher: GrammarMatcher, reportsUnknownNames: Bool = false) {
         self.matcher = matcher
+        self.reportsUnknownNames = reportsUnknownNames
     }
 
     private static let referBack: Set<String> = ["it", "that", "this", "them"]
@@ -26,12 +31,16 @@ struct GrammarParser {
     }
 
     private mutating func addMark(_ mark: MarkKind, objects: [String], label: String? = nil) -> String? {
-        switch resolveObjects(objects, for: mark) {
+        // A blur that cannot be placed must not look done, so only other marks report unknown names.
+        switch resolveObjects(objects, for: mark, reportingUnknown: reportsUnknownNames && mark != .blur) {
         case .failure(let reason):
             return reason.message
-        case .success(let (picks, missing)):
-            notFound += missing
-            if !picks.isEmpty { operations.append(InterpretedOperation(mark: mark, picks: picks, label: label)) }
+        case .success(let resolved):
+            notFound += resolved.missing + resolved.unknown
+            unknownNames += resolved.unknown
+            if !resolved.picks.isEmpty {
+                operations.append(InterpretedOperation(mark: mark, picks: resolved.picks, label: label))
+            }
             return nil
         }
     }
@@ -101,8 +110,8 @@ struct GrammarParser {
         }
         for end in stride(from: words.count - 1, through: 1, by: -1) {
             let object = Array(words[..<end])
-            if case .success(let (picks, missing)) = resolveObjects(object, for: .text), missing.isEmpty,
-               picks.count == 1 {
+            if case .success(let resolved) = resolveObjects(object, for: .text), resolved.missing.isEmpty,
+               resolved.picks.count == 1 {
                 return addMark(.text, objects: object, label: Self.text(words[end...]))
             }
         }
@@ -118,30 +127,68 @@ struct Decline: Error {
     var message: String
 }
 
+/// What an object phrase resolved to.
+struct ResolvedObjects {
+    var picks: [TargetPick] = []
+    /// Kinds the screen has none of.
+    var missing: [String] = []
+    /// Plain names the screen does not show, when the parser reports them.
+    var unknown: [String] = []
+}
+
 extension GrammarParser {
-    /// Picks for an object phrase, plus kinds the screen has none of. Fails on anything unsure.
-    func resolveObjects(_ words: [String], for mark: MarkKind) -> Result<([TargetPick], [String]), Decline> {
-        var words = words
-        while let first = words.first, GrammarLexicon.prepositions.contains(first) { words.removeFirst() }
-        if words.count >= 2, GrammarLexicon.colors.contains(words[words.count - 1]), words[words.count - 2] == "in" {
-            words.removeLast(2)
-        }
+    /// Picks for an object phrase, plus kinds the screen has none of and, when `reportingUnknown`, plain names it
+    /// does not show. Fails on anything unsure.
+    func resolveObjects(_ words: [String], for mark: MarkKind, reportingUnknown: Bool = false)
+        -> Result<ResolvedObjects, Decline> {
+        let words = Self.objectWords(words)
         guard !words.isEmpty else { return .failure(Decline(message: "nothing named")) }
         var items = items(in: words, for: mark)
         breakTies(&items)
-        var picks: [TargetPick] = []
-        var missing: [String] = []
+        var resolved = ResolvedObjects()
         for item in items {
             switch item {
-            case .targets(let targets, let phrase): picks += targets.map { matcher.pick($0, phrase: phrase, for: mark) }
-            case .kinds(let kinds): picks += kinds.map(TargetPick.kind)
-            case .notFound(let phrase): missing.append(phrase)
+            case .targets(let targets, let phrase):
+                resolved.picks += targets.map { matcher.pick($0, phrase: phrase, for: mark) }
+            case .kinds(let kinds): resolved.picks += kinds.map(TargetPick.kind)
+            case .notFound(let phrase): resolved.missing.append(phrase)
             case .ambiguous(let found, _): return .failure(Decline(message: "\(found.count) equal matches"))
-            case .unmatched(let phrase): return .failure(Decline(message: "\"\(phrase)\" is not on the screen as text"))
+            case .unmatched(let phrase):
+                guard reportingUnknown, Self.isPlainName(Words.of(phrase)) else {
+                    return .failure(Decline(message: "\"\(phrase)\" is not on the screen as text"))
+                }
+                resolved.unknown.append(phrase)
             case .decline(let reason): return .failure(Decline(message: reason))
             }
         }
-        return .success((picks, missing))
+        return .success(resolved)
+    }
+
+    /// The object words without leading prepositions or a trailing colour ("in red").
+    private static func objectWords(_ words: [String]) -> [String] {
+        var words = Array(words.drop { GrammarLexicon.prepositions.contains($0) })
+        if words.count >= 2, GrammarLexicon.colors.contains(words[words.count - 1]), words[words.count - 2] == "in" {
+            words.removeLast(2)
+        }
+        return words
+    }
+
+    /// Words that make a phrase more than a name: pronouns, places, order, comparisons and verbs. "circle pricing
+    /// and make it bigger" is an instruction the grammar does not know, not a name to report as not found.
+    private static let notInNames: Set<String> = [
+        "it", "them", "this", "that", "these", "those", "me", "us", "him", "here", "there",
+        "in", "on", "at", "to", "from", "with", "for", "of", "near", "under", "above", "below", "beside", "between",
+        "left", "right", "top", "bottom", "first", "last", "second", "third", "next", "previous", "other", "same",
+        "biggest", "largest", "smallest", "newest", "oldest", "latest", "highest", "lowest", "cheapest", "main",
+        "make", "change", "move", "add", "remove", "delete", "show", "put", "draw", "turn", "is", "are", "was",
+        "not", "no", "except", "but", "or", "if"
+    ]
+
+    /// A short noun phrase naming one thing ("pricing button", "log out link"): the only kind of unknown phrase
+    /// the grammar may report as not found. Anything longer, or with a word from `notInNames`, may be a
+    /// description or an instruction, which the grammar declines.
+    static func isPlainName(_ words: [String]) -> Bool {
+        (1...4).contains(words.count) && !words.contains(where: notInNames.contains)
     }
 
     /// The whole phrase if it resolves; otherwise its parts split at "and", each part split into whole lines if

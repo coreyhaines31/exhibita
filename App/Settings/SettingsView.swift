@@ -11,7 +11,7 @@ struct SettingsActions {
 }
 
 /// One pane, grouped like System Settings: hotkeys, permission, privacy, history, free-form instructions,
-/// general.
+/// command line, general.
 struct SettingsView: View {
     let model: AppModel
     let actions: SettingsActions
@@ -21,6 +21,8 @@ struct SettingsView: View {
     var policy: CapturePolicyModel?
     var policyActions = PolicyActions()
     var freeForm = FreeFormSettings.shared
+    var updates = UpdateSettings()
+    var commandLine = CommandLineTool.app
 
     static let width: CGFloat = 540
 
@@ -31,7 +33,8 @@ struct SettingsView: View {
             if let policy { NeverCaptureSection(policy: policy, actions: policyActions) }
             HistorySection(model: model, actions: actions)
             FreeFormSection(model: freeForm)
-            GeneralSection(model: model)
+            CommandLineSection(tool: commandLine)
+            GeneralSection(model: model, updates: updates)
         }
         .formStyle(.grouped)
         .frame(width: Self.width)

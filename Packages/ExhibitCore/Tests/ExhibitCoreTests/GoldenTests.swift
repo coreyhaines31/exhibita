@@ -31,7 +31,35 @@ import Testing
         }
     }
 
-    func check(_ output: CGImage, name: String) throws {
+    /// Every mark over the sample in Display P3, with bands of P3 colours sRGB cannot hold (issue 17).
+    @Test func displayP3SampleMatchesGolden() throws {
+        let fixture = sampleFixture()
+        let width = fixture.image.width, height = fixture.image.height
+        let original = makeImage(width: width, height: height, space: CGColorSpace.displayP3) { context in
+            // The sample is drawn in an unflipped space here, so undo the helper's flip for it.
+            context.saveGState()
+            context.translateBy(x: 0, y: CGFloat(height))
+            context.scaleBy(x: 1, y: -1)
+            context.draw(fixture.image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            context.restoreGState()
+            let band = CGFloat(height) / 40
+            let wideSpace = CGColorSpace(name: CGColorSpace.displayP3)!
+            for (index, components) in [[1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1] as [CGFloat]].enumerated() {
+                context.setFillColor(CGColor(colorSpace: wideSpace, components: components)!)
+                context.fill(CGRect(x: 0, y: CGFloat(height) - band * CGFloat(3 - index), width: CGFloat(width) / 3,
+                                    height: band))
+            }
+        }
+        let output = try Renderer.render(original: original, marks: sampleMarks(on: fixture), scale: fixture.scale)
+        #expect(output.colorSpace?.isWideGamutRGB == true)
+        try check(output, name: "all-marks-p3@2x.png", space: CGColorSpace.displayP3)
+        if !Self.recording {
+            let golden = try PNG.decode(Data(contentsOf: Self.goldens.appendingPathComponent("all-marks-p3@2x.png")))
+            #expect(golden.colorSpace?.isWideGamutRGB == true, "the golden keeps its P3 profile")
+        }
+    }
+
+    func check(_ output: CGImage, name: String, space: CFString = CGColorSpace.sRGB) throws {
         let url = Self.goldens.appendingPathComponent(name)
         if Self.recording {
             try FileManager.default.createDirectory(at: Self.goldens, withIntermediateDirectories: true)
@@ -39,7 +67,7 @@ import Testing
             return
         }
         let golden = try PNG.decode(Data(contentsOf: url))
-        let difference = ImageDifference(Pixels(output), Pixels(golden))
+        let difference = ImageDifference(Pixels(output, space: space), Pixels(golden, space: space))
         #expect(difference.sameSize, "\(name): size changed")
         // Text antialiasing can shift slightly between OS versions; anything bigger is a real change.
         #expect(difference.changedFraction <= 0.005,

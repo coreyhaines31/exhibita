@@ -9,23 +9,45 @@ import Foundation
 /// rather than guesses, so a model can try next. It reports a kind the screen has none of ("blur the faces") as not
 /// found.
 public struct GrammarInterpreter: Interpreter {
-    public init() {}
+    /// What to do with a plain name the screen does not show, such as "the pricing button" when no line reads
+    /// "Pricing".
+    public enum UnknownNames: Sendable, Equatable {
+        /// Decline the whole instruction, so a model can try: it may know a mis-hearing or a description the
+        /// grammar does not. The choice when a model is set up.
+        case decline
+        /// Apply the rest and report the name as not found, when the rest was understood, the name follows a
+        /// mark other than blur, and it is a plain noun phrase (see `GrammarParser.isPlainName`). The choice when
+        /// no model is set up, since declining could only end in "needs a model" with nothing done.
+        case reportNotFound
+    }
+
+    public let unknownNames: UnknownNames
+
+    public init(unknownNames: UnknownNames = .decline) {
+        self.unknownNames = unknownNames
+    }
 
     public var name: String { "grammar" }
 
     public func interpret(_ request: InterpretRequest) async throws -> InterpretOutcome {
-        Self.interpret(request)
+        Self.interpret(request, unknownNames: unknownNames)
     }
 
-    public static func interpret(_ request: InterpretRequest) -> InterpretOutcome {
+    public static func interpret(_ request: InterpretRequest, unknownNames: UnknownNames = .decline)
+        -> InterpretOutcome {
         let words = Words.of(request.instruction)
         if let reason = GrammarClauses.judgement(in: words) { return .declined(reason: reason) }
         guard let clauses = GrammarClauses.split(words) else {
             return .declined(reason: "no known verb at the start")
         }
-        var parser = GrammarParser(matcher: GrammarMatcher(request: request))
+        var parser = GrammarParser(matcher: GrammarMatcher(request: request),
+                                   reportsUnknownNames: unknownNames == .reportNotFound)
         for clause in clauses {
             if let reason = parser.add(clause) { return .declined(reason: reason) }
+        }
+        // A name reported as not found only stands beside something that was done; on its own it declines.
+        if let unknown = parser.unknownNames.first, parser.operations.isEmpty {
+            return .declined(reason: "\"\(unknown)\" is not on the screen as text")
         }
         guard !parser.operations.isEmpty || !parser.notFound.isEmpty else {
             return .declined(reason: "nothing to do")

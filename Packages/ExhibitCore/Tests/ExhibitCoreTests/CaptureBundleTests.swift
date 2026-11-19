@@ -34,6 +34,21 @@ import Testing
         #expect(Pixels(loaded.original) == Pixels(original))
     }
 
+    @Test func aDisplayP3OriginalKeepsItsColourSpace() throws {
+        let directory = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let wide = makeImage(width: 64, height: 48, space: CGColorSpace.displayP3) { context in
+            context.setFillColor(CGColor(colorSpace: CGColorSpace(name: CGColorSpace.displayP3)!,
+                                         components: [0, 1, 0, 1])!)
+            context.fill(CGRect(x: 0, y: 0, width: 64, height: 48))
+        }
+        let url = try CaptureBundle.save(document(), original: wide, in: directory)
+        let loaded = try CaptureBundle.load(from: url)
+        #expect(loaded.original.colorSpace?.isWideGamutRGB == true)
+        #expect(Pixels(loaded.original, space: CGColorSpace.displayP3) == Pixels(wide, space: CGColorSpace.displayP3))
+        #expect(Pixels(loaded.original, space: CGColorSpace.displayP3).pixel(x: 3, y: 3) == [0, 255, 0, 255])
+    }
+
     @Test func updatesTheDocumentInPlace() throws {
         let directory = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }

@@ -39,7 +39,8 @@ The spec's budget is 1.5 s from releasing D to marks on the grammar path, for a 
 | "Blur the emails" | Every email blurred, summary names the count | | |
 | "Circle Pricing and point at Sign up" (on a page with both) | Circle on "Pricing", arrow to "Sign up" | | |
 | "Highlight this" with the pointer resting on a line | That line highlighted; move the pointer away before releasing D and it still uses where the pointer was at key-down | | |
-| "Circle the avatar" | "Couldn't find: avatar." and nothing changes (or "Needs a model" if the grammar declines the phrase; write down which) | | |
+| "Circle the avatar" | With no model: "Needs a model" and nothing changes (nothing else in the sentence was understood). With a model: "Couldn't find: avatar." | | |
+| "Blur the emails and circle the logout button" with no model and no "Logout" on screen | Emails blurred, "Couldn't find: logout button." | | |
 | A five-second sentence: "blur the emails and the keys and circle update plan" | All three marks, one ⌘Z removes them | | |
 
 Also:
