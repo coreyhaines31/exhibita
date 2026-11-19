@@ -11,9 +11,14 @@ import Foundation
 /// its position, Sparkle never starts, and Screen Recording reads as off (`ScreenRecording.forcedOff`), so nothing
 /// can capture the screen. Hosted by XCTest without the variables, it makes its own temporary ones,
 /// so a test run never touches the real captures or settings.
+///
+/// `EXHIBIT_E2E_ALLOW_CAPTURE=1` (set only by `Scripts/run-e2e-capture.sh`) leaves Screen Recording to what
+/// `CGPreflightScreenCaptureAccess` says, so `CaptureTests` can take real captures into the temporary support
+/// directory. It never asks for the permission; without it those tests skip.
 enum TestSeam {
     static let supportVariable = ExhibitPaths.supportOverrideVariable
     static let defaultsSuiteVariable = "EXHIBIT_DEFAULTS_SUITE"
+    static let allowCaptureVariable = "EXHIBIT_E2E_ALLOW_CAPTURE"
 
     struct Configuration {
         let supportDirectory: URL
@@ -41,6 +46,15 @@ enum TestSeam {
     }()
 
     static var isActive: Bool { configuration != nil }
+
+    /// Real captures allowed under the seam: debug builds, seam on, `EXHIBIT_E2E_ALLOW_CAPTURE=1`.
+    static let allowsCapture: Bool = {
+        #if DEBUG
+        return isActive && ProcessInfo.processInfo.environment[allowCaptureVariable] == "1"
+        #else
+        return false
+        #endif
+    }()
 
     /// Points `Preferences` at the throwaway suite. Call first thing at launch, before anything reads a setting.
     static func applyDefaults() {
