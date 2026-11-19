@@ -32,9 +32,9 @@ Then wait for Vercel to show both domains as valid, and check `https://exhibitaf
 
 Siblings load TracerKit, which loads Headstream (and Fathom on some), with one script tag in `base.html`'s head (Kill Cord: `<script async src="https://tracerkit.com/t.js" data-key="tk_...">`).
 
-- [ ] Request a TracerKit site key for `exhibitaformac.com` and a Headstream property under it. Not done at launch: the Headstream project could not be created from an agent session, so the site shipped with no analytics and the privacy page says so.
-- [ ] Add the one script tag to `site/src/layouts/base.html`, before `</head>`.
-- [ ] Rewrite the "exhibitaformac.com" section of `site/src/pages/privacy/index.html`: it currently says the site sets no cookies and loads no analytics. Use Kill Cord's wording (`killcord/site/src/pages/privacy/index.html`, section "killcord.app") as the model.
+- [x] TracerKit site "Exhibit A" (a652babc) and Headstream project exhibitaformac.com (cd49ce0b) created on 2026-11-19; the TracerKit tag loads Headstream only (no Fathom).
+- [x] Add the one script tag to `site/src/layouts/base.html`, before `</head>`.
+- [x] The "exhibitaformac.com" section of the privacy page names TracerKit and Headstream and their first-party cookies.
 
 ## 5. At release: switch the calls to action
 
