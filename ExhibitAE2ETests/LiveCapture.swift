@@ -151,6 +151,8 @@ enum LiveCapture {
             && window.frame.width >= 300 && window.frame.height >= 200 {
             let center = CGPoint(x: window.frame.midX, y: window.frame.midY)
             if let bounds, !bounds.contains(window.frame) { continue }
+            // A pick is cut from one display's still, so its size is the window's only when it is on one display.
+            guard NSScreen.screens.contains(where: { coreGraphicsFrame(of: $0).contains(window.frame) }) else { continue }
             guard NSScreen.screens.contains(where: { coreGraphicsFrame(of: $0).contains(center) }) else { continue }
             if WindowPicker.pick(at: center, in: windows, excludingPID: own)?.id == window.id {
                 return (window, center)
@@ -169,6 +171,38 @@ enum LiveCapture {
     static var screenUnderPointer: NSScreen {
         let mouse = NSEvent.mouseLocation
         return NSScreen.screens.first { $0.frame.contains(mouse) } ?? mainScreen
+    }
+
+    // MARK: - A window of our own
+
+    /// The colour of `solidWindow`, in sRGB.
+    static let solidColour = NSColor(srgbRed: 0, green: 1, blue: 0, alpha: 1)
+
+    /// A plain window of this app filled with `solidColour`, at `frame` (global Cocoa points), in front of other
+    /// apps' ordinary windows without activating anything. What the captures of it are checked against.
+    static func solidWindow(at frame: CGRect) -> NSWindow {
+        let window = NSWindow(contentRect: frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.backgroundColor = solidColour
+        window.isOpaque = true
+        window.hasShadow = false
+        window.level = .normal
+        window.orderFrontRegardless()
+        return window
+    }
+
+    /// Fraction of pixels that read as `solidColour` once converted to sRGB, with room for the display's colour
+    /// profile on the way.
+    static func solidFraction(_ image: CGImage) -> Double {
+        let bytes = Pixels(image).bytes
+        guard !bytes.isEmpty else { return 0 }
+        var solid = 0
+        var index = 0
+        while index + 3 < bytes.count {
+            if bytes[index] < 70, bytes[index + 1] > 190, bytes[index + 2] < 70 { solid += 1 }
+            index += 4
+        }
+        return Double(solid) / Double(bytes.count / 4)
     }
 
     // MARK: - What was captured
