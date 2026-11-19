@@ -132,6 +132,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func panelActions(model: AppModel) -> PanelActions {
         PanelActions(
             openSettings: { [weak self] in self?.settingsWindow?.show() },
+            openHotkeySettings: { [weak self] in self?.settingsWindow?.show(at: .hotkeys) },
             quit: { NSApp.terminate(nil) },
             allowScreenRecording: { ScreenRecording.request() },
             checkPermissionAgain: { [weak self] in self?.refreshSystemState() },

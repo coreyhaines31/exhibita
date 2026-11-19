@@ -34,6 +34,11 @@ final class StatusItemController {
             popover.performClose(nil)
             openSettings()
         }
+        let openHotkeySettings = actions.openHotkeySettings
+        panelActions.openHotkeySettings = {
+            popover.performClose(nil)
+            openHotkeySettings()
+        }
         let hosting = NSHostingController(rootView: PanelView(model: model, actions: panelActions))
         hosting.sizingOptions = .preferredContentSize
         self.hosting = hosting

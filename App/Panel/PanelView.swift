@@ -5,6 +5,8 @@ import SwiftUI
 /// What the panel's buttons do. The app supplies these; renders pass no-ops.
 struct PanelActions {
     var openSettings: () -> Void = {}
+    /// Opens Settings scrolled to the hotkeys, from the hotkey tiles.
+    var openHotkeySettings: () -> Void = {}
     var quit: () -> Void = {}
     var allowScreenRecording: () -> Void = {}
     var checkPermissionAgain: () -> Void = {}
@@ -28,7 +30,7 @@ struct PanelView: View {
         Panel(accent: Brand.accent) {
             Fascia(nameplate: Brand.name, timestamp: showsSummary ? model.summary : nil,
                    label: "Screenshot markup", isLit: model.permission == .granted) {
-                HotkeyTiles(bindings: model.bindings)
+                HotkeyTiles(bindings: model.bindings, actions: actions)
             }
             if let refusal = model.captureRefusal {
                 RefusedCaptureNotice(message: refusal, openSettings: actions.openSettings,
@@ -82,16 +84,32 @@ struct PanelView: View {
     }
 }
 
-/// The two hotkeys as readouts on the fascia.
+/// The two hotkeys as readouts on the fascia, each saying what it does. Clicking one opens Settings at Hotkeys,
+/// where they are changed or swapped.
 struct HotkeyTiles: View {
     let bindings: HotkeyBindings
+    var actions = PanelActions()
 
     var body: some View {
         HStack(spacing: 8) {
-            ReadingTile("Capture and edit", value: bindings.combo(for: .captureAndEdit).display)
-            ReadingTile("To clipboard", value: bindings.combo(for: .captureToClipboard).display)
+            tile(.captureAndEdit, label: "Capture and edit", does: "Select, then mark it up")
+            tile(.captureToClipboard, label: "To clipboard", does: "Select, then it's copied")
         }
         .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func tile(_ action: HotkeyAction, label: String, does: String) -> some View {
+        let combo = bindings.combo(for: action).display
+        return Button(action: actions.openHotkeySettings) {
+            ReadingTile(label, value: combo) {
+                Text(does).lineLimit(1)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help("Change or swap the hotkeys in Settings")
+        .accessibilityLabel("\(action.title), \(combo). \(does). Opens Settings to change it.")
+        .reportingFrame("hotkey \(action.rawValue)", to: actions)
     }
 }
 
