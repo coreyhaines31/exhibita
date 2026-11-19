@@ -100,3 +100,16 @@ struct ModelDiscoveryTests {
         #expect(RecommendedModels.pick(from: [server(.ollama, [])]) == nil)
     }
 }
+
+/// The real transport refuses any host that is not this Mac before it sends anything.
+struct LoopbackTransportTests {
+    @Test func getAndPostRefuseOtherHosts() {
+        let transport = URLSessionModelTransport()
+        #expect(throws: ModelError.notLoopback("example.com")) {
+            try transport.get(URL(string: "http://example.com/api/tags")!, timeout: 1)
+        }
+        #expect(throws: ModelError.notLoopback("192.168.1.20")) {
+            try transport.post(URL(string: "http://192.168.1.20:11434/api/chat")!, body: Data(), timeout: 1)
+        }
+    }
+}
