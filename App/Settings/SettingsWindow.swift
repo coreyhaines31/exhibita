@@ -8,12 +8,17 @@ final class SettingsWindow {
     private let model: AppModel
     private let actions: SettingsActions
     private let refresh: () -> Void
+    private let policy: CapturePolicyModel?
+    private let policyActions: PolicyActions
     private var window: NSWindow?
     private var observer: NSObjectProtocol?
 
-    init(model: AppModel, actions: SettingsActions, refresh: @escaping () -> Void) {
+    init(model: AppModel, actions: SettingsActions, policy: CapturePolicyModel? = nil,
+         policyActions: PolicyActions = PolicyActions(), refresh: @escaping () -> Void) {
         self.model = model
         self.actions = actions
+        self.policy = policy
+        self.policyActions = policyActions
         self.refresh = refresh
     }
 
@@ -32,7 +37,8 @@ final class SettingsWindow {
     }
 
     private func makeWindow() -> NSWindow {
-        let controller = NSHostingController(rootView: SettingsView(model: model, actions: actions))
+        let controller = NSHostingController(rootView: SettingsView(model: model, actions: actions, policy: policy,
+                                                                    policyActions: policyActions))
         controller.sizingOptions = .preferredContentSize
         let window = NSWindow(contentViewController: controller)
         window.title = "\(Brand.name) Settings"

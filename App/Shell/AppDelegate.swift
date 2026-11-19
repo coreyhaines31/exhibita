@@ -1,5 +1,6 @@
 import AppKit
 import ExhibitEditor
+import ExhibitShell
 import ExhibitStore
 import os
 import PanelKit
@@ -35,7 +36,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Every document write for a capture the editor may have open goes through `OpenCaptures`.
         let editors = EditorWindows(model: model, captures: OpenCaptures(store: store))
         self.editors = editors
+        // The never-capture list and auto-blur, one file for people and agents alike.
+        let support = store.directory.deletingLastPathComponent()
+        let policy = CapturePolicyModel(file: CapturePolicyFile(supportDirectory: support))
         let capture = CaptureController(model: model, editors: editors)
+        capture.policy = { [snapshot = policy.snapshot] in snapshot.current }
         self.capture = capture
         let hotkeys = HotkeyCenter { [weak self] action in
             self?.refreshSystemState()
@@ -47,7 +52,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.hotkeys = hotkeys
 
         let actions = settingsActions(model: model, store: store)
-        let settingsWindow = SettingsWindow(model: model, actions: actions) { [weak self] in
+        let policyActions = PolicyActions(runningApps: { AppPicker.runningApps() },
+                                          chooseApp: { AppPicker.choose { policy.add($0) } })
+        let settingsWindow = SettingsWindow(model: model, actions: actions, policy: policy,
+                                            policyActions: policyActions) { [weak self] in
             self?.refreshSystemState()
         }
         self.settingsWindow = settingsWindow
