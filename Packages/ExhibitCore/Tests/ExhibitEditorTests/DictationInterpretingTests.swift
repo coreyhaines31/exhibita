@@ -23,22 +23,44 @@ import Testing
         #expect(dictation.editor.marks.isEmpty)
     }
 
-    /// The app looks for a model server the first time a model is needed; the session waits for that answer.
-    @Test func aModelFoundWhileTheInstructionWaitsIsUsed() async {
+    /// A model found only when needed: the grammar never waits on the lookup, and a declined instruction is
+    /// the only thing that starts it.
+    @Test func aBuiltInCommandNeverLooksForAModel() async {
         let answer = Interpretation(operations: [InterpretedOperation(mark: .blur, picks: [.id(fixture.emailID)])])
-        let model = FakeModel(.success(.understood(answer)))
+        let found = FakeModel(.success(.understood(answer)))
+        let lookups = Counter()
+        let lazy = LazyModelInterpreter {
+            await lookups.increment()
+            return found
+        }
         let dictation = DictationSession(editor: makeEditor(fixture), original: fixture.fixture.image,
-                                         transcriber: FakeTranscriber(), model: {
-                                             try? await Task.sleep(for: .milliseconds(50))
-                                             return model
-                                         })
-        dictation.submit("hide anything that identifies the customer")
-        await until { model.calls == 1 }
+                                         transcriber: FakeTranscriber(), model: { lazy })
+        dictation.submit("blur the emails")
         await dictation.settle()
+        #expect(await lookups.value == 0, "the grammar read it; nothing looked for a model")
+        guard case .applied(_, _, false) = dictation.editor.dictation else {
+            Issue.record("not applied by the grammar: \(String(describing: dictation.editor.dictation))")
+            return
+        }
+        dictation.submit("hide anything that identifies the customer")
+        await until { found.calls == 1 }
+        await dictation.settle()
+        #expect(await lookups.value == 1, "a declined instruction looked once")
         guard case .applied(_, _, true) = dictation.editor.dictation else {
             Issue.record("not applied by the model: \(String(describing: dictation.editor.dictation))")
             return
         }
+    }
+
+    @Test func aModelThatTurnsOutNotToExistNeedsAModel() async {
+        let lazy = LazyModelInterpreter { nil }
+        let dictation = DictationSession(editor: makeEditor(fixture), original: fixture.fixture.image,
+                                         transcriber: FakeTranscriber(), model: { lazy })
+        dictation.submit("hide anything that identifies the customer")
+        await dictation.settle()
+        #expect(dictation.editor.dictation == .needsModel(transcript: "hide anything that identifies the customer"))
+        #expect(dictation.editor.dictation?.link == .modelSettings)
+        #expect(dictation.editor.marks.isEmpty)
     }
 
     @Test func theModelIsAskedOnlyWhenTheGrammarDeclines() async {
@@ -179,4 +201,10 @@ import Testing
         await dictation.settle()
         #expect(dictation.editor.marks.map(\.kind) == [.circle])
     }
+}
+
+/// Counts calls from any task.
+actor Counter {
+    private(set) var value = 0
+    func increment() { value += 1 }
 }

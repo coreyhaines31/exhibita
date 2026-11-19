@@ -25,8 +25,8 @@ final class FreeFormSettings {
         Discovery(probes: ModelDiscovery.candidates.map { .notRunning($0.kind, $0.url) })
     }
 
-    /// A never-chosen setting with nothing found looks again on the next instruction only after this long, so the
-    /// built-in commands never wait on it twice in a row.
+    /// A never-chosen setting that found nothing looks again for an instruction that needs a model only after
+    /// this long; until then such an instruction says at once that it needs one.
     static let retryAfter: Duration = .seconds(30)
 
     var settings: ModelSettings {
@@ -78,13 +78,18 @@ final class FreeFormSettings {
         return task
     }
 
-    /// The interpreter for what the built-in commands decline, or nil when none is chosen or found. Never chosen
-    /// and nothing found yet: looks first (connection refused answers at once; one second at most), unless it
-    /// looked in the last `retryAfter`.
-    func interpreter() async -> (any Interpreter)? {
-        if settings.effectiveChoice == nil, discovery?.defaultChoice == nil,
-           discoveredAt.map({ ContinuousClock.now - $0 > Self.retryAfter }) ?? true,
-           let task = refresh() {
+    /// The model step for what the built-in commands decline, at once and without looking: the model in effect,
+    /// nil when None is chosen or nothing was found in the last `retryAfter`, or, when never chosen and nothing is
+    /// known yet, a `LazyModelInterpreter` that looks for a server on this Mac only if the grammar declines.
+    func interpreter() -> (any Interpreter)? {
+        guard settings.effectiveChoice == nil, discovery?.defaultChoice == nil else { return currentInterpreter() }
+        if let discoveredAt, ContinuousClock.now - discoveredAt <= Self.retryAfter { return nil }
+        return LazyModelInterpreter { [weak self] in await self?.lookThenInterpreter() }
+    }
+
+    /// Looks for a server (joining a look under way), then the model in effect.
+    private func lookThenInterpreter() async -> (any Interpreter)? {
+        if let task = refresh() {
             discovery = await task.value
             discoveredAt = .now
         }
