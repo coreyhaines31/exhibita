@@ -1,3 +1,4 @@
+import ExhibitShell
 import Foundation
 import Sparkle
 
@@ -10,11 +11,28 @@ final class Updater {
         return !key.isEmpty && !key.hasPrefix("REPLACE_WITH") && !TestSeam.isActive
     }
 
+    /// Started from `start()` once the app has launched, so the launch check can follow it at once, as Sparkle asks.
     private let controller = SPUStandardUpdaterController(
-        startingUpdater: Updater.isConfigured,
+        startingUpdater: false,
         updaterDelegate: nil,
         userDriverDelegate: nil
     )
+    private var started = false
+
+    /// Starts Sparkle, then looks for an update in the background when one is due (`UpdateCheckSchedule`): with
+    /// automatic checks on and the last check over an hour old. Nothing shows unless an update exists. Once per
+    /// launch; never under the test seam or with a placeholder key.
+    func start(now: Date = Date()) {
+        guard Self.isConfigured, !started else { return }
+        started = true
+        controller.startUpdater()
+        let updater = controller.updater
+        // Sparkle: call checkForUpdatesInBackground only immediately after starting, and only with automatic checks on.
+        if UpdateCheckSchedule.isDueAtLaunch(lastCheck: updater.lastUpdateCheckDate, now: now,
+                                             checksAutomatically: updater.automaticallyChecksForUpdates) {
+            updater.checkForUpdatesInBackground()
+        }
+    }
 
     var checksAutomatically: Bool {
         get { controller.updater.automaticallyChecksForUpdates }

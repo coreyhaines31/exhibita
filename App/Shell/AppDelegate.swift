@@ -26,6 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if TestSeam.isActive, !TestSeam.allowsCapture { ScreenRecording.forcedOff = true }
         PanelFont.register()
         if !TestSeam.isActive { LaunchAtLogin.applyDefault() }
+        updater.start()
 
         let store = CaptureStore(directory: (try? TestSeam.capturesDirectory())
             ?? FileManager.default.temporaryDirectory.appendingPathComponent("Exhibit A Captures"))
@@ -67,10 +68,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.refreshSystemState()
         }
         self.settingsWindow = settingsWindow
-        let statusItem = StatusItemController(model: model, actions: panelActions(model: model)) { [weak self] in
-            self?.refreshSystemState()
-            Task { await model.reload() }
-        }
+        let statusItem = makeStatusItem(model: model)
         self.statusItem = statusItem
         wire(capture, to: statusItem)
         editors.willOpen = { [weak statusItem] in statusItem?.close() }
@@ -127,6 +125,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let model else { return }
         model.permission = ScreenRecording.state
         model.updateSystemShortcuts(SystemShortcuts.read())
+    }
+
+    /// The menu bar item and its panel, which reads the system state and history again each time it opens.
+    private func makeStatusItem(model: AppModel) -> StatusItemController {
+        StatusItemController(model: model, actions: panelActions(model: model), updates: updater.settings) { [weak self] in
+            self?.refreshSystemState()
+            Task { await model.reload() }
+        }
     }
 
     private func panelActions(model: AppModel) -> PanelActions {
