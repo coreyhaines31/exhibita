@@ -340,17 +340,18 @@ final class CaptureTests: XCTestCase {
         policy.add(listed)
         defer { if !hadIt { policy.remove(listed) } }
 
+        // Only the window's visible part is black (issue 75): look inside the largest part other windows leave.
+        let patch = try XCTUnwrap(LiveCapture.visiblePatch(of: window, policy: policy.policy),
+                                  "some of the listed window shows")
         var known = before
         try await LiveCapture.start(.captureToClipboard)
         LiveCapture.key(Events.returnKey, in: try LiveCapture.panel(on: screen))
         let (item, _) = try await LiveCapture.waitForCapture(since: known)
         let image = try E2E.store.load(item.id).original
         let scale = Double(screen.backingScaleFactor)
-        // Only the window's visible part is black (issue 75); near its centre it is frontmost. The label sits on
-        // the centre line, so the patch is just above it.
         let display = LiveCapture.coreGraphicsFrame(of: screen)
-        let local = PixelRect(x: (point.x - display.minX - 40) * scale, y: (point.y - display.minY - 65) * scale,
-                              width: 80 * scale, height: 40 * scale)
+        let local = PixelRect(x: (patch.minX - display.minX) * scale, y: (patch.minY - display.minY) * scale,
+                              width: patch.width * scale, height: patch.height * scale)
         let black = LiveCapture.blackFraction(image, in: local)
         XCTAssertGreaterThan(black, 0.95, "the listed app's window is blacked out where it shows")
         print("E2E: never-capture window area \(String(format: "%.3f", black)) black")

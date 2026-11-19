@@ -161,6 +161,19 @@ enum LiveCapture {
         return nil
     }
 
+    /// A patch of `window` (global Core Graphics points) that no window in front of it covers, by the rule
+    /// `Blackout` uses: inside the largest visible part, near its top-left corner and clear of its centre line,
+    /// where the blackout label is drawn. Nil when nothing big enough shows.
+    static func visiblePatch(of window: WindowCandidate, policy: CapturePolicy) -> CGRect? {
+        let windows = WindowList.onScreen()
+        guard let index = windows.firstIndex(where: { $0.id == window.id }) else { return nil }
+        let infront = windows[..<index].filter { Blackout.covers($0, policy: policy) }.map(\.frame)
+        let parts = Blackout.visibleParts(of: window.frame, minus: infront)
+        guard let largest = parts.max(by: { $0.width * $0.height < $1.width * $1.height }),
+              largest.width >= 60, largest.height >= 100 else { return nil }
+        return CGRect(x: largest.minX + 8, y: largest.minY + 8, width: min(80, largest.width - 16), height: 30)
+    }
+
     /// A screen's frame in global Core Graphics points (top-left origin).
     static func coreGraphicsFrame(of screen: NSScreen) -> CGRect {
         CGRect(x: screen.frame.minX, y: mainDisplayHeight - screen.frame.maxY,
