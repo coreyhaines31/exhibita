@@ -26,7 +26,7 @@ public final class DictationSession {
 
     @ObservationIgnored private let original: CGImage
     @ObservationIgnored private let transcriber: (any SpeechTranscribing)?
-    @ObservationIgnored private let model: @MainActor () async -> (any Interpreter)?
+    @ObservationIgnored private let model: @MainActor () -> (any Interpreter)?
     @ObservationIgnored private var pointer: PixelPoint?
     @ObservationIgnored private var listening: Task<Void, Never>?
     @ObservationIgnored private var working: Task<Void, Never>?
@@ -36,11 +36,12 @@ public final class DictationSession {
     /// From releasing D (or pressing ↩ in the typed field) to the marks being applied, for the 1.5 s budget.
     @ObservationIgnored public private(set) var lastReleaseToMarks: Duration?
 
-    /// `model` is asked for each instruction and returns nil when no model is set up or chosen. It may wait
-    /// briefly, as the app's does to look for a model server on this Mac the first time one is needed.
+    /// `model` is asked for each instruction, at once, and returns nil when no model is set up or chosen. It
+    /// never waits: anything slow to find (the app's `LazyModelInterpreter`) happens only when the grammar
+    /// declines, and a model that turns out not to exist (`ModelUnavailable`) reads as "needs a model".
     /// `transcriber` is nil when this Mac has no usable speech at all.
     public init(editor: CaptureEditor, original: CGImage, transcriber: (any SpeechTranscribing)?,
-                model: @escaping @MainActor () async -> (any Interpreter)? = { nil }) {
+                model: @escaping @MainActor () -> (any Interpreter)? = { nil }) {
         self.editor = editor
         self.original = original
         self.transcriber = transcriber
@@ -249,8 +250,7 @@ public final class DictationSession {
 
     private func work(_ request: InterpretRequest) async {
         let text = request.instruction
-        let model = await model()
-        guard !closed, !Task.isCancelled else { return }
+        let model = model()
         // With no model to try next, a name the screen does not show is reported as not found beside what was
         // done; with one, the grammar declines so the model can read it, as `exhibit say` does.
         var interpretation = GrammarInterpreter.interpret(request, unknownNames: model == nil ? .reportNotFound : .decline)
@@ -261,6 +261,9 @@ public final class DictationSession {
             show(.interpreting(transcript: text, usingModel: true))
             do {
                 interpretation = try await model.interpret(request).interpretation
+            } catch is ModelUnavailable {
+                guard !closed, !Task.isCancelled else { return }
+                return finish(.needsModel(transcript: text))
             } catch {
                 guard !closed, !Task.isCancelled else { return }
                 return finish(.modelFailed(transcript: text, reason: Self.reason(for: error)))
