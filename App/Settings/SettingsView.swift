@@ -44,8 +44,20 @@ struct SettingsView: View {
     var updates = UpdateSettings()
     var commandLine = CommandLineTool.app
     var navigation = SettingsNavigation()
+    /// True sizes the view to all of its content, for renders. The window passes false: it caps its height to
+    /// the screen and the form scrolls inside it.
+    var fitsContent = true
 
     static let width: CGFloat = 540
+    static let preferredWindowHeight: CGFloat = 720
+    static let minimumWindowHeight: CGFloat = 360
+
+    /// The window's content height on a screen whose visible area is `screenHeight` tall: the preferred height,
+    /// or less so the title bar and a margin still fit.
+    static func windowHeight(onScreenOfHeight screenHeight: CGFloat?) -> CGFloat {
+        guard let screenHeight else { return preferredWindowHeight }
+        return max(minimumWindowHeight, min(preferredWindowHeight, screenHeight - 80))
+    }
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -75,6 +87,6 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .frame(width: Self.width)
-        .fixedSize(horizontal: false, vertical: true)
+        .fixedSize(horizontal: false, vertical: fitsContent)
     }
 }

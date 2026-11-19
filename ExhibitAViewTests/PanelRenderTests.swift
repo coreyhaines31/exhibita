@@ -298,3 +298,29 @@ final class PanelRenderTests: XCTestCase {
         print("Rendered \(url.path)")
     }
 }
+
+extension PanelRenderTests {
+    /// The window's view, at the height the window takes on a laptop screen: the form scrolls inside it instead of
+    /// making the window taller than the screen.
+    func testSettingsFitTheScreen() throws {
+        XCTAssertEqual(SettingsView.windowHeight(onScreenOfHeight: 848), 720)
+        XCTAssertEqual(SettingsView.windowHeight(onScreenOfHeight: 600), 520)
+        XCTAssertEqual(SettingsView.windowHeight(onScreenOfHeight: 300), SettingsView.minimumWindowHeight)
+        XCTAssertEqual(SettingsView.windowHeight(onScreenOfHeight: nil), SettingsView.preferredWindowHeight)
+
+        let model = try makeModel()
+        let size = NSSize(width: SettingsView.width, height: SettingsView.windowHeight(onScreenOfHeight: 600))
+        let hosting = NSHostingView(rootView: SettingsView(model: model, actions: SettingsActions(),
+                                                           drawsRecorders: false, fitsContent: false)
+            .background(Color(nsColor: .windowBackgroundColor)))
+        hosting.sizingOptions = []
+        hosting.appearance = NSAppearance(named: .aqua)
+        hosting.frame = NSRect(origin: .zero, size: size)
+        hosting.layoutSubtreeIfNeeded()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+        XCTAssertEqual(hosting.frame.size, size, "the form does not force the window taller")
+        let rep = try XCTUnwrap(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
+        hosting.cacheDisplay(in: hosting.bounds, to: rep)
+        try write(try XCTUnwrap(rep.cgImage), to: "settings-window-light")
+    }
+}
