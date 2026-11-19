@@ -29,6 +29,9 @@ final class BootTests: XCTestCase {
         XCTAssertNotEqual(E2E.model.permission, .granted)
         XCTAssertEqual(E2E.model.content, .permission(E2E.model.permission))
         XCTAssertFalse(statusItem.isShown)
+        let folder = try FileManager.default.contentsOfDirectory(atPath: E2E.store.directory.path)
+        XCTAssertTrue(folder.contains(".metadata_never_index"), "Spotlight skips the captures folder: \(folder)")
+        XCTAssertTrue(E2E.store.isExcludedFromBackup, "Time Machine skips it")
 
         E2E.app.hotkeyPressed(.captureAndEdit)
         await E2E.wait("the permission panel") { statusItem.isShown }
