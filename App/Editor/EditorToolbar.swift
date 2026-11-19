@@ -253,13 +253,16 @@ private struct StatusStrip: View {
                 // A message that asks for something takes the room of the less used finishing keys; ⌘S and ⇧⌘C
                 // still work, and the keys come back with the next action.
                 FinishKey(keys: "\u{2192}", title: link.title) { actions.openLink(link) }
-                FinishKey(keys: keys.display(for: .copyAndClose), title: "Copy", action: actions.copyAndClose)
+                FinishKey(keys: keys.display(for: .copyAndClose), icon: "doc.on.doc", title: "Copy",
+                          action: actions.copyAndClose)
             } else {
-                FinishKey(keys: keys.display(for: .copyAndClose), title: "Copy", action: actions.copyAndClose)
-                FinishKey(keys: keys.display(for: .save), title: "Save", action: actions.save)
-                FinishKey(keys: keys.display(for: .copyPath), title: "Path", action: actions.copyPath)
+                FinishKey(keys: keys.display(for: .copyAndClose), icon: "doc.on.doc", title: "Copy",
+                          action: actions.copyAndClose)
+                FinishKey(keys: keys.display(for: .save), icon: "square.and.arrow.down", title: "Save",
+                          action: actions.save)
+                FinishKey(keys: keys.display(for: .copyPath), icon: "link", title: "Path", action: actions.copyPath)
             }
-            FinishKey(keys: keys.display(for: .close), title: "Close", action: actions.close)
+            FinishKey(keys: keys.display(for: .close), icon: "xmark", title: "Close", action: actions.close)
         }
         .padding(.horizontal, 7)
         .frame(height: 24)
@@ -356,9 +359,10 @@ private struct InstructionField: View {
     }
 }
 
-/// A finishing key in the status strip: the keys on a small plate, then what they do.
+/// A finishing key in the status strip: the keys on a small plate, then an icon and what they do.
 private struct FinishKey: View {
     let keys: String
+    var icon: String?
     let title: String
     let action: () -> Void
 
@@ -373,6 +377,11 @@ private struct FinishKey: View {
                     .padding(.horizontal, 4)
                     .padding(.vertical, 1)
                     .background(theme.plate, in: RoundedRectangle(cornerRadius: 2))
+                if let icon {
+                    Image(systemName: icon)
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(theme.ink2)
+                }
                 Text(title.uppercased())
                     .font(PanelFont.condensed(9.5, .semibold))
                     .tracking(0.5)
