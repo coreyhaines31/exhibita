@@ -65,6 +65,22 @@ import Testing
         #expect(!editor.canUndo)
     }
 
+    @Test func aBlurOnPartOfALineCoversTheWholeLine() throws {
+        let fixture = EditorFixture()
+        let editor = makeEditor(fixture)
+        let renews = fixture.renewsID
+        let narrow = Interpretation(operations: [
+            InterpretedOperation(mark: .blur, picks: [.part(renews, start: 0, length: 6)]),
+            InterpretedOperation(mark: .circle, picks: [.part(renews, start: 0, length: 6)])
+        ])
+        _ = editor.apply(narrow, original: fixture.fixture.image)
+        let line = fixture["renews"]
+        let blur = try #require(editor.marks.first { $0.kind == .blur })
+        #expect(blur.bounds.covers(line), "the blur covers the whole line")
+        let circle = try #require(editor.marks.first { $0.kind == .circle })
+        #expect(circle.bounds.width < line.width, "other marks still go on the phrase")
+    }
+
     @Test func nothingFoundChangesNothing() throws {
         let fixture = EditorFixture()
         let editor = makeEditor(fixture)
