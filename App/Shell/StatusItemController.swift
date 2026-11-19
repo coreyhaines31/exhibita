@@ -70,10 +70,14 @@ final class StatusItemController {
         popover.performClose(nil)
     }
 
+    /// How many times `flash` has run, for the end-to-end tests.
+    private(set) var flashes = 0
+
     /// Blinks the glyph twice, so a person sees that an agent just captured the screen. Changes only the
     /// button's opacity: nothing activates and focus stays where it is.
     func flash() {
         guard let button = item.button else { return }
+        flashes += 1
         Task { @MainActor in
             for _ in 0..<2 {
                 button.alphaValue = 0.2
