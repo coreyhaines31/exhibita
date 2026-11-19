@@ -2,7 +2,7 @@
 
 For maintainers. Exhibit A ships the way its siblings do: a notarized DMG on a GitHub release, Sparkle updates from the appcast attached to that release, and a cask in `coreyhaines31/homebrew-tap`. `Scripts/release.sh` is modelled on Kill Cord's and Fuel Gauge's.
 
-Signing, notarization and publication have never been run for Exhibit A. Only `--dry-run` has. The first real release is also the rehearsal: run it without `--publish` so it stops at the prompt, check the DMG on a second Mac (`docs/product/unit10-live-checklist.md`), then publish.
+0.1.0 was signed, notarized and published this way on 2026-11-19. Updating from a previous build has not been exercised yet (there was no previous build); check it with the next release (`docs/product/unit10-live-checklist.md`).
 
 ## Cutting a release
 
@@ -58,7 +58,7 @@ Runs everything local: the preflight (branch, clean tree and Sparkle key become 
   It prints the public key. Put it in `project.yml` as `SPARKLE_PUBLIC_ED_KEY` (replacing `REPLACE_WITH_SPARKLE_PUBLIC_ED_KEY`) and commit that on `development`. Run `generate_keys --account exhibita -p` later to print it again. Never use another app's account, and never export the private key into the repo. Until the key is set, the updater never starts and Check for Updates is disabled.
 - **Developer ID.** Xcode signed in to team `KPQU8X839X` (Settings, Accounts), as for the siblings, or `ASC_KEY_PATH`, `ASC_KEY_ID` and `ASC_ISSUER_ID` for an App Store Connect API key. The bundle ids `com.exhibitaformac.ExhibitA` and `com.exhibitaformac.ExhibitA.CLI` need no registration for Developer ID; cloud signing creates what it needs on first export.
 - **Notarization.** The siblings share one notarytool profile, `midnightoil-notary`, which the script uses by default. Confirm it exists with `xcrun notarytool history --keychain-profile midnightoil-notary`. Pass `NOTARY_PROFILE=<name>` to use another.
-- **Where the appcast is served.** The app checks `https://github.com/coreyhaines31/exhibita/releases/latest/download/appcast.xml`. GitHub serves release assets anonymously only from public repos, and `coreyhaines31/exhibita` is private, so before the first release either make the repo public (as every sibling is; the license is FSL-1.1-MIT, free and source available) or choose another public host for the DMG and appcast and change `SUFeedURL`, the cask `url` and the script's `--download-url-prefix` together. The Homebrew cask has the same need.
+- **Where the appcast is served.** The app checks `https://github.com/coreyhaines31/exhibita/releases/latest/download/appcast.xml`. GitHub serves release assets anonymously only from public repos, so the repo is public (since 0.1.0), as every sibling is. The Homebrew cask has the same need.
 - **GitHub CLI.** `gh` signed in with push access to this repo and `coreyhaines31/homebrew-tap`.
 - **Branch protection.** None: no sibling protects `main`. Releases come from `main`, which only takes merges from `development`.
 - **App icon.** `App/Assets.xcassets/AppIcon`, the exhibit plate, rendered from mac-app-kit's `icons/exhibit`. The menu bar glyph is drawn in code (`App/Shell/Glyph.swift`) from mac-app-kit's `glyphs/exhibit`.

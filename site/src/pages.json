@@ -2,9 +2,9 @@
   {
     "path": "index.html",
     "title": "Exhibit A: Screenshot Markup for Mac, Free",
-    "description": "Exhibit A is a free Mac menu bar screenshot tool: mark up a capture with single keys, a spoken sentence, or one command from an agent. Coming soon.",
+    "description": "Exhibit A is a free Mac menu bar screenshot tool: mark up a capture with single keys, a spoken sentence, or one command from an agent. For macOS 14 or later.",
     "og_title": "Exhibit A: mark up a screenshot in a few keystrokes",
-    "og_description": "Seven marks on seven keys, plain-spoken instructions, and an exhibit command and MCP server for agents. Secrets blur for good. Free for macOS, coming soon.",
+    "og_description": "Seven marks on seven keys, plain-spoken instructions, and an exhibit command and MCP server for agents. Secrets blur for good. Free for macOS 14 or later.",
     "body_class": "home",
     "updated": "2026-11-18"
   },

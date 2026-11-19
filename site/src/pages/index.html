@@ -5,9 +5,11 @@
       <h1 id="hero-title">Mark up a screenshot <span>in a few keystrokes.</span></h1>
       <p class="bx-lede">Exhibit A is a menu bar screenshot tool. Press one key per mark, say what you want changed, or let an agent do it with one command. Emails, keys and card numbers blur so the pixels underneath are gone from the file.</p>
       <div class="bx-cta">
-        <span class="bx-btn soon-btn">Coming soon</span>
-        <a class="bx-btn sec" href="#agents">See the command line <span aria-hidden="true">↓</span></a>
+        <a class="bx-btn" href="{{download_url}}">Download for Mac <span aria-hidden="true">↓</span></a>
+        <a class="bx-btn sec" href="https://github.com/coreyhaines31/exhibita">View source <span aria-hidden="true">↗</span></a>
       </div>
+      <p class="brew-label">Or install with Homebrew</p>
+      <pre class="bx-code brew"><code>brew install --cask coreyhaines31/tap/exhibit-a</code></pre>
       <p class="bx-meta">Free with no account · Captures stay on your Mac · macOS 14 Sonoma or later</p>
     </div>
     <figure class="stage" aria-labelledby="stage-caption">
@@ -15,7 +17,7 @@
         <span class="bx-screw"></span><span class="bx-screw"></span><span class="bx-screw"></span><span class="bx-screw"></span>
         <picture>
           <source srcset="/shots/editor-applied-dark.webp" media="(prefers-color-scheme: dark)">
-          <img class="shot" src="/shots/editor-applied-light.webp" alt="The Exhibit A editor: a metal toolbar with one key per mark, a status line reading Blurred 1 email, circled Update plan, and a billing page with the email blurred and the Update plan button circled in red." width="1200" height="763">
+          <img class="shot" src="/shots/editor-applied-light.webp" alt="The Exhibit A editor: a metal toolbar with one key per mark, a status line reading Blurred 1 email, circled Update plan, and a billing page with the email blurred and the Update plan button circled in red." width="1200" height="700">
         </picture>
       </div>
       <figcaption id="stage-caption">The editor after “blur the emails and circle update plan”, rendered from the app’s code on a sample screen.</figcaption>
@@ -154,32 +156,19 @@ exhibit mcp</code></pre>
   </div>
 </section>
 
-<section class="bx-section" id="why">
-  <div class="bx-wrap">
-    <div class="bx-maker">
-      <img src="/corey-152.webp" srcset="/corey-76.webp 1x, /corey-152.webp 2x, /corey-228.webp 3x" alt="Corey Haines" width="76" height="76">
-      <div>
-        <span class="bx-strip">Why it exists</span>
-        <p>I share marked-up screenshots all day, and so do the agents working on my Mac. Every time it was the same routine: take the shot, open Markup, hunt for the arrow, and still no quick way to hide an email. When an agent wanted to show me something, it couldn’t point at all. So I built the app I wanted: one key per mark, a sentence when that’s faster, and a command an agent can run. And it’s free.</p>
-        <cite>Corey Haines, maker of Exhibit A and <a href="#apps">more free Mac apps</a></cite>
-      </div>
-    </div>
-  </div>
-</section>
-
 <section class="bx-section" id="faq" aria-labelledby="faq-title">
   <div class="bx-wrap">
     <span class="bx-eyebrow">Questions</span>
-    <h2 id="faq-title">Before it ships.</h2>
+    <h2 id="faq-title">Before you install.</h2>
     <div class="bx-faq faq-list">
-      <details><summary>When can I get it?</summary><p>Exhibit A isn’t released yet. It’s built and unit tested, and still needs checking on a real Mac before the first release. The download will be on this page when it ships.</p></details>
+      <details><summary>How do I get it?</summary><p>Download the DMG from this page, or run <code>brew install --cask coreyhaines31/tap/exhibit-a</code>. It needs macOS 14 Sonoma or later, and checks for updates itself.</p></details>
       <details><summary>What permissions does it need?</summary><p>Screen Recording, once, to take captures. The microphone and speech recognition only the first time you hold D. The <code>exhibit</code> command never has or asks for a permission; live captures come from the app.</p></details>
       <details><summary>Can someone recover what I blurred?</summary><p>Not from an exported file. It’s flat pixels, and the blur is built only from pixels outside the blurred area. In the editor, marks stay editable until you export, so you can still move or remove a blur.</p></details>
       <details><summary>Does voice need the internet?</summary><p>No. Speech is turned into text on your Mac, never on a server. The first time, macOS may need to download its speech model.</p></details>
       <details><summary>Do I need an AI model?</summary><p>No. The built-in grammar handles plain commands like “blur the emails” or “circle Pricing”. Free-form requests need a model server you run on this Mac, set up in Settings. Exhibit A only accepts an address on this Mac.</p></details>
       <details><summary>What does an agent get to see?</summary><p>The capture with detected secrets already blurred (a Settings switch), and text read from the screen marked as data, not instructions. Detection is pattern matching, so it can miss things. Never-capture apps are never in the image.</p></details>
       <details><summary>How long are captures kept?</summary><p>30 days by default, so marks stay editable. Retention is a setting, including deleting a capture once you export it, and you can purge history at any time.</p></details>
-      <details><summary>What does it cost?</summary><p>Nothing. Exhibit A is free with no account. The source is available under the Functional Source License (FSL-1.1-MIT), and each version becomes MIT two years after release.</p></details>
+      <details><summary>What does it cost?</summary><p>Nothing. Exhibit A is free with no account. The source is on GitHub under the Functional Source License (FSL-1.1-MIT), and each version becomes MIT two years after release.</p></details>
     </div>
   </div>
 </section>
@@ -188,11 +177,14 @@ exhibit mcp</code></pre>
   <div class="bx-wrap get-grid">
     <div>
       <span class="bx-eyebrow">Get Exhibit A</span>
-      <h2 id="install-title">Coming soon.</h2>
-      <p class="bx-intro">Free, with no account and no subscription. It needs macOS 14 Sonoma or later. The download and a Homebrew cask arrive with the first release.</p>
+      <h2 id="install-title">Press the hotkey. Mark it. Press Return.</h2>
+      <p class="bx-intro">Free, with no account and no subscription. It needs macOS 14 Sonoma or later. Open the DMG and drag Exhibit A to Applications, or install it with Homebrew.</p>
       <div class="bx-cta">
-        <span class="bx-btn soon-btn">Coming soon</span>
+        <a class="bx-btn" href="{{download_url}}">Download for Mac <span aria-hidden="true">↓</span></a>
+        <a class="bx-btn sec" href="https://github.com/coreyhaines31/exhibita">View source <span aria-hidden="true">↗</span></a>
       </div>
+      <p class="brew-label">Or install with Homebrew</p>
+      <pre class="bx-code brew"><code>brew install --cask coreyhaines31/tap/exhibit-a</code></pre>
     </div>
     <div class="bx-mount get-mount" aria-hidden="true">
       <span class="bx-screw"></span><span class="bx-screw"></span><span class="bx-screw"></span><span class="bx-screw"></span>

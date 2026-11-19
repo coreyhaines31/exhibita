@@ -16,8 +16,8 @@ img {max-width: 100%; height: auto}
 .fine {font-size: 14px; color: var(--bx-muted); line-height: 1.55; margin-top: 16px}
 .bx-btn span {line-height: 1}
 /* Not released yet: the primary button is a label, not a link. */
-.soon-btn {cursor: default; opacity: .78}
-.soon-btn:hover {filter: none}
+.brew-label {margin-top: 18px; font: 600 12px/1 var(--bx-display); letter-spacing: .2em; text-transform: uppercase; color: var(--bx-muted)}
+.brew {margin: 8px 0 0; width: fit-content}
 
 /* Header: transparent over the homepage hero, brushed elsewhere */
 .site-header {background: var(--bx-brush); border-bottom: 1px solid rgba(0,0,0,.25)}
@@ -121,6 +121,8 @@ img {max-width: 100%; height: auto}
 @media (max-width: 420px) {
   .stage-mount {padding: 12px}
   .keys {grid-template-columns: minmax(0, 1fr)}
+  .brew {width: 100%; padding-inline: 10px}
+  .brew code {font-size: .85em}
 }
 
 .bx-card .bx-strip, .bx-card .bx-led {justify-self: start}
