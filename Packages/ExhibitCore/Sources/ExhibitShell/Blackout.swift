@@ -4,8 +4,8 @@ import ExhibitCore
 import Foundation
 
 /// Never-capture windows inside a region or screen capture. ScreenCaptureKit leaves their windows out of the
-/// image; these are the areas they covered, drawn black with a label saying why, so nothing that was behind them
-/// shows through either.
+/// image; these are the visible areas they covered, drawn black with a label saying why, so nothing that was
+/// behind them shows through either. Where another window was in front of one, that window shows as it was.
 public enum Blackout {
     public struct Region: Equatable, Sendable {
         public var rect: PixelRect
@@ -17,31 +17,88 @@ public enum Blackout {
         }
     }
 
-    /// The never-capture windows among `windows`, as pixel regions of a capture of `captureRect`.
+    /// The visible parts of the never-capture windows among `windows`, as pixel regions of a capture of
+    /// `captureRect`.
     ///
-    /// `windows` and `captureRect` are in the same global top-left point space (ScreenCaptureKit's window and
-    /// display frames). Each window's whole frame is blacked out, even where another window covers part of it:
-    /// covering too much is safe, too little is not. Rects are grown outward to whole pixels and clipped to the
-    /// image; windows outside the capture are dropped.
+    /// `windows` are every window on screen, front to back, and `captureRect` is in the same global top-left point
+    /// space (ScreenCaptureKit's window and display frames). ScreenCaptureKit already leaves a never-capture app's
+    /// pixels out of the image; the black marks where its windows were. So each listed window is blacked out only
+    /// where no window in front of it covers it (`covers`): what such a window shows is its own content, never the
+    /// listed app's. A listed window whose place in the order is unknown goes last, so nothing covers it. A window
+    /// with nothing visible gives no region. Rects are grown outward to whole pixels and clipped to the image;
+    /// parts outside the capture are dropped. `notInImage` names the apps left out of this image (Exhibit A in an
+    /// agent's capture): their windows cover nothing.
     public static func regions(windows: [WindowCandidate], policy: CapturePolicy, captureRect: CGRect,
-                               pixelSize: PixelSize) -> [Region] {
+                               pixelSize: PixelSize, notInImage: Set<Int32> = []) -> [Region] {
         guard captureRect.width > 0, captureRect.height > 0, pixelSize.width > 0, pixelSize.height > 0 else {
             return []
         }
         let scaleX = Double(pixelSize.width) / captureRect.width
         let scaleY = Double(pixelSize.height) / captureRect.height
         let image = CGRect(x: 0, y: 0, width: pixelSize.width, height: pixelSize.height)
-        return windows.compactMap { window in
-            let subject = CaptureSubject(bundleIdentifier: window.bundleIdentifier, appName: window.ownerName)
-            guard case .blackOut(let reason) = policy.decision(for: subject) else { return nil }
-            let local = CGRect(x: (window.frame.minX - captureRect.minX) * scaleX,
-                               y: (window.frame.minY - captureRect.minY) * scaleY,
-                               width: window.frame.width * scaleX, height: window.frame.height * scaleY)
-            let clipped = local.integral.intersection(image)
-            guard !clipped.isNull, clipped.width > 0, clipped.height > 0 else { return nil }
-            return Region(rect: PixelRect(x: clipped.minX, y: clipped.minY, width: clipped.width,
-                                          height: clipped.height), reason: reason)
+        var regions: [Region] = []
+        for (index, window) in windows.enumerated() {
+            guard case .blackOut(let reason) = policy.decision(for: subject(of: window)) else { continue }
+            let infront = windows[..<index].filter { covers($0, policy: policy, notInImage: notInImage) }.map(\.frame)
+            for part in visibleParts(of: window.frame, minus: infront) {
+                let local = CGRect(x: (part.minX - captureRect.minX) * scaleX, y: (part.minY - captureRect.minY) * scaleY,
+                                   width: part.width * scaleX, height: part.height * scaleY)
+                let clipped = local.integral.intersection(image)
+                guard !clipped.isNull, clipped.width > 0, clipped.height > 0 else { continue }
+                regions.append(Region(rect: PixelRect(x: clipped.minX, y: clipped.minY, width: clipped.width,
+                                                      height: clipped.height), reason: reason))
+            }
         }
+        return regions
+    }
+
+    /// Whether `window` hides what is behind it in the image, so a never-capture window under it needs no black
+    /// there. Only an ordinary window counts: layer 0 (not a menu, popover, panel, overlay or shadow layer), fully
+    /// opaque to the window server, shared with screen capture, and in the image (not a never-capture app's, not
+    /// one of `notInImage`). Anything else may let the area behind it show, so the black stays.
+    public static func covers(_ window: WindowCandidate, policy: CapturePolicy, notInImage: Set<Int32> = []) -> Bool {
+        window.layer == 0 && window.alpha >= 1 && window.isShared && !notInImage.contains(window.ownerPID)
+            && policy.entry(for: subject(of: window)) == nil
+    }
+
+    /// `frame` minus every rect in `covers`, as non-overlapping rects. Empty when nothing is left.
+    public static func visibleParts(of frame: CGRect, minus covers: [CGRect]) -> [CGRect] {
+        var parts = [frame.standardized]
+        for cover in covers {
+            parts = parts.flatMap { subtract(cover.standardized, from: $0) }
+            if parts.isEmpty { break }
+        }
+        return parts
+    }
+
+    /// Each reason once, in the order the regions give them: one per never-capture app shown, not per piece.
+    public static func reasons(_ regions: [Region]) -> [String] {
+        var seen = Set<String>()
+        return regions.map(\.reason).filter { seen.insert($0).inserted }
+    }
+
+    private static func subject(of window: WindowCandidate) -> CaptureSubject {
+        CaptureSubject(bundleIdentifier: window.bundleIdentifier, appName: window.ownerName)
+    }
+
+    /// `rect` minus `cover`: the bands above and below the overlap at full width, then left and right of it.
+    private static func subtract(_ cover: CGRect, from rect: CGRect) -> [CGRect] {
+        let overlap = rect.intersection(cover)
+        guard !overlap.isNull, overlap.width > 0, overlap.height > 0 else { return [rect] }
+        var pieces: [CGRect] = []
+        if overlap.minY > rect.minY {
+            pieces.append(CGRect(x: rect.minX, y: rect.minY, width: rect.width, height: overlap.minY - rect.minY))
+        }
+        if overlap.maxY < rect.maxY {
+            pieces.append(CGRect(x: rect.minX, y: overlap.maxY, width: rect.width, height: rect.maxY - overlap.maxY))
+        }
+        if overlap.minX > rect.minX {
+            pieces.append(CGRect(x: rect.minX, y: overlap.minY, width: overlap.minX - rect.minX, height: overlap.height))
+        }
+        if overlap.maxX < rect.maxX {
+            pieces.append(CGRect(x: overlap.maxX, y: overlap.minY, width: rect.maxX - overlap.maxX, height: overlap.height))
+        }
+        return pieces
     }
 
     /// The label drawn on a region.

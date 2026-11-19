@@ -12,9 +12,13 @@ public struct WindowCandidate: Equatable, Sendable {
     public var ownerName: String?
     public var title: String?
     public var bundleIdentifier: String?
+    /// The window's opacity as the window server applies it (`kCGWindowAlpha`), 0 to 1.
+    public var alpha: Double
+    /// False for a window its app keeps out of screen capture (`kCGWindowSharingState` none).
+    public var isShared: Bool
 
     public init(id: UInt32, frame: CGRect, layer: Int, ownerPID: Int32, ownerName: String? = nil,
-                title: String? = nil, bundleIdentifier: String? = nil) {
+                title: String? = nil, bundleIdentifier: String? = nil, alpha: Double = 1, isShared: Bool = true) {
         self.id = id
         self.frame = frame
         self.layer = layer
@@ -22,6 +26,8 @@ public struct WindowCandidate: Equatable, Sendable {
         self.ownerName = ownerName
         self.title = title
         self.bundleIdentifier = bundleIdentifier
+        self.alpha = alpha
+        self.isShared = isShared
     }
 }
 
