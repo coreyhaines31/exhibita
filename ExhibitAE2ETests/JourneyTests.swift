@@ -24,6 +24,14 @@ final class JourneyTests: XCTestCase {
         XCTAssertTrue(editor.window.isKeyWindow, "the editor takes the keys")
         XCTAssertTrue(NSApp.isActive)
         XCTAssertEqual(editor.map.pointsPerPixel, 0.5, accuracy: 0.001, "a 2x capture shows at its own points")
+        // Regression: the content honoured the title bar's safe area, so the toolbar sat under a blank band and the
+        // window was a title bar taller than the layout; and the divider's point was left out of the height.
+        let layoutSize = EditorLayout.contentSize(pixelSize: CGSize(width: fixture.image.width,
+                                                                  height: fixture.image.height), pointsPerPixel: 0.5)
+        XCTAssertEqual(editor.window.contentView?.bounds.size, layoutSize, "the window is the layout's size")
+        let canvasTop = try XCTUnwrap(controller.canvas.frameInWindow).minY
+        XCTAssertEqual(canvasTop, EditorLayout.toolbarHeight + EditorLayout.dividerHeight + EditorLayout.mountPadding,
+                       accuracy: 0.01, "the toolbar starts at the top, under the title bar")
 
         let email = try editor.target(.email)
         let button = try editor.target(containing: "Update plan")

@@ -170,8 +170,13 @@ final class EditorWindowController: NSObject, NSWindowDelegate {
                                     openLink: { [weak self] in self?.open($0) })
         let view = EditorView(editor: editor, canvas: canvas, actions: actions, pointsPerPixel: pointsPerPixel,
                               dictation: dictation)
-        window.contentView = NSHostingView(rootView: view)
-        window.setContentSize(size)
+        let hosting = NSHostingView(rootView: view)
+        // The window's size comes from `EditorLayout`, not from SwiftUI, whose sizing adds the title bar again.
+        hosting.sizingOptions = []
+        window.contentView = hosting
+        // The content spans the whole frame, title bar included (the toolbar sits under it), so the frame is the
+        // size. `setContentSize` would add a title bar's height on top.
+        window.setFrame(NSRect(origin: .zero, size: size), display: false)
         // Centred on the display the capture came from.
         let frame = window.frame
         window.setFrameOrigin(NSPoint(x: visible.midX - frame.width / 2, y: visible.midY - frame.height / 2))
