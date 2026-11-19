@@ -99,43 +99,6 @@ enum Events {
     }
 }
 
-/// Where things are on screen, found through the real views' accessibility elements (in process, no permission).
-@MainActor
-enum Locate {
-    /// Every accessibility element under `root`, depth first.
-    static func elements(under root: Any) -> [NSObject & NSAccessibilityProtocol] {
-        var found: [NSObject & NSAccessibilityProtocol] = []
-        var queue: [Any] = [root]
-        var seen = 0
-        while let next = queue.popLast(), seen < 5000 {
-            seen += 1
-            guard let element = next as? NSObject & NSAccessibilityProtocol else { continue }
-            found.append(element)
-            if let children = element.accessibilityChildren() { queue.append(contentsOf: children) }
-        }
-        return found
-    }
-
-    /// The frame, in window coordinates, of the first element whose label matches.
-    static func frame(labelled match: (String) -> Bool, in window: NSWindow) -> NSRect? {
-        frames(labelled: match, in: window).first
-    }
-
-    static func frames(labelled match: (String) -> Bool, in window: NSWindow) -> [NSRect] {
-        guard let root = window.contentView else { return [] }
-        return elements(under: root).compactMap { element in
-            guard let label = element.accessibilityLabel(), match(label) else { return nil }
-            return window.convertFromScreen(element.accessibilityFrame())
-        }
-    }
-
-    /// Every label under the window, for failure messages.
-    static func labels(in window: NSWindow) -> [String] {
-        guard let root = window.contentView else { return [] }
-        return elements(under: root).compactMap { $0.accessibilityLabel() }.filter { !$0.isEmpty }
-    }
-}
-
 /// Image pixels (top-left origin) to window points, through the frame the editor's canvas was laid out at.
 @MainActor
 struct CanvasMap {

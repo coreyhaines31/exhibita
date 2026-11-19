@@ -34,23 +34,32 @@ final class PanelTests: XCTestCase {
         }
 
         func click(_ name: String, count: Int = 1) async throws {
-            // A transient popover closes when the app stops being active (a real click on the menu bar item
-            // activates it; calling `show()` does not), so open it again if it went.
-            if !controller.isShown {
-                controller.show()
-                await E2E.wait("the panel again") { controller.isShown }
-                await E2E.settle(300)
-            }
-            XCTAssertTrue(window.isVisible, "the panel is up")
+            try await PanelTests.ensureShown(controller)
             Events.click(at: try center(of: name), in: window, count: count)
             await E2E.settle(350)
         }
     }
 
+    /// A transient popover closes when the app stops being active, as it does just after an editor closes. A real
+    /// click on the menu bar item brings the app forward; `show()` alone does not, so the test does both, and
+    /// shows the panel again if it closed while the app was still deactivating.
+    static func ensureShown(_ controller: StatusItemController) async throws {
+        for _ in 0..<3 {
+            if controller.isShown, controller.panelView?.window?.isKeyWindow == true {
+                await E2E.settle(150)
+                if controller.isShown { return }
+            }
+            NSApp.activate()
+            controller.show()
+            await E2E.wait("the panel") { controller.isShown }
+            await E2E.settle(300)
+        }
+        XCTAssertTrue(controller.isShown, "the panel stays up")
+    }
+
     private func showPanel() async throws -> Panel {
         let controller = try XCTUnwrap(E2E.app.statusItem)
-        controller.show()
-        await E2E.wait("the panel") { controller.isShown }
+        try await Self.ensureShown(controller)
         let view = try XCTUnwrap(controller.panelView)
         await E2E.wait("the rows to be laid out") { controller.frames.byName.keys.contains { $0.hasPrefix("row ") } }
         await E2E.settle(300)
