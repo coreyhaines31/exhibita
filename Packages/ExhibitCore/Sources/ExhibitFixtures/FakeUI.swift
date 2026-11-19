@@ -21,10 +21,11 @@ public struct Ink: Sendable, Equatable {
     var cgColor: CGColor { CGColor(srgbRed: r, green: g, blue: b, alpha: 1) }
 }
 
-/// An RGBA8 sRGB image drawn by `draw` in a context flipped to top-left coordinates.
-public func makeImage(width: Int, height: Int, draw: (CGContext) -> Void) -> CGImage {
+/// An RGBA8 image, sRGB unless `space` names another, drawn by `draw` in a context flipped to top-left coordinates.
+public func makeImage(width: Int, height: Int, space: CFString = CGColorSpace.sRGB,
+                      draw: (CGContext) -> Void) -> CGImage {
     guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
-                                  space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                  space: CGColorSpace(name: space)!,
                                   bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
         fatalError("Could not create a test context")
     }
