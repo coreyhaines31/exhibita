@@ -9,6 +9,7 @@ struct EditorToolbar: View {
     let editor: CaptureEditor
     let actions: EditorActions
     let leadingInset: CGFloat
+    var dictation: DictationSession?
 
     @Environment(\.panelTheme) private var theme
 
@@ -30,6 +31,14 @@ struct EditorToolbar: View {
                 }
                 Divider().frame(height: 26).overlay(theme.fasciaEdge)
                 HStack(spacing: 4) {
+                    DictateKey(isOn: dictation?.isHeld == true,
+                               press: { dictation?.press() }, release: { dictation?.release() })
+                    LegendKey(key: "/", title: "Type", isOn: dictation?.isTyping == true) { dictation?.beginTyping() }
+                        .accessibilityLabel("Type an instruction, key /")
+                        .help("Type what to change instead of saying it (/)")
+                }
+                Divider().frame(height: 26).overlay(theme.fasciaEdge)
+                HStack(spacing: 4) {
                     KeyCap("arrow.uturn.backward", accessibilityLabel: "Undo, ⌘Z") { editor.undo() }
                         .disabled(!editor.canUndo)
                     KeyCap("arrow.uturn.forward", accessibilityLabel: "Redo, ⇧⌘Z") { editor.redo() }
@@ -38,7 +47,7 @@ struct EditorToolbar: View {
                 Spacer(minLength: 0)
             }
             .padding(.leading, leadingInset)
-            StatusStrip(status: editor.status, hint: hint, actions: actions)
+            StatusStrip(status: editor.status, hint: hint, actions: actions, dictation: dictation)
         }
         .padding(.horizontal, 14)
         .padding(.top, 10)
@@ -70,39 +79,78 @@ private struct ToolKey: View {
     let isOn: Bool
     let action: () -> Void
 
-    @Environment(\.panelTheme) private var theme
+    var body: some View {
+        LegendKey(key: tool.key, title: tool.title, isOn: isOn, action: action)
+            .accessibilityLabel("\(tool.title), key \(tool.key)")
+            .accessibilityAddTraits(isOn ? .isSelected : [])
+            .help("\(tool.title) (\(tool.key))")
+    }
+}
+
+/// A key as the toolbar draws it: the key large, what it does small. On, it is a reversed plate.
+private struct LegendKey: View {
+    let key: String
+    let title: String
+    let isOn: Bool
+    let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 1) {
-                Text(tool.key)
-                    .font(PanelFont.condensed(15, .bold))
-                Text(tool.title.uppercased())
-                    .font(PanelFont.condensed(8, .semibold))
-                    .tracking(0.4)
-                    .lineLimit(1)
-                    .fixedSize()
-            }
-            .frame(width: 42, height: 34)
-            .foregroundStyle(isOn ? theme.plateInk : (theme.isDark ? theme.ink : Color(white: 0.17)))
-            .background {
-                let shape = RoundedRectangle(cornerRadius: 4)
-                if isOn {
-                    shape.fill(theme.plate)
-                } else if theme.isDark {
-                    shape.fill(LinearGradient(colors: theme.button2, startPoint: .top, endPoint: .bottom))
-                        .overlay(shape.strokeBorder(theme.button2Edge, lineWidth: 1))
-                } else {
-                    shape.fill(.white.opacity(0.45))
-                        .overlay(shape.strokeBorder(.black.opacity(0.15), lineWidth: 1))
-                }
-            }
-            .contentShape(Rectangle())
+            KeyFace(key: key, title: title, isOn: isOn)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(tool.title), key \(tool.key)")
-        .accessibilityAddTraits(isOn ? .isSelected : [])
-        .help("\(tool.title) (\(tool.key))")
+    }
+}
+
+/// D: held with the mouse as with the key. Lit while listening.
+private struct DictateKey: View {
+    let isOn: Bool
+    let press: () -> Void
+    let release: () -> Void
+
+    var body: some View {
+        KeyFace(key: "D", title: "Say", isOn: isOn)
+            .gesture(DragGesture(minimumDistance: 0)
+                .onChanged { _ in if !isOn { press() } }
+                .onEnded { _ in release() })
+            .accessibilityLabel("Dictate: hold D and say what to change")
+            .accessibilityAddTraits(.isButton)
+            .help("Hold D and say what to change, like \u{201C}blur the emails\u{201D}")
+    }
+}
+
+private struct KeyFace: View {
+    let key: String
+    let title: String
+    let isOn: Bool
+
+    @Environment(\.panelTheme) private var theme
+
+    var body: some View {
+        VStack(spacing: 1) {
+            Text(key)
+                .font(PanelFont.condensed(15, .bold))
+            Text(title.uppercased())
+                .font(PanelFont.condensed(8, .semibold))
+                .tracking(0.4)
+                .lineLimit(1)
+                .fixedSize()
+        }
+        .frame(width: 42, height: 34)
+        .foregroundStyle(isOn ? theme.plateInk : (theme.isDark ? theme.ink : Color(white: 0.17)))
+        .background {
+            let shape = RoundedRectangle(cornerRadius: 4)
+            if isOn {
+                shape.fill(theme.plate)
+            } else if theme.isDark {
+                shape.fill(LinearGradient(colors: theme.button2, startPoint: .top, endPoint: .bottom))
+                    .overlay(shape.strokeBorder(theme.button2Edge, lineWidth: 1))
+            } else {
+                shape.fill(.white.opacity(0.45))
+                    .overlay(shape.strokeBorder(.black.opacity(0.15), lineWidth: 1))
+            }
+        }
+        .contentShape(Rectangle())
     }
 }
 
@@ -142,6 +190,7 @@ private struct StatusStrip: View {
     let status: EditorStatus
     let hint: String
     let actions: EditorActions
+    var dictation: DictationSession?
 
     @Environment(\.panelTheme) private var theme
 
@@ -151,15 +200,22 @@ private struct StatusStrip: View {
                 .fill(light)
                 .frame(width: 6, height: 6)
                 .shadow(color: light, radius: status == .none ? 0 : 2.5)
-            Text(status.text ?? hint)
-                .font(PanelFont.body(11.5, status == .none ? .regular : .semibold))
-                .foregroundStyle(status == .none ? theme.ink2 : theme.ink)
-                .lineLimit(1)
-                .truncationMode(.tail)
+            if let dictation, dictation.isTyping {
+                InstructionField(dictation: dictation)
+            } else {
+                message
+            }
             Spacer(minLength: 8)
-            FinishKey(keys: "↩", title: "Copy", action: actions.copyAndClose)
-            FinishKey(keys: "⌘S", title: "Save", action: actions.save)
-            FinishKey(keys: "⇧⌘C", title: "Path", action: actions.copyPath)
+            if case .dictation(let said) = status, let link = said.link {
+                // A message that asks for something takes the room of the less used finishing keys; ⌘S and ⇧⌘C
+                // still work, and the keys come back with the next action.
+                FinishKey(keys: "\u{2192}", title: link.title) { actions.openLink(link) }
+                FinishKey(keys: "↩", title: "Copy", action: actions.copyAndClose)
+            } else {
+                FinishKey(keys: "↩", title: "Copy", action: actions.copyAndClose)
+                FinishKey(keys: "⌘S", title: "Save", action: actions.save)
+                FinishKey(keys: "⇧⌘C", title: "Path", action: actions.copyPath)
+            }
             FinishKey(keys: "Esc", title: "Close", action: actions.close)
         }
         .padding(.horizontal, 7)
@@ -168,12 +224,92 @@ private struct StatusStrip: View {
         .accessibilityElement(children: .contain)
     }
 
+    @ViewBuilder private var message: some View {
+        if case .dictation(let said) = status, let transcript = said.transcript {
+            // The message matters more than the words heard, so a long transcript is clipped first.
+            HStack(spacing: 5) {
+                Text("\u{201C}\(Self.clipped(transcript, to: said.link == nil ? 60 : 28))\u{201D}")
+                    .foregroundStyle(theme.ink2)
+                    .fixedSize()
+                Text(said.message)
+                    .foregroundStyle(theme.ink)
+                    .truncationMode(.tail)
+                    .layoutPriority(1)
+            }
+            .font(PanelFont.body(11.5, .semibold))
+            .lineLimit(1)
+        } else {
+            Text(status.text ?? hint)
+                .font(PanelFont.body(11.5, status == .none ? .regular : .semibold))
+                .foregroundStyle(status == .none ? theme.ink2 : theme.ink)
+                .lineLimit(1)
+                .truncationMode(.tail)
+        }
+    }
+
+    /// Long transcripts keep their start and end: "hide anything th…the customer".
+    static func clipped(_ text: String, to limit: Int) -> String {
+        guard text.count > limit else { return text }
+        let half = (limit - 1) / 2
+        return text.prefix(half).trimmingCharacters(in: .whitespaces) + "\u{2026}"
+            + text.suffix(half).trimmingCharacters(in: .whitespaces)
+    }
+
     private var light: Color {
         switch status {
         case .none: Color(white: 0.55)
         case .readingText, .secrets: theme.caution
         case .notice: theme.go
+        case .dictation(let said): dictationLight(said)
         }
+    }
+
+    /// Red while listening, like a recording light; amber while working or when something needs doing.
+    private func dictationLight(_ said: DictationStatus) -> Color {
+        switch said {
+        case .listening: theme.stop
+        case .applied, .partial: theme.go
+        default: theme.caution
+        }
+    }
+}
+
+/// The typed-instruction field in the status strip: ↩ applies, Esc closes it.
+private struct InstructionField: View {
+    let dictation: DictationSession
+    static let prompt = "Type what to change, like \u{201C}blur the emails\u{201D}. \u{21A9} applies, Esc closes."
+    @State private var text = ""
+    @FocusState private var focused: Bool
+
+    @Environment(\.panelTheme) private var theme
+    @Environment(\.panelSnapshot) private var isSnapshot
+
+    var body: some View {
+        if isSnapshot {
+            // ImageRenderer can't draw an AppKit text field; renders show the empty field's prompt and a caret.
+            HStack(spacing: 1) {
+                Rectangle().fill(theme.ink).frame(width: 1.5, height: 13)
+                Text(Self.prompt).foregroundStyle(theme.ink2).lineLimit(1)
+            }
+            .font(PanelFont.body(11.5, .semibold))
+        } else {
+            field
+        }
+    }
+
+    private var field: some View {
+        TextField("", text: $text, prompt: Text(Self.prompt).foregroundStyle(theme.ink2))
+            .textFieldStyle(.plain)
+            .font(PanelFont.body(11.5, .semibold))
+            .foregroundStyle(theme.ink)
+            .focused($focused)
+            .onSubmit {
+                dictation.submit(text)
+                text = ""
+            }
+            .onExitCommand { dictation.endTyping() }
+            .onAppear { focused = true }
+            .accessibilityLabel("Instruction")
     }
 }
 

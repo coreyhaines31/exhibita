@@ -14,6 +14,8 @@ TEST_RUNNER_EXHIBIT_RENDER_DIR="$out" xcodebuild -project ExhibitA.xcodeproj -sc
   -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO \
   -only-testing:ExhibitAViewTests/PanelRenderTests/testRendersThePanel \
   -only-testing:ExhibitAViewTests/PanelRenderTests/testRendersSettings \
+  -only-testing:ExhibitAViewTests/PanelRenderTests/testRendersFreeFormSettings \
   -only-testing:ExhibitAViewTests/EditorRenderTests/testRendersTheEditor \
+  -only-testing:ExhibitAViewTests/DictationRenderTests/testRendersDictation \
   test -quiet
 ls -1 "$out"

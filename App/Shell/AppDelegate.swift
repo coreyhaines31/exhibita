@@ -67,6 +67,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.statusItem = statusItem
         capture.showPanel = { [weak statusItem] in statusItem?.show() }
         editors.willOpen = { [weak statusItem] in statusItem?.close() }
+        editors.openSettings = { [weak settingsWindow] in settingsWindow?.show() }
         startBridge(store: store, support: support, policy: policy, model: model)
 
         Task { await model.reload() }

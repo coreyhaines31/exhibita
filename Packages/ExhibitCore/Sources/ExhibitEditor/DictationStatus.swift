@@ -31,7 +31,7 @@ public enum DictationStatus: Equatable, Sendable {
     case downloadStopped(reason: String)
 
     /// The grammar can read these; shown when an instruction needs a model.
-    public static let grammarExample = "\u{201C}blur the emails\u{201D} or \u{201C}circle Pricing\u{201D}"
+    public static let grammarExample = "\u{201C}blur the emails\u{201D}"
 
     /// Still in progress: listening, readying or working. Finished statuses go away on the next action.
     public var isLive: Bool {
@@ -68,7 +68,7 @@ public enum DictationStatus: Equatable, Sendable {
         case .nothingFound(_, let summary): summary + " No changes made."
         case .nothingUnderstood: "No changes made."
         case .needsModel:
-            "This needs a model. Set one up in Settings, or try \(Self.grammarExample). No changes made."
+            "Needs a model: set one up in Settings, or try \(Self.grammarExample)."
         case .modelFailed(_, let reason): "\(reason) No changes made."
         case .microphoneDenied:
             "Exhibit A can't use the microphone. Allow it in System Settings, or press / to type."

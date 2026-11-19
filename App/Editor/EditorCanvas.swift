@@ -35,6 +35,13 @@ struct EditorCanvas: View {
         .frame(width: size.width, height: size.height)
         .contentShape(Rectangle())
         .gesture(pointer)
+        .onContinuousHover(coordinateSpace: .local) { phase in
+            // Where "this" is when D goes down.
+            switch phase {
+            case .active(let location): editor.hoverPoint = pixel(location)
+            case .ended: editor.hoverPoint = nil
+            }
+        }
         .task(id: editor.marks) { await canvas.refresh(editor.marks) }
         .accessibilityElement()
         .accessibilityLabel("Capture")
