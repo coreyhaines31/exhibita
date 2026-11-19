@@ -15,7 +15,7 @@ struct EditorToolbar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 10) {
+            HStack(spacing: 7) {
                 Nameplate(Brand.name.uppercased(), isLit: true)
                     .fixedSize()
                 Seam()
@@ -27,7 +27,7 @@ struct EditorToolbar: View {
                     }
                 }
                 Seam()
-                HStack(spacing: 6) {
+                HStack(spacing: 4) {
                     ForEach(MarkColor.allCases, id: \.self) { color in
                         ColorLight(color: color, key: keys.display(for: .color(color)),
                                    isOn: editor.currentColor == color) { editor.choose(color) }

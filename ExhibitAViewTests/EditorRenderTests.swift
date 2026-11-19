@@ -43,6 +43,26 @@ final class EditorRenderTests: XCTestCase {
         XCTAssertEqual(shown, try EditorExport.png(editor.document, original: fixture.image))
     }
 
+    /// The window's traffic lights take 74 points on the left, so the toolbar must fit the minimum width with that
+    /// inset, also with long remapped keys (issue 70; renders pass no inset and would not show it).
+    func testToolbarFitsTheMinimumWidthBesideTheTrafficLights() {
+        let editor = makeEditor()
+        for keymap in [EditorKeymap.standard, Self.longKeys] {
+            editor.keymap = keymap
+            let toolbar = NSHostingView(rootView: EditorToolbar(editor: editor, actions: EditorActions(),
+                                                                leadingInset: 74))
+            XCTAssertLessThanOrEqual(toolbar.fittingSize.width, EditorLayout.minimumWidth)
+        }
+    }
+
+    private static let longKeys = EditorKeymap(custom: [
+        .tool(.arrow): EditorShortcut("q", [.control, .option, .shift]),
+        .tool(.highlight): EditorShortcut("j", [.command, .option]),
+        .blurAllSensitive: EditorShortcut("k", [.control, .option, .shift]),
+        .dictate: EditorShortcut(" "),
+        .color(.red): EditorShortcut("8", [.control, .option])
+    ])
+
     func testCaptureShowsOneToOneWhereItFitsAndScalesDownOtherwise() {
         let pixels = CGSize(width: 1240, height: 760)
         let roomy = EditorLayout.pointsPerPixel(pixelSize: pixels, scale: 2, available: CGSize(width: 1600, height: 1000))
