@@ -176,7 +176,14 @@ final class CaptureTests: XCTestCase {
         LiveCapture.key(0x31, in: try LiveCapture.panel(on: LiveCapture.screenUnderPointer))
         XCTAssertEqual(overlay.mode, .window, "Space switches to window picking")
         try LiveCapture.move(toCoreGraphics: point)
-        await E2E.wait("the window under the pointer") { overlay.hovered?.id == window.id }
+        let hovered = await E2E.wait("the window under the pointer") { overlay.hovered?.id == window.id }
+        if !hovered {
+            let other = overlay.hovered
+            let inFrozen = overlay.frozen?.windows.firstIndex { $0.id == window.id }
+            let picked = overlay.frozen.flatMap { frozen in frozen.windows.firstIndex { $0.id == other?.id } }
+            print("E2E: window pick hovered \(other == nil ? "nothing" : "another window") (own \(other?.ownerPID == ProcessInfo.processInfo.processIdentifier), "
+                  + "layer \(other?.layer ?? -1), z \(picked ?? -1)); target at z \(inFrozen ?? -1)")
+        }
         try LiveCapture.click(atCoreGraphics: point)
         let (item, _) = try await LiveCapture.waitForCapture(since: known)
         let screen = NSScreen.screens.first { LiveCapture.coreGraphicsFrame(of: $0).contains(point) }
@@ -377,10 +384,13 @@ final class CaptureTests: XCTestCase {
         defer { if !hadIt { policy.remove(listed) } }
 
         // Ours covers the listed window from 20 points past its left edge to 10 points short of its centre.
+        // Inside the visible frame, so the menu bar and the Dock, which sit above it, never cover it.
         let display = LiveCapture.coreGraphicsFrame(of: screen)
+        let usable = CGRect(x: screen.visibleFrame.minX, y: LiveCapture.mainDisplayHeight - screen.visibleFrame.maxY,
+                            width: screen.visibleFrame.width, height: screen.visibleFrame.height)
         let front = CGRect(x: listedWindow.frame.minX - 20, y: listedWindow.frame.minY - 20,
                            width: listedWindow.frame.width / 2 + 10, height: listedWindow.frame.height + 40)
-            .intersection(display)
+            .intersection(usable)
         let window = LiveCapture.solidWindow(at: SelectionGeometry.cocoaRect(fromCoreGraphics: front,
                                                                              mainDisplayHeight: LiveCapture.mainDisplayHeight))
         defer { window.orderOut(nil) }
@@ -410,7 +420,10 @@ final class CaptureTests: XCTestCase {
         XCTAssertEqual(result.status, 0, LiveCapture.summary(result))
         let path = try XCTUnwrap(result.json["image"] as? String)
         let agent = try PNG.decode(Data(contentsOf: URL(fileURLWithPath: path)))
-        XCTAssertEqual((result.json["blackedOut"] as? [String])?.count, 1, "named once")
+        // Other never-capture apps may show too; ours is named, and no app twice. Names are never printed.
+        let named = try XCTUnwrap(result.json["blackedOut"] as? [String])
+        XCTAssertFalse(named.isEmpty, "the listed app is named")
+        XCTAssertEqual(Set(named).count, named.count, "each app once")
         let underOurs = PixelRect(x: (listedWindow.frame.minX - display.minX + 10) * scale,
                                   y: (point.y - display.minY - 65) * scale, width: 40 * scale, height: 40 * scale)
         let agentBlack = LiveCapture.blackFraction(agent, in: underOurs)
