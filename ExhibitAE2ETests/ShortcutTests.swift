@@ -110,6 +110,8 @@ final class ShortcutTests: XCTestCase {
                                  to: nil)
         Events.click(at: point, in: try XCTUnwrap(view.window))
         await E2E.wait("Settings") { NSApp.windows.contains { $0.title.hasSuffix("Settings") && $0.isVisible } }
+        // The popover animates closed after Settings comes forward.
+        await E2E.wait("the panel to close") { !controller.isShown }
         XCTAssertFalse(controller.isShown, "the panel closed for Settings")
     }
 }
