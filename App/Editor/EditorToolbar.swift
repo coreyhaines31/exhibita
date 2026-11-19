@@ -91,10 +91,10 @@ private struct ToolKey: View {
     let action: () -> Void
 
     var body: some View {
-        LegendKey(key: tool.key, title: tool.title, isOn: isOn, action: action)
-            .accessibilityLabel("\(tool.title), key \(tool.key)")
+        LegendKey(key: tool.defaultKey, title: tool.title, isOn: isOn, action: action)
+            .accessibilityLabel("\(tool.title), key \(tool.defaultKey)")
             .accessibilityAddTraits(isOn ? .isSelected : [])
-            .help("\(tool.title) (\(tool.key))")
+            .help("\(tool.title) (\(tool.defaultKey))")
     }
 }
 
@@ -181,7 +181,7 @@ private struct ColorLight: View {
                     .frame(width: 9, height: 9)
                     .shadow(color: isOn ? color.swatch : .clear, radius: 3)
                     .overlay(Circle().strokeBorder(.black.opacity(isOn ? 0.25 : 0.15), lineWidth: 0.5))
-                Text(color.key)
+                Text(color.defaultKey)
                     .font(PanelFont.condensed(10, .bold))
                     .foregroundStyle(theme.ink2)
             }
@@ -189,9 +189,9 @@ private struct ColorLight: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(color.title), key \(color.key)")
+        .accessibilityLabel("\(color.title), key \(color.defaultKey)")
         .accessibilityAddTraits(isOn ? .isSelected : [])
-        .help("\(color.title) (\(color.key))")
+        .help("\(color.title) (\(color.defaultKey))")
     }
 }
 
