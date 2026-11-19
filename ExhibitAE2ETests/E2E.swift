@@ -79,6 +79,8 @@ enum E2E {
             controller.window?.close()
         }
         app.statusItem?.close()
+        // The clipboard note lasts about 1.4 s; it must not reach the next test's window counts or stills.
+        app.capture?.copiedNote.dismiss()
         editors.flushAll()
     }
 
