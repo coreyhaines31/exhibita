@@ -15,7 +15,8 @@ final class CaptureController {
     private let model: AppModel
     private let editors: EditorWindows
     private let overlay = SelectionOverlay()
-    private let policy = CapturePolicy()
+    /// The never-capture list and auto-blur, read fresh for every capture.
+    var policy: () -> CapturePolicy = { CapturePolicy() }
     /// Opens the panel: to explain the permission, or with a new capture selected.
     var showPanel: () -> Void = {}
 
@@ -44,10 +45,16 @@ final class CaptureController {
             case .cancelled:
                 return
             case .region(let region):
-                captured = try await ScreenCapturer.capture(region)
+                captured = try await ScreenCapturer.capture(region, policy: policy())
             case .window(let window):
-                // The never-capture list (unit 6) decides here; everything is allowed for now.
-                guard policy.decision(for: CaptureSubject(appName: window.ownerName)) == .allow else { return }
+                let bundle = NSRunningApplication(processIdentifier: window.ownerPID)?.bundleIdentifier
+                guard policy().decision(for: CaptureSubject(bundleIdentifier: bundle, appName: window.ownerName))
+                        == .allow else {
+                    // The never-capture list refuses the window. The overlay has closed; a beep says nothing was
+                    // taken. A message in the panel is left for later (docs/product/capture-bridge.md).
+                    NSSound.beep()
+                    return
+                }
                 captured = try await ScreenCapturer.capture(windowID: window.id)
             }
         } catch {

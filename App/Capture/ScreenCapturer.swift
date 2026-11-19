@@ -1,4 +1,5 @@
 import CoreGraphics
+import ExhibitCore
 import ExhibitShell
 import Foundation
 @preconcurrency import ScreenCaptureKit
@@ -11,6 +12,8 @@ struct CapturedImage: @unchecked Sendable {
     var windowTitle: String?
     /// The display it came from, so the editor opens there.
     var displayID: CGDirectDisplayID?
+    /// One reason per never-capture window left out and drawn black.
+    var blackedOut: [String] = []
 }
 
 enum CaptureFailure: Error {
@@ -19,23 +22,42 @@ enum CaptureFailure: Error {
 }
 
 /// One still image through ScreenCaptureKit. Exhibit A's own windows (the overlay, the panel) are always left
-/// out. Call only once Screen Recording is granted: asking for shareable content without it prompts.
+/// out, and so are the windows of never-capture apps, whose area is then drawn black with a label (`Blackout`).
+/// Call only once Screen Recording is granted: asking for shareable content without it prompts. Nothing here
+/// activates an app or moves focus.
 enum ScreenCapturer {
-    static func capture(_ region: CaptureRegion) async throws -> CapturedImage {
+    static func capture(_ region: CaptureRegion, policy: CapturePolicy) async throws -> CapturedImage {
         let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
         guard let display = content.displays.first(where: { $0.displayID == region.displayID }) else {
             throw CaptureFailure.displayGone
         }
         let ownPID = ProcessInfo.processInfo.processIdentifier
         let own = content.applications.filter { $0.processID == ownPID }
-        let filter = SCContentFilter(display: display, excludingApplications: own, exceptingWindows: [])
+        let listed = content.applications.filter { policy.entry(for: subject(of: $0)) != nil }
+        let filter = SCContentFilter(display: display, excludingApplications: own + listed, exceptingWindows: [])
         let configuration = SCStreamConfiguration()
         configuration.sourceRect = region.sourceRect
         configuration.width = region.pixelSize.width
         configuration.height = region.pixelSize.height
         configuration.showsCursor = false
         let image = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
-        return CapturedImage(image: image, scale: region.scale, displayID: region.displayID)
+        // Window and display frames share one global top-left point space.
+        let captureRect = region.sourceRect.offsetBy(dx: display.frame.minX, dy: display.frame.minY)
+        let listedWindows = content.windows.compactMap { window -> WindowCandidate? in
+            guard let app = window.owningApplication, policy.entry(for: subject(of: app)) != nil else { return nil }
+            return WindowCandidate(id: window.windowID, frame: window.frame, layer: window.windowLayer,
+                                   ownerPID: app.processID, ownerName: app.applicationName,
+                                   bundleIdentifier: app.bundleIdentifier)
+        }
+        let regions = Blackout.regions(windows: listedWindows, policy: policy, captureRect: captureRect,
+                                       pixelSize: PixelSize(width: image.width, height: image.height))
+        let painted = try Blackout.paint(image, regions: regions, scale: region.scale)
+        return CapturedImage(image: painted, scale: region.scale, displayID: region.displayID,
+                             blackedOut: regions.map(\.reason))
+    }
+
+    static func subject(of app: SCRunningApplication) -> CaptureSubject {
+        CaptureSubject(bundleIdentifier: app.bundleIdentifier, appName: app.applicationName)
     }
 
     static func capture(windowID: UInt32) async throws -> CapturedImage {
