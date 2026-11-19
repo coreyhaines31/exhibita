@@ -13,6 +13,7 @@ let package = Package(
         .library(name: "ExhibitShell", targets: ["ExhibitShell"]),
         .library(name: "ExhibitEditor", targets: ["ExhibitEditor"]),
         .library(name: "ExhibitBridge", targets: ["ExhibitBridge"]),
+        .library(name: "ExhibitPlanning", targets: ["ExhibitPlanning"]),
         .executable(name: "exhibit", targets: ["exhibit"])
     ],
     dependencies: [
@@ -25,12 +26,16 @@ let package = Package(
         // Every command's logic, so tests can drive it in process. The executable is a thin shell over it.
         .target(name: "ExhibitCLI", dependencies: [
             "ExhibitCore", "ExhibitTargets", "ExhibitInterpret", "ExhibitBridge", "ExhibitShell", "ExhibitStore",
+            "ExhibitPlanning",
             .product(name: "ArgumentParser", package: "swift-argument-parser")
         ]),
         .executableTarget(name: "exhibit", dependencies: ["ExhibitCLI"]),
         // Instructions to operations: the interpreter contract, the grammar and the loopback model client. Text in,
         // never the image.
         .target(name: "ExhibitInterpret", dependencies: ["ExhibitCore"]),
+        // Selectors and interpretations to placed marks, and the summary sentence. Shared by `exhibit say` and the
+        // editor's dictation, so both give the same marks. No Vision, no AppKit.
+        .target(name: "ExhibitPlanning", dependencies: ["ExhibitCore", "ExhibitInterpret"]),
         // The interpreter and speech spike (issue 3): `swift run exhibit-eval`. Not shipped. Uses FoundationModels
         // and SpeechAnalyzer behind macOS 26 availability checks.
         .executableTarget(name: "exhibit-eval", dependencies: ["ExhibitInterpret", "ExhibitCore"], path: "Sources/ExhibitEval"),
@@ -60,6 +65,6 @@ let package = Package(
         // Depends on the executable so `swift test` builds the real binary for the end-to-end tests.
         .testTarget(name: "ExhibitCLITests",
                     dependencies: ["ExhibitCLI", "exhibit", "ExhibitCore", "ExhibitTargets", "ExhibitFixtures",
-                                   "ExhibitInterpret", "ExhibitBridge"])
+                                   "ExhibitInterpret", "ExhibitBridge", "ExhibitPlanning"])
     ]
 )

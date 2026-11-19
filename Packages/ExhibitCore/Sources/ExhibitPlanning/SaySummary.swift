@@ -2,21 +2,21 @@ import ExhibitCore
 import ExhibitInterpret
 import Foundation
 
-/// What `say` did, in words a person reads after the marks appear: "Blurred 4 emails, circled "Pricing". Couldn't
-/// find: logout link." Every mark is named, because about one model answer in ten is wrong and the summary is how
-/// a person notices. Text comes from the targets, where sensitive values are already masked.
-struct SaySummary {
-    struct Operation: Encodable {
-        var mark: String
-        var summary: String
-        var targetIDs: [UUID]
-        var label: String?
+/// What `say` and dictation did, in words a person reads after the marks appear: "Blurred 4 emails, circled
+/// "Pricing". Couldn't find: logout link." Every mark is named, because about one model answer in ten is wrong
+/// and the summary is how a person notices. Text comes from the targets, where sensitive values are already masked.
+public struct SaySummary: Sendable, Equatable {
+    public struct Operation: Encodable, Sendable, Equatable {
+        public var mark: String
+        public var summary: String
+        public var targetIDs: [UUID]
+        public var label: String?
     }
 
-    let operations: [Operation]
-    let sentence: String
+    public let operations: [Operation]
+    public let sentence: String
 
-    init(interpretation: Interpretation, targets: [Target]) {
+    public init(interpretation: Interpretation, targets: [Target]) {
         let operations = interpretation.operations.map { operation in
             let marked = targets.filter { operation.targetIDs(in: targets).contains($0.id) }
             var phrases: [UUID: String] = [:]

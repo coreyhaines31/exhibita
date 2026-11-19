@@ -1,4 +1,5 @@
 import ExhibitCore
+import ExhibitPlanning
 import Foundation
 
 /// Opens the input, plans every spec, then renders once. Nothing is written unless every spec succeeds.
@@ -13,21 +14,12 @@ enum MarkRun {
     }
 
     /// Every spec as placed marks, in one planner so later marks avoid earlier ones. Throws on the first spec that
-    /// fails; nothing is written here.
+    /// fails; nothing is written here. The same planning the editor's dictation uses.
     static func plan(_ specs: [MarkSpec], in session: Session, indexed: Bool) throws
         -> (placed: [PlacedMark], reports: [SelectorReport]) {
-        let clutter = specs.contains { [.arrow, .text, .step].contains($0.kind) }
-            ? Clutter(image: session.original, cell: 4 * session.layout.unit) : nil
-        var planner = Planner(targets: session.targets, imageSize: session.imageSize, layout: session.layout,
-                              clutter: clutter, existingMarks: session.bundle?.document.marks ?? [])
-        var placed: [PlacedMark] = []
-        var reports: [SelectorReport] = []
-        for (index, spec) in specs.enumerated() {
-            let result = try planner.plan(spec, entry: indexed ? index : nil)
-            placed += result.marks
-            reports += result.reports
-        }
-        return (placed, reports)
+        let canvas = MarkingCanvas(original: session.original, targets: session.targets, layout: session.layout,
+                                   existingMarks: session.bundle?.document.marks ?? [])
+        return try InterpretationMarks.plan(specs, on: canvas, indexed: indexed)
     }
 }
 

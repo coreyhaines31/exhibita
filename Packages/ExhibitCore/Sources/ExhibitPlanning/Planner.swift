@@ -2,78 +2,90 @@ import ExhibitCore
 import Foundation
 
 /// One mark request: a command line, or one entry of `marks.json`.
-struct MarkSpec: Equatable {
-    var kind: MarkKind
-    var selectors: [Selector] = []
+public struct MarkSpec: Equatable, Sendable {
+    public var kind: MarkKind
+    public var selectors: [MarkSelector] = []
     /// Arrow tail, fixed.
-    var from: PixelPoint?
+    public var from: PixelPoint?
     /// Arrow head, fixed. Only from `marks.json`, with `from`, for an arrow drawn by coordinates alone.
-    var toPoint: PixelPoint?
-    var label: String?
-    var color: MarkColor?
-    var number: Int?
-    var all = false
-    var nth: Int?
-    var allowMissing = false
+    public var toPoint: PixelPoint?
+    public var label: String?
+    public var color: MarkColor?
+    public var number: Int?
+    public var all = false
+    public var nth: Int?
+    public var allowMissing = false
 
-    var needsTargets: Bool {
+    public init(kind: MarkKind, selectors: [MarkSelector] = []) {
+        self.kind = kind
+        self.selectors = selectors
+    }
+
+    public var needsTargets: Bool {
         selectors.contains(where: \.needsTargets) || [.arrow, .text, .step].contains(kind)
     }
 
     /// Blur and highlight cover every match; the rest draw one mark per selector unless told otherwise.
-    var coversEveryMatch: Bool { kind == .blur || kind == .highlight }
+    public var coversEveryMatch: Bool { kind == .blur || kind == .highlight }
 
-    func validate() throws {
+    public func validate() throws {
         if kind == .arrow, toPoint != nil {
-            guard from != nil else { throw CLIError.usage("An arrow with a \"to\" point also needs \"from\".") }
+            guard from != nil else { throw PlanError.usage("An arrow with a \"to\" point also needs \"from\".") }
             guard selectors.isEmpty else {
-                throw CLIError.usage("An arrow with a \"to\" point takes no selectors; use one or the other.")
+                throw PlanError.usage("An arrow with a \"to\" point takes no selectors; use one or the other.")
             }
             return
         }
         guard !selectors.isEmpty else {
-            throw CLIError.usage("Say what to \(kind.rawValue): give --text, --to, --regex, --kind or --rect.")
+            throw PlanError.usage("Say what to \(kind.rawValue): give --text, --to, --regex, --kind or --rect.")
         }
         try validateOptions()
     }
 
     private func validateOptions() throws {
-        if from != nil, kind != .arrow { throw CLIError.usage("--from only applies to arrow.") }
-        if label != nil, kind != .arrow, kind != .text { throw CLIError.usage("--label only applies to arrow and text.") }
-        if kind == .text, (label ?? "").isEmpty { throw CLIError.usage("text needs --label with the words to show.") }
-        if number != nil, kind != .step { throw CLIError.usage("--number only applies to step.") }
-        if let number, number < 0 { throw CLIError.usage("--number must be 0 or more.") }
-        if all, nth != nil { throw CLIError.usage("Use --all or --nth, not both.") }
-        if let nth, nth < 1 { throw CLIError.usage("--nth counts from 1.") }
+        if from != nil, kind != .arrow { throw PlanError.usage("--from only applies to arrow.") }
+        if label != nil, kind != .arrow, kind != .text { throw PlanError.usage("--label only applies to arrow and text.") }
+        if kind == .text, (label ?? "").isEmpty { throw PlanError.usage("text needs --label with the words to show.") }
+        if number != nil, kind != .step { throw PlanError.usage("--number only applies to step.") }
+        if let number, number < 0 { throw PlanError.usage("--number must be 0 or more.") }
+        if all, nth != nil { throw PlanError.usage("Use --all or --nth, not both.") }
+        if let nth, nth < 1 { throw PlanError.usage("--nth counts from 1.") }
     }
 }
 
 /// A mark ready to save or render, with what produced it.
-struct PlacedMark {
-    var mark: Mark
-    var selector: String?
-    var entry: Int?
+public struct PlacedMark: Sendable {
+    public var mark: Mark
+    public var selector: String?
+    public var entry: Int?
     /// The box a person sees: a text label, a step disc, an arrow's caption.
-    var visibleBox: PixelRect?
+    public var visibleBox: PixelRect?
+
+    public init(mark: Mark, selector: String? = nil, entry: Int? = nil, visibleBox: PixelRect? = nil) {
+        self.mark = mark
+        self.selector = selector
+        self.entry = entry
+        self.visibleBox = visibleBox
+    }
 }
 
 /// How many things one selector matched and how many marks it produced.
-struct SelectorReport: Encodable, Equatable {
-    var entry: Int?
-    var selector: String
-    var matches: Int
-    var marked: Int
+public struct SelectorReport: Encodable, Equatable, Sendable {
+    public var entry: Int?
+    public var selector: String
+    public var matches: Int
+    public var marked: Int
 }
 
 /// Turns specs into marks. Keeps state across specs, so a batch avoids its own labels and numbers steps on.
-struct Planner {
-    let targets: [Target]
-    let placement: Placement
+public struct Planner {
+    public let targets: [Target]
+    public let placement: Placement
     private(set) var obstacles: [PixelRect]
     private var nextStep = 1
 
-    init(targets: [Target], imageSize: PixelSize, layout: MarkLayout, clutter: Clutter? = nil,
-         existingMarks: [Mark] = []) {
+    public init(targets: [Target], imageSize: PixelSize, layout: MarkLayout, clutter: Clutter? = nil,
+                existingMarks: [Mark] = []) {
         self.targets = targets
         placement = Placement(imageSize: imageSize, layout: layout, clutter: clutter)
         // Words rather than whole lines, so a mark may sit beside its target on the same line.
@@ -84,10 +96,11 @@ struct Planner {
         obstacles += existingMarks.compactMap(Self.footprint(of:))
     }
 
-    mutating func plan(_ spec: MarkSpec, entry: Int? = nil) throws -> (marks: [PlacedMark], reports: [SelectorReport]) {
+    public mutating func plan(_ spec: MarkSpec, entry: Int? = nil) throws
+        -> (marks: [PlacedMark], reports: [SelectorReport]) {
         do {
             return try planUnlabelled(spec, entry: entry)
-        } catch let error as CLIError {
+        } catch let error as PlanError {
             throw error.inEntry(entry)
         }
     }
@@ -107,13 +120,11 @@ struct Planner {
         let missing = resolved.filter { $0.1.isEmpty }.map(\.0)
         if !missing.isEmpty, !spec.allowMissing || missing.count == resolved.count {
             let names = missing.map(\.description)
-            var error = CLIError(code: "no_match", message: "No match for " + names.joined(separator: ", ") + ".",
-                                 status: .noMatch, selectors: names)
-            error.hint = missing.compactMap(SelectorMatcher.hint(for:)).first
-            throw error
+            throw PlanError(code: .noMatch, message: "No match for " + names.joined(separator: ", ") + ".",
+                            selectors: names, missing: missing)
         }
 
-        var picks: [(selector: Selector, candidate: Candidate)] = []
+        var picks: [(selector: MarkSelector, candidate: Candidate)] = []
         var reports: [SelectorReport] = []
         for (selector, candidates) in resolved {
             let chosen = try pick(from: candidates, selector: selector, spec: spec)
@@ -146,26 +157,25 @@ struct Planner {
 
     /// The area a placed mark covers, for later placements to avoid. Arrows without a caption are left out: their
     /// bounding box is mostly empty.
-    static func footprint(of mark: Mark) -> PixelRect? {
+    public static func footprint(of mark: Mark) -> PixelRect? {
         mark.kind == .arrow || mark.kind == .text || mark.kind == .step ? nil : mark.bounds
     }
 
-    private func pick(from candidates: [Candidate], selector: Selector, spec: MarkSpec) throws -> [Candidate] {
+    private func pick(from candidates: [Candidate], selector: MarkSelector, spec: MarkSpec) throws -> [Candidate] {
         if let nth = spec.nth {
             if candidates.isEmpty { return [] }
             guard nth <= candidates.count else {
-                throw CLIError(code: "nth_out_of_range",
-                               message: "\(selector.description) matched \(candidates.count), so there is no --nth \(nth).",
-                               status: .noMatch, selectors: [selector.description],
-                               candidates: candidates.map(\.report))
+                throw PlanError(code: .nthOutOfRange,
+                            message: "\(selector.description) matched \(candidates.count), so there is no --nth \(nth).",
+                            selectors: [selector.description], candidates: candidates)
             }
             return [candidates[nth - 1]]
         }
         if spec.all || spec.coversEveryMatch || candidates.count <= 1 { return candidates }
-        throw CLIError(code: "ambiguous",
-                       message: "\(selector.description) matched \(candidates.count) things and \(spec.kind.rawValue) "
-                           + "draws one. Pass --all for every match, or --nth <n> to pick one (counting from 1).",
-                       status: .ambiguous, selectors: [selector.description], candidates: candidates.map(\.report))
+        throw PlanError(code: .ambiguous,
+                        message: "\(selector.description) matched \(candidates.count) things and \(spec.kind.rawValue) "
+                            + "draws one. Pass --all for every match, or --nth <n> to pick one (counting from 1).",
+                        selectors: [selector.description], candidates: candidates)
     }
 
     private func place(_ spec: MarkSpec, on candidate: Candidate, stepNumber: Int) -> PlacedMark {

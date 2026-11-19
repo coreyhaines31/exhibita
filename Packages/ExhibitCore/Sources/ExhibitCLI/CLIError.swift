@@ -1,5 +1,6 @@
 import ExhibitBridge
 import ExhibitCore
+import ExhibitPlanning
 import Foundation
 
 /// Exit codes. Stable: agents branch on them. Documented in `docs/cli.md`.
@@ -67,6 +68,7 @@ struct CLIError: Error, Equatable {
 
     static func from(_ error: Error) -> CLIError {
         if let error = error as? CLIError { return error }
+        if let error = error as? PlanError { return CLIError(error) }
         if let error = error as? ExhibitError {
             return CLIError(code: error == .renderFailed ? "render" : "io", message: error.description, status: .failure)
         }
@@ -91,6 +93,20 @@ struct CLIError: Error, Equatable {
                                  candidates: candidates, hint: hint, notFound: notFound,
                                  windows: windows)
         return OutputJSON.string(Envelope(error: body))
+    }
+}
+
+extension CLIError {
+    /// A planning failure with the CLI's exit code, candidates as reported, and a hint for what matched nothing.
+    init(_ error: PlanError) {
+        let status: ExitStatus = switch error.code {
+        case .usage: .usage
+        case .noMatch, .nthOutOfRange: .noMatch
+        case .ambiguous: .ambiguous
+        }
+        self.init(code: error.code.rawValue, message: error.message, status: status, selectors: error.selectors,
+                  candidates: error.candidates?.map(\.report))
+        if error.code == .noMatch { hint = error.missing.compactMap(SelectorMatcher.hint(for:)).first }
     }
 }
 

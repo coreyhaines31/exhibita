@@ -1,6 +1,7 @@
 import ArgumentParser
 import ExhibitCore
 import ExhibitInterpret
+import ExhibitPlanning
 import Foundation
 
 /// What a command produced: the exit status and what goes to stdout and stderr.
