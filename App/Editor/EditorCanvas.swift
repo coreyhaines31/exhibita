@@ -43,6 +43,7 @@ struct EditorCanvas: View {
             }
         }
         .task(id: editor.marks) { await canvas.refresh(editor.marks) }
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { canvas.frameInWindow = $0 }
         .accessibilityElement()
         .accessibilityLabel("Capture")
         .accessibilityValue(editor.marks.isEmpty ? "No marks" : "\(editor.marks.count) marks")

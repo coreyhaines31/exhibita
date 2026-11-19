@@ -136,15 +136,18 @@ enum Locate {
     }
 }
 
-/// Image pixels (top-left origin) to window points, through the canvas the editor actually laid out.
+/// Image pixels (top-left origin) to window points, through the frame the editor's canvas was laid out at.
 @MainActor
 struct CanvasMap {
+    /// The canvas in window coordinates (bottom-left origin).
     let frame: NSRect
     let pixelSize: CGSize
 
-    init(window: NSWindow, pixelSize: CGSize) throws {
-        frame = try XCTUnwrap(Locate.frame(labelled: { $0 == "Capture" }, in: window),
-                              "the editor canvas's accessibility element")
+    /// `topLeftFrame` is the canvas as SwiftUI laid it out in the window's content, top-left origin.
+    init(window: NSWindow, topLeftFrame: CGRect?, pixelSize: CGSize) throws {
+        let laidOut = try XCTUnwrap(topLeftFrame, "the editor canvas reported no frame")
+        let height = try XCTUnwrap(window.contentView).bounds.height
+        frame = NSRect(x: laidOut.minX, y: height - laidOut.maxY, width: laidOut.width, height: laidOut.height)
         self.pixelSize = pixelSize
     }
 

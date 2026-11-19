@@ -102,7 +102,7 @@ final class EditorWindowController: NSObject, NSWindowDelegate {
     /// Hold D or press / to say or type what to change.
     let dictation: DictationSession
     private let capture: OpenCapture
-    private let canvas: EditorCanvasModel
+    let canvas: EditorCanvasModel
     private let exportsFolder: URL
     private(set) var window: EditorWindow?
     private var exported = false
