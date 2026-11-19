@@ -68,7 +68,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         capture.showPanel = { [weak statusItem] in statusItem?.show() }
         editors.willOpen = { [weak statusItem] in statusItem?.close() }
         editors.openSettings = { [weak settingsWindow] in settingsWindow?.show() }
-        startBridge(store: store, support: support, policy: policy, model: model)
+        startBridge(store: store, support: support, policy: policy, model: model, captures: editors.captures)
 
         Task { await model.reload() }
     }
@@ -80,8 +80,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// Live captures for `exhibit capture`, without the overlay and without moving focus.
-    private func startBridge(store: CaptureStore, support: URL, policy: CapturePolicyModel, model: AppModel) {
+    private func startBridge(store: CaptureStore, support: URL, policy: CapturePolicyModel, model: AppModel,
+                             captures: OpenCaptures) {
         let bridge = BridgeHost(store: store, supportDirectory: support, policy: policy.snapshot,
+                                captures: captures,
                                 present: { [weak self] id in
                                     // `exhibit open`: the one place a capture is handed to the person.
                                     guard let editors = self?.editors else { return false }
