@@ -15,7 +15,7 @@ struct EditorToolbar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 10) {
+            HStack(spacing: 7) {
                 Nameplate(Brand.name.uppercased(), isLit: true)
                     .fixedSize()
                 Seam()
@@ -27,7 +27,7 @@ struct EditorToolbar: View {
                     }
                 }
                 Seam()
-                HStack(spacing: 6) {
+                HStack(spacing: 4) {
                     ForEach(MarkColor.allCases, id: \.self) { color in
                         ColorLight(color: color, key: keys.display(for: .color(color)),
                                    isOn: editor.currentColor == color) { editor.choose(color) }
@@ -35,12 +35,20 @@ struct EditorToolbar: View {
                 }
                 Seam()
                 HStack(spacing: 4) {
+                    let secrets = keys.display(for: .blurAllSensitive)
+                    LegendKey(icon: .blurSecrets, key: secrets, title: "Secrets", isOn: false) {
+                        editor.blurAllSensitive()
+                    }
+                    .accessibilityLabel("Blur secrets, key \(secrets)")
+                    .help("Blur every email, key, card and phone number found (\(secrets))")
                     DictateKey(key: keys.display(for: .dictate), isOn: dictation?.isHeld == true,
                                press: { dictation?.press() }, release: { dictation?.release() })
                     let type = keys.display(for: .typeInstruction)
-                    LegendKey(key: type, title: "Type", isOn: dictation?.isTyping == true) { dictation?.beginTyping() }
-                        .accessibilityLabel("Type an instruction, key \(type)")
-                        .help("Type what to change instead of saying it (\(type))")
+                    LegendKey(icon: .type, key: type, title: "Type", isOn: dictation?.isTyping == true) {
+                        dictation?.beginTyping()
+                    }
+                    .accessibilityLabel("Type an instruction, key \(type)")
+                    .help("Type what to change instead of saying it (\(type))")
                 }
                 Seam()
                 HStack(spacing: 4) {
@@ -99,15 +107,16 @@ private struct ToolKey: View {
     let action: () -> Void
 
     var body: some View {
-        LegendKey(key: key, title: tool.title, isOn: isOn, action: action)
+        LegendKey(icon: .tool(tool), key: key, title: tool.title, isOn: isOn, action: action)
             .accessibilityLabel("\(tool.title), key \(key)")
             .accessibilityAddTraits(isOn ? .isSelected : [])
             .help("\(tool.title) (\(key))")
     }
 }
 
-/// A key as the toolbar draws it: the key large, what it does small. On, it is a reversed plate.
+/// A key as the toolbar draws it: its icon and key on top, what it does small beneath. On, it is a reversed plate.
 private struct LegendKey: View {
+    let icon: KeyIcon
     let key: String
     let title: String
     let isOn: Bool
@@ -115,7 +124,7 @@ private struct LegendKey: View {
 
     var body: some View {
         Button(action: action) {
-            KeyFace(key: key, title: title, isOn: isOn)
+            KeyFace(icon: icon, key: key, title: title, isOn: isOn)
         }
         .buttonStyle(.plain)
     }
@@ -129,7 +138,7 @@ private struct DictateKey: View {
     let release: () -> Void
 
     var body: some View {
-        KeyFace(key: key, title: "Say", isOn: isOn)
+        KeyFace(icon: .dictate, key: key, title: "Say", isOn: isOn)
             .gesture(DragGesture(minimumDistance: 0)
                 .onChanged { _ in if !isOn { press() } }
                 .onEnded { _ in release() })
@@ -139,7 +148,10 @@ private struct DictateKey: View {
     }
 }
 
+/// The icon is what you find at a glance; the key beside it is how you learn the keyboard. Both share the key's one
+/// ink, and the plate reverses when the key is on.
 private struct KeyFace: View {
+    let icon: KeyIcon
     let key: String
     let title: String
     let isOn: Bool
@@ -147,11 +159,16 @@ private struct KeyFace: View {
     @Environment(\.panelTheme) private var theme
 
     var body: some View {
-        VStack(spacing: 1) {
-            Text(key)
-                .font(PanelFont.condensed(15, .bold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
+        VStack(spacing: 2) {
+            HStack(spacing: 3) {
+                KeyIconView(icon: icon)
+                Text(key)
+                    .font(PanelFont.condensed(14, .bold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+            }
+            // A fixed row height, so a key that shrinks to fit (⇧B, ⌥⇧Q) keeps its caption level with the rest.
+            .frame(maxWidth: 38, minHeight: 17, maxHeight: 17)
             Text(title.uppercased())
                 .font(PanelFont.condensed(8, .semibold))
                 .tracking(0.4)
@@ -236,13 +253,16 @@ private struct StatusStrip: View {
                 // A message that asks for something takes the room of the less used finishing keys; ⌘S and ⇧⌘C
                 // still work, and the keys come back with the next action.
                 FinishKey(keys: "\u{2192}", title: link.title) { actions.openLink(link) }
-                FinishKey(keys: keys.display(for: .copyAndClose), title: "Copy", action: actions.copyAndClose)
+                FinishKey(keys: keys.display(for: .copyAndClose), icon: "doc.on.doc", title: "Copy",
+                          action: actions.copyAndClose)
             } else {
-                FinishKey(keys: keys.display(for: .copyAndClose), title: "Copy", action: actions.copyAndClose)
-                FinishKey(keys: keys.display(for: .save), title: "Save", action: actions.save)
-                FinishKey(keys: keys.display(for: .copyPath), title: "Path", action: actions.copyPath)
+                FinishKey(keys: keys.display(for: .copyAndClose), icon: "doc.on.doc", title: "Copy",
+                          action: actions.copyAndClose)
+                FinishKey(keys: keys.display(for: .save), icon: "square.and.arrow.down", title: "Save",
+                          action: actions.save)
+                FinishKey(keys: keys.display(for: .copyPath), icon: "link", title: "Path", action: actions.copyPath)
             }
-            FinishKey(keys: keys.display(for: .close), title: "Close", action: actions.close)
+            FinishKey(keys: keys.display(for: .close), icon: "xmark", title: "Close", action: actions.close)
         }
         .padding(.horizontal, 7)
         .frame(height: 24)
@@ -339,9 +359,10 @@ private struct InstructionField: View {
     }
 }
 
-/// A finishing key in the status strip: the keys on a small plate, then what they do.
+/// A finishing key in the status strip: the keys on a small plate, then an icon and what they do.
 private struct FinishKey: View {
     let keys: String
+    var icon: String?
     let title: String
     let action: () -> Void
 
@@ -356,6 +377,11 @@ private struct FinishKey: View {
                     .padding(.horizontal, 4)
                     .padding(.vertical, 1)
                     .background(theme.plate, in: RoundedRectangle(cornerRadius: 2))
+                if let icon {
+                    Image(systemName: icon)
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(theme.ink2)
+                }
                 Text(title.uppercased())
                     .font(PanelFont.condensed(9.5, .semibold))
                     .tracking(0.5)
