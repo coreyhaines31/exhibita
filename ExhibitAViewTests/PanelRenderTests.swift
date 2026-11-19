@@ -122,6 +122,21 @@ final class PanelRenderTests: XCTestCase {
         XCTAssertEqual(model.emptyHint, "Press ⇧⌘4 to capture and mark up, or ⌃⇧⌘4 to copy a capture.")
     }
 
+    func testRefusedWindowPickSaysWhyUntilDismissed() throws {
+        let model = try makeModel()
+        XCTAssertNil(model.captureRefusal)
+        let entry = try XCTUnwrap(CapturePolicy.defaultNeverCapture.first)
+        guard case .blackOut(let reason) = CapturePolicy().decision(
+            for: CaptureSubject(bundleIdentifier: entry.bundleIdentifier, appName: entry.name)) else {
+            return XCTFail("the default list refuses \(entry.name)")
+        }
+        model.refuseCapture(reason: reason)
+        XCTAssertEqual(model.captureRefusal, "\(entry.name) is on the never-capture list, so its window was not "
+                       + "captured. Change the list in Settings, Privacy.")
+        model.clearCaptureRefusal()
+        XCTAssertNil(model.captureRefusal)
+    }
+
     static let takenOver = SystemScreenshotShortcuts(symbolicHotKeys: [
         "30": ["enabled": false], "31": ["enabled": false]
     ] as [String: Any])
@@ -145,6 +160,9 @@ final class PanelRenderTests: XCTestCase {
         try await fillHistory(history)
         history.selected = history.items.dropFirst().first?.id
         try renderPanel(history, name: "panel-history")
+
+        history.refuseCapture(reason: "1Password is on the never-capture list")
+        try renderPanel(history, name: "panel-refused")
     }
 
     func testRendersSettings() async throws {

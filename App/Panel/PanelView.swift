@@ -27,6 +27,10 @@ struct PanelView: View {
                    label: "Screenshot markup", isLit: model.permission == .granted) {
                 HotkeyTiles(bindings: model.bindings)
             }
+            if let refusal = model.captureRefusal {
+                RefusedCaptureNotice(message: refusal, openSettings: actions.openSettings,
+                                     dismiss: model.clearCaptureRefusal)
+            }
             switch model.content {
             case .permission(let state):
                 PermissionNotice(state: state, actions: actions)
@@ -117,6 +121,26 @@ struct EmptyHistory: View {
                 }
             }
         }
+    }
+}
+
+/// A window pick the never-capture list refused: which app, and where the list is.
+struct RefusedCaptureNotice: View {
+    let message: String
+    let openSettings: () -> Void
+    let dismiss: () -> Void
+
+    var body: some View {
+        Notice("Not captured", message: message, status: .stop) {
+            HStack(spacing: 8) {
+                Button("Open Settings", action: openSettings)
+                    .buttonStyle(.panelSecondary)
+                Button("Dismiss", action: dismiss)
+                    .buttonStyle(.panelSecondary)
+            }
+            .controlSize(.small)
+        }
+        .padding(.top, 10)
     }
 }
 
