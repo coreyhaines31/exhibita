@@ -35,7 +35,7 @@ Commands on image files need no app and no permissions. Live captures come from 
 
 ## Privacy
 
-No account and no telemetry. Text is read and speech is transcribed on your Mac with Apple's on-device frameworks. The app's only network call is the update check. Free-form instructions can use a local model you run yourself (an Ollama or LM Studio endpoint on this Mac).
+No account and no telemetry. Text is read and speech is transcribed on your Mac with Apple's on-device frameworks. The update check is the only request that leaves your Mac. For instructions in your own words the app can use a local model you run yourself: it finds Ollama or LM Studio on this Mac (127.0.0.1 only) and picks a model for you.
 
 ## Building
 

@@ -12,7 +12,7 @@ public struct CLIResult: Sendable {
 }
 
 public enum CLI {
-    public static let version = "0.1.2"
+    public static let version = "0.1.3"
 
     /// Runs one command line with the given environment and model transport, for tests.
     static func run(arguments: [String], environment: [String: String],
