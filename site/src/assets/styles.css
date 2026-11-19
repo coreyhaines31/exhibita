@@ -1,0 +1,128 @@
+/* Exhibit A on the Brushed family look. brushed.css carries the tokens and shared components;
+   this file maps the site's own sections onto them. Colour only in lights and readings: --bx-accent is the pilot light. */
+:root {
+  --bx-accent: #b42ee8;
+}
+
+* {box-sizing: border-box}
+html {-webkit-text-size-adjust: 100%}
+body {margin: 0; overflow-x: clip}
+p {margin: 0}
+code, kbd {font-family: var(--bx-mono); font-size: .9em}
+img {max-width: 100%; height: auto}
+.skip {position: fixed; z-index: 20; top: -6rem; left: 1rem; padding: .75rem 1rem; background: var(--bx-btn); color: var(--bx-btn-ink); border-radius: 5px}
+.skip:focus {top: 1rem}
+[id] {scroll-margin-top: 2rem}
+.fine {font-size: 14px; color: var(--bx-muted); line-height: 1.55; margin-top: 16px}
+.bx-btn span {line-height: 1}
+/* Not released yet: the primary button is a label, not a link. */
+.soon-btn {cursor: default; opacity: .78}
+.soon-btn:hover {filter: none}
+
+/* Header: transparent over the homepage hero, brushed elsewhere */
+.site-header {background: var(--bx-brush); border-bottom: 1px solid rgba(0,0,0,.25)}
+.home .site-header {position: absolute; inset: 0 0 auto; z-index: 5; background: none; border-bottom: 0}
+.site-header .bx-nav {padding-block: 14px}
+.site-header nav {margin-left: auto}
+.site-header .bx-brand {color: var(--bx-ink)}
+.header-cta {padding: 10px 16px; font-size: 14px}
+@media (max-width: 760px) {
+  .site-header nav {order: 3; width: 100%; margin-left: 0; gap: 8px 18px; font-size: 14.5px}
+}
+
+/* Hero */
+.hero .bx-hero-grid {padding-top: 104px}
+@media (max-width: 760px) { .hero .bx-hero-grid {padding-top: 132px} }
+.stage {margin: 0; display: grid; gap: 12px; min-width: 0}
+.stage figcaption, .plate-figure figcaption {font-size: 14px; color: var(--bx-muted); text-align: center}
+.stage-mount {padding: 22px}
+.shot {display: block; width: 100%; border-radius: 6px}
+
+/* Screenshots on a plate */
+.plate-figure {margin: 0; display: grid; gap: 12px; min-width: 0}
+.plate-figure img {display: block; width: 100%; border-radius: 8px; border: 1px solid var(--bx-rule); box-shadow: 0 2px 0 rgba(0,0,0,.12)}
+
+/* Problem */
+.problem-grid {display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 40px; align-items: start}
+.problem-copy {display: grid; gap: 14px; color: var(--bx-ink2); font-size: 18px}
+
+/* Marks */
+.marks-grid {display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 48px; align-items: center}
+.keys {list-style: none; margin: 24px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 18px; color: var(--bx-ink2); font-size: 15.5px}
+.keys li {display: flex; align-items: center; gap: 10px}
+.keys kbd {display: inline-grid; place-items: center; min-width: 38px; height: 30px; padding: 0 7px; border-radius: 5px; background: var(--bx-field); border: 1px solid var(--bx-rule); box-shadow: 0 2px 0 var(--bx-rule); color: var(--bx-ink); font: 600 14px/1 var(--bx-display)}
+
+/* Hotkeys and voice: copy beside a list of readings */
+.hotkeys-grid, .honest-grid {display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; align-items: start}
+.facts {list-style: none; margin: 24px 0 0; padding: 0; display: grid; gap: 12px; color: var(--bx-ink2)}
+.facts li {padding-left: 16px; border-left: 2px solid var(--bx-rule)}
+.facts b {color: var(--bx-ink); font-weight: 600}
+.readings {margin: 0; background: var(--bx-card); border: 1px solid var(--bx-rule); border-radius: 10px; overflow: hidden}
+.readings div {padding: 14px 18px; border-top: 1px solid var(--bx-rule); display: grid; gap: 6px}
+.readings div:first-child {border-top: 0}
+.readings dt {font-weight: 600}
+.readings dt code {font-size: 14px; background: var(--bx-field); border: 1px solid var(--bx-rule); border-radius: 4px; padding: 3px 7px}
+.readings dt .bx-led {font-size: 12px; letter-spacing: .1em}
+.readings dd {margin: 0; color: var(--bx-ink2); font-size: 15.5px}
+
+/* Agents */
+.agents-grid {display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: center; margin: 30px 0}
+.cli {margin: 0; white-space: pre; overflow-x: auto; padding: 18px 20px; font-size: 14px; line-height: 1.8}
+.bx-card code {overflow-wrap: anywhere}
+
+/* Nine siblings: three rows of three */
+@media (min-width: 881px) { #apps .bx-apps {grid-template-columns: repeat(3, minmax(0, 1fr))} }
+
+/* Privacy band */
+.bx-band {border-top: 0}
+.bx-band .bx-eyebrow {color: #8f9192}
+.bx-band .bx-card p {color: #a9abad}
+.band-link {margin-top: 24px}
+.band-link a {color: #f0f0f0; font-weight: 600}
+
+/* Get Exhibit A */
+.get-grid {display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, .7fr); gap: 40px; align-items: center}
+.get-mount {gap: 18px; padding-block: 44px}
+.get-mount .bx-badge {background: #c9cbcc; color: #161616}
+
+/* Footer: ten apps across, five on phones */
+.bx-family ul {align-items: start; grid-template-columns: repeat(10, minmax(0, 1fr))}
+.bx-family a {align-content: start}
+.bx-family strong {font-weight: 600; color: #e9eaea}
+.bx-family span {font-size: 12px; line-height: 1.35; color: #8f9192}
+.bx-footer .bx-wrap {align-items: center}
+.footer-brand {display: inline-flex; align-items: center; gap: 8px; font: 600 16px/1 var(--bx-display); color: #e9eaea !important}
+.bx-footer p {flex: 1}
+.footer-links {display: flex; flex-wrap: wrap; gap: 8px 20px}
+
+/* Inner pages */
+.page-head {padding-block: 40px 48px}
+.page-head h1 {font-weight: 600; font-size: clamp(40px, 6vw, 64px); line-height: 1; margin-top: 18px}
+.crumbs ol {list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 22px; padding: 0; font-size: 14px; color: var(--bx-muted)}
+.crumbs li + li::before {content: "›"; margin-right: 6px}
+.crumbs a {color: var(--bx-ink2)}
+.prose {display: grid; gap: 40px; padding-block: 56px 80px; color: var(--bx-ink2)}
+.prose > section {max-width: 760px}
+.prose section {display: grid; gap: 14px}
+.prose h2 {font-weight: 700; font-size: clamp(26px, 3vw, 32px); line-height: 1.1; color: var(--bx-ink)}
+.prose ul {margin: 0; padding-left: 20px; display: grid; gap: 6px}
+.prose code {overflow-wrap: anywhere}
+
+@media (max-width: 960px) {
+  .bx-family ul {grid-template-columns: repeat(5, minmax(0, 1fr))}
+}
+@media (max-width: 880px) {
+  .problem-grid, .marks-grid, .hotkeys-grid, .honest-grid, .agents-grid, .get-grid {grid-template-columns: minmax(0, 1fr); gap: 28px}
+}
+@media (max-width: 760px) {
+  .bx-family span {display: none}
+  .bx-section {padding-block: 56px}
+}
+@media (max-width: 420px) {
+  .stage-mount {padding: 12px}
+  .keys {grid-template-columns: minmax(0, 1fr)}
+}
+
+.bx-card .bx-strip, .bx-card .bx-led {justify-self: start}
+.faq-list {margin-top: 26px}
+.stage-mount, .get-mount {grid-template-columns: minmax(0, 1fr)}
