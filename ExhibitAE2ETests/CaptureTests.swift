@@ -98,6 +98,8 @@ final class CaptureTests: XCTestCase {
         let (item, _) = try await LiveCapture.waitForCapture(since: known)
         XCTAssertEqual(item.capturedBy, .person, "in history too")
         XCTAssertEqual(E2E.app.capture!.copiedNote.shown, notes + 1, "the copy is confirmed on screen")
+        XCTAssertTrue(E2E.app.capture!.copiedNote.isVisible, "the note is up")
+        XCTAssertFalse(NSApp.keyWindow.map { $0.level == .statusBar } ?? false, "the note never takes key")
         XCTAssertEqual(item.size, PixelSize(width: copied.width, height: copied.height))
         await E2E.settle(300)
         XCTAssertTrue(E2E.editors.windows.isEmpty, "no editor")
