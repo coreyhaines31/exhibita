@@ -31,6 +31,34 @@ public struct ProvidedCapture: @unchecked Sendable {
     }
 }
 
+/// Where an agent capture's document changes go after it is created. The app passes one backed by the editor's
+/// `OpenCaptures`, so a person who opens the capture before its text is read never saves over the auto-blur
+/// marks; tests and `StoreDocumentSink` write to the store directly.
+public protocol AgentDocumentSink: Sendable {
+    /// The finder has started on `id`.
+    func beginFinding(_ id: UUID) async
+    /// The finder failed on `id`.
+    func findingFailed(_ id: UUID) async
+    /// Stores the targets and adds `marks`, keeping marks already there. Returns once written, or once handed to
+    /// the owner of an open document, which writes it.
+    func targetsFound(_ targets: [Target], adding marks: [Mark], for id: UUID) async throws
+}
+
+/// Writes straight to the store. Only safe when nothing else can have the capture open.
+public struct StoreDocumentSink: AgentDocumentSink {
+    let store: CaptureStore
+
+    public init(store: CaptureStore) {
+        self.store = store
+    }
+
+    public func beginFinding(_ id: UUID) async {}
+    public func findingFailed(_ id: UUID) async {}
+    public func targetsFound(_ targets: [Target], adding marks: [Mark], for id: UUID) async throws {
+        try store.updateTargets(targets, adding: marks, for: id)
+    }
+}
+
 /// Answers bridge requests. A capture is saved to history tagged as an agent's, its targets are found, detected
 /// secrets are blurred in the copy the agent gets (unless the policy turns that off), and the person is told.
 /// The original in the bundle is never changed.
@@ -41,21 +69,26 @@ public struct AgentCaptureService: Sendable {
     let provider: any CaptureProvider
     let policy: @Sendable () -> CapturePolicy
     let findTargets: FindTargets
+    let documents: any AgentDocumentSink
     let present: @Sendable (UUID) async -> Bool
     let didCapture: @Sendable (UUID) async -> Void
 
     /// - Parameters:
     ///   - policy: read on every request, so a change in Settings applies to the next capture.
+    ///   - documents: where the targets and auto-blur marks are written; the app's goes through the editor's
+    ///     document owners. Defaults to the store.
     ///   - present: shows a capture to the person (`exhibit open`); returns false when it could not.
     ///   - didCapture: called after an agent capture is saved, to flash the menu bar glyph and refresh history.
     public init(store: CaptureStore, provider: any CaptureProvider, policy: @escaping @Sendable () -> CapturePolicy,
                 findTargets: @escaping FindTargets = { try await TargetFinder().findTargets(in: $0) },
+                documents: (any AgentDocumentSink)? = nil,
                 present: @escaping @Sendable (UUID) async -> Bool,
                 didCapture: @escaping @Sendable (UUID) async -> Void = { _ in }) {
         self.store = store
         self.provider = provider
         self.policy = policy
         self.findTargets = findTargets
+        self.documents = documents ?? StoreDocumentSink(store: store)
         self.present = present
         self.didCapture = didCapture
     }
@@ -94,26 +127,30 @@ public struct AgentCaptureService: Sendable {
         } catch {
             throw BridgeError(.captureFailed, "The capture could not be saved to history: \(error)")
         }
+        await documents.beginFinding(id)
         let targets: [Target]
         do {
             targets = try await findTargets(provided.image)
         } catch {
             // Without targets nothing can be blurred, so the agent gets nothing; the person still has it.
+            await documents.findingFailed(id)
             await didCapture(id)
             throw BridgeError(.captureFailed, "Reading text in the capture failed, so secrets could not be "
                               + "blurred. The capture is in history for the person: \(error)")
         }
-        var document = try store.load(id).document
-        document.targets = targets
         let blurs = policy.agentAutoBlur ? Self.autoBlurMarks(targets, kinds: policy.autoBlurKinds) : []
-        // The blurs are marks on the document, so every later render of the capture (by the CLI or the editor)
-        // keeps them, and the person can still remove them; original.png is untouched.
-        document.marks += blurs
         let image = store.exportURL(for: id)
         do {
-            try store.save(document)
-            let original = try store.load(id).original
-            try PNG.encode(Renderer.render(document, original: original)).write(to: image, options: .atomic)
+            // The blurs are marks on the document, so every later render of the capture (by the CLI or the
+            // editor) keeps them, and the person can still remove them; original.png is untouched. They go
+            // through `documents`, so an editor already open on the capture merges them instead of saving over.
+            try await documents.targetsFound(targets, adding: blurs, for: id)
+            let loaded = try store.load(id)
+            var document = loaded.document
+            // The agent's copy has every blur, whether or not an open editor has written them yet.
+            document.targets = targets
+            document.marks += blurs.filter { blur in !document.marks.contains { $0.id == blur.id } }
+            try PNG.encode(Renderer.render(document, original: loaded.original)).write(to: image, options: .atomic)
         } catch {
             await didCapture(id)
             throw BridgeError(.captureFailed, "The capture could not be written: \(error)")
@@ -123,7 +160,10 @@ public struct AgentCaptureService: Sendable {
         for target in targets where blurs.contains(where: { $0.targetID == target.id }) {
             kinds[target.kind.rawValue, default: 0] += 1
         }
-        return CaptureResult(id: id, bundle: store.url(for: id).path, image: image.path,
+        // The agent was given a redacted image; the unredacted original is not one path away. The id still works
+        // in every command, and those render the document, blurs included.
+        let bundle = policy.agentAutoBlur && !blurs.isEmpty ? nil : store.url(for: id).path
+        return CaptureResult(id: id, bundle: bundle, image: image.path,
                              width: provided.image.width, height: provided.image.height, scale: provided.scale,
                              appName: provided.appName, windowTitle: provided.windowTitle,
                              autoBlur: .init(enabled: policy.agentAutoBlur, blurred: blurs.count, kinds: kinds),

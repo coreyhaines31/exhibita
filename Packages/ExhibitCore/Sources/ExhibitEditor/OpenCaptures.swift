@@ -23,6 +23,8 @@ public final class OpenCaptures {
     private var finding: Set<UUID> = []
     /// Target results that arrived while their capture was loading. nil means the finder failed.
     private var heldResults: [UUID: [Target]?] = [:]
+    /// Auto-blur marks of agent captures that arrived while their capture was loading.
+    private var heldMarks: [UUID: [Mark]] = [:]
 
     public init(store: CaptureStore, writer: DocumentWriter? = nil) {
         self.store = store
@@ -64,6 +66,23 @@ public final class OpenCaptures {
         }
     }
 
+    /// An agent capture's targets and auto-blur marks. An open capture's owner merges both; while the capture
+    /// is loading they are held; otherwise they are written on the writer's queue, ahead of any later open, and
+    /// this returns once they are on disk. Either way no editor can save the capture without the blurs.
+    public func agentTargetsFound(_ targets: [Target], blurs: [Mark], for id: UUID) async throws {
+        finding.remove(id)
+        if let capture = captures[id] {
+            capture.owner.mergeTargets(targets)
+            capture.owner.addMarks(blurs)
+        } else if loading.contains(id) {
+            heldResults[id] = .some(targets)
+            heldMarks[id, default: []] += blurs
+        } else {
+            let store = store
+            try await writer.perform { try store.updateTargets(targets, adding: blurs, for: id) }
+        }
+    }
+
     /// The finder failed on `id`. An open editor stops waiting for text.
     public func findingFailed(_ id: UUID) {
         finding.remove(id)
@@ -102,6 +121,7 @@ public final class OpenCaptures {
                 capture.owner.targetsUnavailable()
             }
         }
+        if let marks = heldMarks.removeValue(forKey: id) { capture.owner.addMarks(marks) }
         return capture
     }
 

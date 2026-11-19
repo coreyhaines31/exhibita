@@ -13,11 +13,18 @@ struct Session {
     /// True when targets came from the bundle's document instead of a fresh OCR pass.
     private(set) var targetsReused = false
     private var targetsLoaded = false
+    /// The capture id, when the input was given as one and the capture is an agent's with blurs: outputs then
+    /// name the id, not the bundle, so an agent given a redacted capture is not handed the path to the original.
+    private(set) var withheldID: String?
 
     var imageSize: PixelSize { PixelSize(width: original.width, height: original.height) }
     /// The bundle's scale, or nil for plain files so the renderer infers one from the image size.
     var scale: Double? { bundle?.document.scale }
     var layout: MarkLayout { MarkLayout(scale: scale, imageSize: imageSize) }
+    /// The input as outputs name it: the capture id when the bundle path is withheld, else the path.
+    var reportedInput: String { withheldID ?? inputURL.path }
+    /// The bundle path for outputs, or nil when there is no bundle or its path is withheld.
+    var reportedBundle: String? { withheldID == nil ? bundle?.url.path : nil }
 
     static func open(_ path: String) throws -> Session {
         let url = try CaptureID.resolve(path)
@@ -32,7 +39,13 @@ struct Session {
             } catch let error as ExhibitError {
                 throw CLIError.io("\(url.path) is not a readable .exhibit bundle: \(error.description)")
             }
-            return Session(inputURL: url, original: loaded.original, bundle: loaded)
+            var session = Session(inputURL: url, original: loaded.original, bundle: loaded)
+            let givenAsID = url.path != URL(fileURLWithPath: path).standardizedFileURL.path
+            if givenAsID, loaded.document.source?.capturedBy == .agent,
+               loaded.document.marks.contains(where: { $0.kind == .blur }) {
+                session.withheldID = path.trimmingCharacters(in: .whitespaces)
+            }
+            return session
         }
         guard let data = try? Data(contentsOf: url) else { throw CLIError.io("Could not read \(url.path).") }
         guard let image = try? PNG.decode(data) else {

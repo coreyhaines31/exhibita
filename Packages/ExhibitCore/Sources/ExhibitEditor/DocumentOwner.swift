@@ -35,6 +35,18 @@ public final class DocumentOwner {
         writer.submit(document)
     }
 
+    /// Called after `addMarks`, so an editor can keep the added marks in its undo history.
+    @ObservationIgnored public var onMarksAdded: (([Mark]) -> Void)?
+
+    /// Adds marks made outside the editor (an agent capture's auto-blur) to the person's marks and queues a write.
+    public func addMarks(_ marks: [Mark]) {
+        let added = marks.filter { mark in !document.marks.contains { $0.id == mark.id } }
+        guard !added.isEmpty else { return }
+        document.marks += added
+        writer.submit(document)
+        onMarksAdded?(added)
+    }
+
     /// The finder failed: stop waiting for targets. Nothing to write.
     public func targetsUnavailable() {
         targetsLoaded = true

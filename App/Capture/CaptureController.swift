@@ -27,6 +27,7 @@ final class CaptureController {
 
     func start(_ action: HotkeyAction) {
         guard !overlay.isActive else { return }
+        model.clearCaptureRefusal()
         model.permission = ScreenRecording.state
         guard model.permission == .granted else {
             showPanel()
@@ -48,11 +49,12 @@ final class CaptureController {
                 captured = try await ScreenCapturer.capture(region, policy: policy())
             case .window(let window):
                 let bundle = NSRunningApplication(processIdentifier: window.ownerPID)?.bundleIdentifier
-                guard policy().decision(for: CaptureSubject(bundleIdentifier: bundle, appName: window.ownerName))
-                        == .allow else {
-                    // The never-capture list refuses the window. The overlay has closed; a beep says nothing was
-                    // taken. A message in the panel is left for later (docs/product/capture-bridge.md).
+                let subject = CaptureSubject(bundleIdentifier: bundle, appName: window.ownerName)
+                if case .blackOut(let reason) = policy().decision(for: subject) {
+                    // The never-capture list refuses the window. The overlay has closed; the panel says why.
                     NSSound.beep()
+                    model.refuseCapture(reason: reason)
+                    showPanel()
                     return
                 }
                 captured = try await ScreenCapturer.capture(windowID: window.id)

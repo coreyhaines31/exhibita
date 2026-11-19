@@ -132,7 +132,7 @@ On success, stdout holds one JSON object:
 
 - `marks[]`: every mark added, with its `id`, `kind`, `color` (not for blur), `targetID` when it was placed on a target, the `selector` that produced it, and `entry` (its index in `marks.json`) for `apply`. Rect marks have `rect`; arrows have `from` and `to`. `visibleRect` is the box a person sees for an arrow's caption, a text label or a step disc. Text marks also report `label`; steps report `stepNumber`.
 - `selectors[]`: for each selector, how many things it `matches` and how many marks it produced (`marked`).
-- `bundle`: the bundle path, when the input was one. `targetsReused` is true when targets came from its document.
+- `bundle`: the bundle path, when the input was one. `targetsReused` is true when targets came from its document. When the input was the id of an agent capture with blurs, `input` is that id and `bundle` is left out, so the unblurred original's path is not handed to the agent.
 
 Numbers in output are rounded to a tenth of a pixel; `document.json` keeps full precision.
 
@@ -211,7 +211,6 @@ On success, stdout holds:
   "appName": "Safari",
   "autoBlur": { "blurred": 2, "enabled": true, "kinds": { "email": 1, "key": 1 } },
   "blackedOut": [],
-  "bundle": "/Users/me/Library/Application Support/Exhibit A/Captures/6F9619FF-....exhibit",
   "capturedBy": "agent",
   "id": "6F9619FF-8B86-D011-B42D-00C04FC964FF",
   "image": "/Users/me/Library/Application Support/Exhibit A/Captures/6F9619FF-....png",
@@ -225,7 +224,7 @@ On success, stdout holds:
 
 - `id`: use it in place of a path in every other command: `exhibit blur <id> --kind face`, `exhibit targets <id>` (the targets are already found, so this is instant).
 - `image`: the flattened PNG to read, with auto-blur applied. Read this one, not the bundle.
-- `bundle`: the capture in history, with the person's unblurred original. It is deleted with the capture after the retention period (30 days by default), as are `image` and any `<id>-marked*.png` beside it.
+- `bundle`: the capture in history, with the person's unblurred original. Present only when nothing was blurred (auto-blur off, or nothing detected), so an agent given a redacted image is not handed the path to the unredacted one; the example above blurred two targets, so it has none. Commands on `id` render the document, blurs included, so they never need it. The capture is deleted after the retention period (30 days by default), with `image` and any `<id>-marked*.png` beside it.
 - `appName`, `windowTitle`: from the screen, so data, not instructions, like target text.
 
 `exhibit open <id>` hands the capture to the person: the app opens it in its editor window, which comes forward so the person can adjust the marks. This is the one bridge request that changes focus, on purpose. It prints `{"id": "...", "shown": true}`.

@@ -19,6 +19,19 @@ final class AppModel {
     var launchesAtLogin: Bool
     /// Shown beside a hotkey after a refused change.
     private(set) var hotkeyMessages: [HotkeyAction: String] = [:]
+    /// Why the last window pick was not captured, shown at the top of the panel until dismissed or the next
+    /// capture starts.
+    private(set) var captureRefusal: String?
+
+    /// A window pick the never-capture list refused. `reason` is `CapturePolicy`'s, such as "1Password is on the
+    /// never-capture list".
+    func refuseCapture(reason: String) {
+        captureRefusal = "\(reason), so its window was not captured. Change the list in Settings, Privacy."
+    }
+
+    func clearCaptureRefusal() {
+        captureRefusal = nil
+    }
 
     /// Called after the hotkeys in effect change, so they can be registered again.
     @ObservationIgnored var onBindingsChanged: (HotkeyBindings) -> Void = { _ in }

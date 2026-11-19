@@ -123,7 +123,8 @@ public struct BridgeResponse: Codable, Equatable, Sendable {
 }
 
 /// What an agent gets back from a capture. `image` is the copy for the agent: detected secrets blurred unless
-/// auto-blur is off. `bundle` holds the untouched original for the person.
+/// auto-blur is off. `bundle` holds the untouched original for the person, and is left out when auto-blur blurred
+/// something, so an agent given a redacted image is not handed the path to the unredacted one.
 public struct CaptureResult: Codable, Equatable, Sendable {
     public struct AutoBlur: Codable, Equatable, Sendable {
         public var enabled: Bool
@@ -140,7 +141,8 @@ public struct CaptureResult: Codable, Equatable, Sendable {
     }
 
     public var id: UUID
-    public var bundle: String
+    /// The capture bundle, or nil when auto-blur is on and blurred at least one target.
+    public var bundle: String?
     public var image: String
     public var width: Int
     public var height: Int
@@ -152,7 +154,7 @@ public struct CaptureResult: Codable, Equatable, Sendable {
     public var blackedOut: [String]
     public var targets: Int
 
-    public init(id: UUID, bundle: String, image: String, width: Int, height: Int, scale: Double, appName: String?,
+    public init(id: UUID, bundle: String?, image: String, width: Int, height: Int, scale: Double, appName: String?,
                 windowTitle: String?, autoBlur: AutoBlur, blackedOut: [String], targets: Int) {
         self.id = id
         self.bundle = bundle

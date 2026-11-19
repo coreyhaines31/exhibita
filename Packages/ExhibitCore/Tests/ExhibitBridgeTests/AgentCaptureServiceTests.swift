@@ -70,7 +70,7 @@ final class Recorder<Value: Sendable>: @unchecked Sendable {
         #expect(result.targets == 3)
         #expect(result.appName == "Safari")
         #expect(result.width == fixture.image.width)
-        #expect(result.bundle == store.url(for: result.id).path)
+        #expect(result.bundle == nil, "the unblurred original is not one path away from the blurred copy")
         #expect(result.image == store.exportURL(for: result.id).path)
 
         let item = try #require(store.list().first)
@@ -96,6 +96,16 @@ final class Recorder<Value: Sendable>: @unchecked Sendable {
         #expect(result.autoBlur == .init(enabled: false, blurred: 0, kinds: [:]))
         #expect(try store.load(result.id).document.marks.isEmpty)
         #expect(try Data(contentsOf: URL(fileURLWithPath: result.image)) == PNG.encode(fixture.image))
+        #expect(result.bundle == store.url(for: result.id).path, "nothing was redacted, so nothing to withhold")
+    }
+
+    @Test func theBundleIsGivenWhenAutoBlurFindsNothing() async throws {
+        let store = try store()
+        let response = await service(store, policy: CapturePolicy(autoBlurKinds: [.phone]))
+            .handle(BridgeRequest(method: .capture))
+        let result = try #require(response.capture)
+        #expect(result.autoBlur.blurred == 0)
+        #expect(result.bundle == store.url(for: result.id).path)
     }
 
     @Test func failedTextReadingGivesTheAgentNothing() async throws {

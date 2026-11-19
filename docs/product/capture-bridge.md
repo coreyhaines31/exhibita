@@ -38,8 +38,8 @@ Unit 6. How `exhibit capture` and `exhibit open` reach the running app, which ho
 3. `SCScreenshotManager` takes the still image. No overlay, nothing activated, focus untouched.
 4. The capture is saved to history with `capturedBy: agent`, so history shows "by agent", and the menu bar glyph blinks twice.
 5. `TargetFinder` reads it. If that fails, the agent gets `capture_failed` and no image, because secrets could not be blurred; the person still has the capture.
-6. Auto-blur (on by default, Settings): every email, key, card and phone target becomes a blur mark on the document, and `<id>.png` beside the bundle is rendered through the real renderer. Because the blurs are marks, every later CLI render of the capture id keeps them, and the person can remove them in the editor. `original.png` is never changed.
-7. The response names the id, the bundle, the image, the size, the blur counts by kind and the blacked-out reasons.
+6. Auto-blur (on by default, Settings): every email, key, card and phone target becomes a blur mark on the document, and `<id>.png` beside the bundle is rendered through the real renderer. Because the blurs are marks, every later CLI render of the capture id keeps them, and the person can remove them in the editor. `original.png` is never changed. The targets and blurs go through the editor's `OpenCaptures` (`AgentDocumentSink`, `EditorDocumentSink` in the app), like a person's capture's targets: an editor already open on the capture shows "reading text" until they arrive and then merges them into its document; the blurs join every step of its undo history, so undoing the person's own change never removes them.
+7. The response names the id, the image, the size, the blur counts by kind and the blacked-out reasons. It names the bundle only when nothing was blurred: an agent that was given a redacted image is not handed the path to the unredacted original. Commands on the id keep the blurs, so the bundle path is never needed.
 
 `exhibit open <id>` opens the capture in the editor (`EditorWindows.open`), the one bridge request that brings a window forward, because handing the capture to a person is its purpose. The call site is the `present` closure in `AppDelegate.startBridge`.
 
@@ -47,15 +47,14 @@ Unit 6. How `exhibit capture` and `exhibit open` reach the running app, which ho
 
 One file, `~/Library/Application Support/Exhibit A/policy.json` (`docs/format.md`), so a team or a managed profile can supply it later. Defaults: 1Password (`com.1password.1password`), 1Password 7 (`com.agilebits.onepassword7`), Bitwarden (`com.bitwarden.desktop`), Dashlane and LastPass (by name: their bundle identifiers are not verified), KeePassXC (`org.keepassxc.keepassxc`), Passwords (`com.apple.Passwords` and its menu bar extra) and Keychain Access (`com.apple.keychainaccess`). An entry matches by bundle identifier or by app name, ignoring case. A damaged file, or one from a newer version, is ignored in favour of the defaults, so a broken file never switches protection off.
 
-It applies to people too: a region or screen capture blacks listed windows out, and picking a listed window with Space is refused with a beep.
+It applies to people too: a region or screen capture blacks listed windows out, and picking a listed window with Space is refused with a beep and the panel opens saying which app is on the list and where to change it.
 
 ## Residual risks
 
 - **Anything running as this user can use the bridge.** The uid check stops other accounts, not other programs of the same user. Such a program could already read the screen by other means if it has Screen Recording itself, and it can read history on disk without any permission. The bridge lends the app's Screen Recording grant to every process of this user; that is the feature, and the flash and "by agent" tag are how the person notices.
-- **The original is on disk.** `bundle` points at the unblurred original, readable by the same user. Auto-blur keeps secrets out of what an agent is asked to read, not out of reach of a hostile one.
+- **The original is on disk.** The unblurred original is readable by the same user, and its path follows from the id and the documented history folder. Leaving `bundle` out of a blurred result keeps it out of what an agent is handed, not out of reach of a hostile one. Auto-blur keeps secrets out of what an agent is asked to read, not out of reach of a hostile one.
 - **Detection is pattern matching** and misses things: names, addresses, secrets in images or odd formats. A capture's text may also be misread by OCR.
 - **The never-capture list matches apps, not content.** A password shown in a browser tab or a terminal is captured. Names are matched as reported by macOS; an app that renames itself and changes its bundle identifier escapes the list until it is added again.
 - **Blackout geometry is unverified on a live Mac** (window and display frames assumed to share ScreenCaptureKit's global top-left space). See `unit6-live-checklist.md`.
 - **Window titles and app names come from the screen** and are returned to agents: a page title can say anything. They are labelled as data, not instructions.
-- **Short race with the editor:** the bridge writes targets and blur marks to a new agent capture's `document.json` directly, before the history refresh that would let a person open it. A person who opens that capture from history within that moment could see the document without its blurs until the editor saves again.
-- **A person's refused window pick** only beeps. A message in the panel is not built yet.
+- **A person can remove the blurs.** In the editor they are ordinary marks. The person deleting one changes what later commands on the id render, by design.
