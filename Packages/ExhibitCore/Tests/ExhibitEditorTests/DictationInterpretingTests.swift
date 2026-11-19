@@ -19,7 +19,26 @@ import Testing
         #expect(dictation.editor.dictation == .needsModel(transcript: "hide anything that identifies the customer"))
         #expect(dictation.editor.dictation?.link == .modelSettings)
         #expect(dictation.editor.status.text?.contains("blur the emails") == true, "an example the grammar reads")
+        #expect(dictation.editor.status.text?.contains("Needs a local model: choose one in Settings") == true)
         #expect(dictation.editor.marks.isEmpty)
+    }
+
+    /// The app looks for a model server the first time a model is needed; the session waits for that answer.
+    @Test func aModelFoundWhileTheInstructionWaitsIsUsed() async {
+        let answer = Interpretation(operations: [InterpretedOperation(mark: .blur, picks: [.id(fixture.emailID)])])
+        let model = FakeModel(.success(.understood(answer)))
+        let dictation = DictationSession(editor: makeEditor(fixture), original: fixture.fixture.image,
+                                         transcriber: FakeTranscriber(), model: {
+                                             try? await Task.sleep(for: .milliseconds(50))
+                                             return model
+                                         })
+        dictation.submit("hide anything that identifies the customer")
+        await until { model.calls == 1 }
+        await dictation.settle()
+        guard case .applied(_, _, true) = dictation.editor.dictation else {
+            Issue.record("not applied by the model: \(String(describing: dictation.editor.dictation))")
+            return
+        }
     }
 
     @Test func theModelIsAskedOnlyWhenTheGrammarDeclines() async {

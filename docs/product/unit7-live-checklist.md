@@ -67,12 +67,14 @@ Also:
 
 | Step | Expected |
 |---|---|
-| Settings, Free-form instructions | Off by default; endpoint http://127.0.0.1:11434. |
-| With it off, say or type "hide anything that identifies the customer" | "Needs a model: set one up in Settings, or try “blur the emails”." and a Settings key that opens Settings. Nothing changes. |
-| Turn it on, model `qwen3.8:27b` (or whatever is installed), press Test with Ollama running | "Reachable. ... answered in N s, loading included if it wasn't loaded." Write down N cold and warm. |
-| Model name with a typo, Test | "The server is running but has no model called ...". |
-| Endpoint http://192.168.1.20:11434, Test | "192.168.1.20 isn't this Mac..." and nothing is sent (check with Little Snitch or `nettop`). |
-| Stop Ollama, Test | "Nothing is answering at http://127.0.0.1:11434. Is the model server running?" |
+| Settings, Instructions in your own words, with Ollama running and never chosen (issue 96) | The Model menu lists Ollama's models with `qwen3.8:27b (recommended)` selected; "Using qwen3.8:27b from Ollama on this Mac." No click needed; an editor uses it. |
+| Quit Ollama, Check Again | "No model server is running on this Mac..." with `ollama pull qwen3.8:27b` and a copy button that copies it. Start Ollama, Check Again: back to "Using ...". |
+| Choose ornith-1.5:9b, reopen Settings | Still ornith-1.5:9b: a choice is never replaced by the default. |
+| Choose None, then say or type "hide anything that identifies the customer" | "Needs a local model: choose one in Settings, or try “blur the emails”." and a Settings key that opens Settings. Nothing changes. |
+| Choose a model, press Test with Ollama running | "Reachable. ... answered in N s, loading included if it wasn't loaded." Write down N cold and warm. |
+| Other, model name with a typo, Test | "The server is running but has no model called ...". |
+| Other, endpoint http://192.168.1.20:11434 | "The model endpoint must be on this Mac ...; 192.168.1.20 is not, so nothing was sent." Test is off, and nothing is sent (check with Little Snitch or `nettop`). |
+| With a model chosen, stop Ollama, Check Again | "Ollama isn't answering, so ... can't be used. Open Ollama, or start it:" with `ollama serve` to copy. |
 | Ollama running, say "hide anything that identifies the customer" | "Asking the local model. This can take several seconds." then each mark named and "Check it; ⌘Z undoes all of it." Time it; model-latency.md expects 5 to 8 s on a new screen with a 27B model. |
 | While the model works, hold D or type another instruction | "Still working on the last instruction. Try again when it finishes." Only the first instruction's marks appear. |
 | While the model works, close the window | No marks are added after closing; reopen from history to check. |

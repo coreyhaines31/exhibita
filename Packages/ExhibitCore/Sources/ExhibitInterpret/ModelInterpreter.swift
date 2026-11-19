@@ -24,8 +24,23 @@ public struct URLSessionModelTransport: ModelTransport {
     public init() {}
 
     public func post(_ url: URL, body: Data, timeout: TimeInterval) throws -> ModelHTTPResponse {
-        guard let host = url.host, ModelEndpoint.isLoopback(host) else {
-            throw ModelError.notLoopback(url.host ?? url.absoluteString)
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: timeout)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = body
+        return try send(request, timeout: timeout)
+    }
+
+    /// A `GET` on this Mac, for `ModelDiscovery`'s model lists; the same rules as `post`.
+    public func get(_ url: URL, timeout: TimeInterval) throws -> ModelHTTPResponse {
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: timeout)
+        request.httpMethod = "GET"
+        return try send(request, timeout: timeout)
+    }
+
+    private func send(_ request: URLRequest, timeout: TimeInterval) throws -> ModelHTTPResponse {
+        guard let url = request.url, let host = url.host, ModelEndpoint.isLoopback(host) else {
+            throw ModelError.notLoopback(request.url?.host ?? request.url?.absoluteString ?? "no URL")
         }
         let configuration = URLSessionConfiguration.ephemeral
         configuration.connectionProxyDictionary = [:]
@@ -35,11 +50,6 @@ public struct URLSessionModelTransport: ModelTransport {
         configuration.httpCookieStorage = nil
         let session = URLSession(configuration: configuration, delegate: RefuseRedirects(), delegateQueue: nil)
         defer { session.invalidateAndCancel() }
-
-        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: timeout)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = body
 
         let reply = ReplyBox()
         let done = DispatchSemaphore(value: 0)

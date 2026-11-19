@@ -72,7 +72,7 @@ final class InstructionTests: XCTestCase {
         guard case .needsModel = editor.editor.dictation else {
             return XCTFail("expected Needs a model, got \(String(describing: editor.editor.dictation))")
         }
-        XCTAssertTrue(editor.editor.status.text?.contains("Needs a model: set one up in Settings") == true,
+        XCTAssertTrue(editor.editor.status.text?.contains("Needs a local model: choose one in Settings") == true,
                       "\(String(describing: editor.editor.status.text))")
         XCTAssertTrue(editor.editor.marks.isEmpty)
         try await editor.picture(named: "editor-needs-model")
