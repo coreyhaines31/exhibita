@@ -145,6 +145,24 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
+  # App-hosted end-to-end tests (Scripts/run-e2e.sh): the bundle runs inside the real Exhibit A app, which shows its
+  # windows, and drives it with synthetic events posted to its own windows. Needs signing, so it has its own scheme
+  # and never runs with the ExhibitA scheme's tests. The app's TestSeam (debug builds only) moves history, the
+  # socket and settings to throwaway places; no permission is ever asked for.
+  ExhibitAE2ETests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - ExhibitAE2ETests
+      # The shared synthetic screenshots, compiled in: ExhibitFixtures is not a package product.
+      - Packages/ExhibitCore/Sources/ExhibitFixtures
+    dependencies:
+      - target: ExhibitA
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Exhibit A.app/Contents/MacOS/Exhibit A"
+        BUNDLE_LOADER: "$(TEST_HOST)"
 schemes:
   ExhibitA:
     build:
@@ -153,3 +171,11 @@ schemes:
     test:
       targets:
         - ExhibitAViewTests
+  ExhibitAE2E:
+    build:
+      targets:
+        ExhibitA: all
+        ExhibitAE2ETests: [test]
+    test:
+      targets:
+        - ExhibitAE2ETests
