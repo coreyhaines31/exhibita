@@ -26,6 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if TestSeam.isActive, !TestSeam.allowsCapture { ScreenRecording.forcedOff = true }
         PanelFont.register()
         if !TestSeam.isActive { LaunchAtLogin.applyDefault() }
+        updater.start()
 
         let store = CaptureStore(directory: (try? TestSeam.capturesDirectory())
             ?? FileManager.default.temporaryDirectory.appendingPathComponent("Exhibit A Captures"))
