@@ -1,6 +1,7 @@
 import AppKit
 import CoreGraphics
 import ExhibitCore
+import ExhibitInterpret
 import ExhibitShell
 import ExhibitStore
 import PanelKit
@@ -157,6 +158,26 @@ final class PanelRenderTests: XCTestCase {
         try renderSettings(after, name: "settings-taken-over", schemes: [.light])
     }
 
+    func testRendersFreeFormSettings() throws {
+        let model = try makeModel()
+        let reachable = FreeFormSettings(settings: ModelSettings(enabled: true, model: "qwen3.8:27b"))
+        reachable.probe = .reachable(model: "qwen3.8:27b", seconds: 6.4)
+        try renderSettings(model, name: "settings-free-form", freeForm: reachable)
+        let remote = FreeFormSettings(settings: ModelSettings(enabled: true, endpoint: "http://192.168.1.20:11434",
+                                                              model: "qwen3:8b"))
+        remote.probe = .notLoopback("192.168.1.20")
+        try renderSettings(model, name: "settings-free-form-not-loopback", schemes: [.light], freeForm: remote)
+    }
+
+    func testFreeFormIsOffByDefaultAndSavesWhatChanges() throws {
+        let settings = FreeFormSettings()
+        XCTAssertFalse(settings.settings.enabled)
+        XCTAssertNil(settings.interpreter(), "no model unless one is turned on")
+        settings.settings = ModelSettings(enabled: true, model: "qwen3:8b")
+        XCTAssertEqual(FreeFormSettings().settings.model, "qwen3:8b", "kept in preferences")
+        XCTAssertNotNil(settings.interpreter())
+    }
+
     // MARK: - Rendering
 
     private func renderFolder() -> URL {
@@ -185,10 +206,12 @@ final class PanelRenderTests: XCTestCase {
     /// Settings is a native form, whose controls `ImageRenderer` can't draw, so it goes through an unattached
     /// hosting view's display cache instead. Still no window.
     private func renderSettings(_ model: AppModel, name: String, schemes: [ColorScheme] = [.light, .dark],
-                                policy: CapturePolicyModel? = nil) throws {
+                                policy: CapturePolicyModel? = nil,
+                                freeForm: FreeFormSettings = FreeFormSettings(settings: ModelSettings())) throws {
         for scheme in schemes {
             let hosting = NSHostingView(rootView: SettingsView(model: model, actions: SettingsActions(),
-                                                               drawsRecorders: false, policy: policy)
+                                                               drawsRecorders: false, policy: policy,
+                                                               freeForm: freeForm)
                 .background(Color(nsColor: .windowBackgroundColor)))
             hosting.appearance = NSAppearance(named: scheme == .dark ? .darkAqua : .aqua)
             hosting.frame = NSRect(origin: .zero, size: hosting.fittingSize)

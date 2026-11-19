@@ -1,6 +1,7 @@
 @testable import ExhibitCLI
 import ExhibitCore
 import ExhibitFixtures
+import ExhibitPlanning
 import ExhibitTargets
 import Foundation
 import Testing

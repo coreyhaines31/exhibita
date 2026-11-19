@@ -1,4 +1,5 @@
 import ExhibitCore
+import ExhibitPlanning
 import Foundation
 
 /// `marks.json` for `exhibit apply`: an array of entries, or `{"marks": [...]}`. Each entry is one mark command,

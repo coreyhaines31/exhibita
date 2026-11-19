@@ -36,17 +36,21 @@ public enum EditorCommand: Equatable, Sendable {
     case copyPath
     /// Esc: close; the capture stays in history.
     case close
+    /// D, held: dictate. The app starts listening on key-down (repeats ignored) and stops on key-up.
+    case dictate
+    /// /: type an instruction instead of saying it.
+    case typeInstruction
 
     /// Commands the app carries out (clipboard, files, windows). The editor handles the rest itself.
     public var isAppCommand: Bool {
         switch self {
-        case .copyAndClose, .save, .copyPath, .close: true
+        case .copyAndClose, .save, .copyPath, .close, .dictate, .typeInstruction: true
         default: false
         }
     }
 }
 
-/// The spec's Keys table. D (dictate) is unit 7 and deliberately unbound.
+/// The spec's Keys table, plus / for a typed instruction.
 public enum EditorKeymap {
     public static func command(for key: EditorKey, modifiers: KeyModifiers) -> EditorCommand? {
         let modifiers = modifiers.intersection(.all)
@@ -66,7 +70,10 @@ public enum EditorKeymap {
     ]
 
     private static func command(for letter: String, modifiers: KeyModifiers) -> EditorCommand? {
+        // "/" needs ⇧ on some layouts, so ⇧ is allowed with it.
+        if letter == "/", modifiers.isSubset(of: [.shift]) { return .typeInstruction }
         guard modifiers.isEmpty else { return modified[modifiers]?[letter] }
+        if letter == "d" { return .dictate }
         if let tool = EditorTool.allCases.first(where: { $0.key.lowercased() == letter }) { return .tool(tool) }
         if let color = MarkColor.allCases.first(where: { $0.key == letter }) { return .color(color) }
         return nil

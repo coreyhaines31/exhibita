@@ -1,6 +1,6 @@
 # Exhibit A — v1 spec
 
-Draft, 2026-11-18. Verdict: **unproven**. Units 0 to 3 are built (core, targets, CLI on files, interpreter spike). Unit 4 (the app shell) and unit 5 (the editor) are built and unit tested but not yet checked live (`docs/product/unit4-live-checklist.md`, `docs/product/unit5-live-checklist.md`).
+Draft, 2026-11-18. Verdict: **unproven**. Units 0 to 3 are built (core, targets, CLI on files, interpreter spike). Unit 4 (the app shell), unit 5 (the editor) and unit 7 (voice) are built and unit tested but not yet checked live (`docs/product/unit4-live-checklist.md`, `docs/product/unit5-live-checklist.md`, `docs/product/unit7-live-checklist.md`).
 
 A Mac menu bar screenshot tool where marking up takes single keystrokes, a spoken sentence, or one CLI command from an agent. Tenth app in the Brushed family. Local, free, no account. CLI binary: `exhibit`.
 
@@ -94,6 +94,7 @@ After either hotkey: drag for a region, Space to pick a window, ↩ for the whol
 | N | Numbered step, counts up by itself |
 | ⇧B | Blur every detected secret |
 | D (hold) | Dictate |
+| / | Type an instruction instead of saying it; same path as D |
 | 1–4 | Colour |
 | ⌘Z | Undo, including dictated marks |
 | ↩ | Copy image and close |
@@ -105,7 +106,7 @@ Blurring one email and pointing at a button: hotkey, drag, B, click, A, drag, �
 
 ## Voice
 
-Hold D, speak, release. Speech is transcribed on the Mac. The interpreter turns the sentence into marks against the target list, applies them at once, and shows what it did and what it could not find. ⌘Z removes the whole batch.
+Hold D, speak, release. Speech is transcribed on the Mac: `SpeechAnalyzer` on macOS 26 and later, `SFSpeechRecognizer` with on-device recognition required on macOS 14 to 25 (no server fallback). The interpreter turns the sentence into marks against the target list, applies them at once through the same planning as `exhibit say`, and shows what it did and what it could not find. ⌘Z removes the whole batch. / opens a field to type the instruction instead. One instruction at a time: another while the model is working is refused with a message.
 
 | Said | Result | Handled by |
 |---|---|---|
@@ -148,7 +149,7 @@ exhibit mcp                                   # stdio MCP server, same commands
 | Listening / interpreting | Live transcript while held, then a short working state; no success before marks exist |
 | Partial match | "Blurred 4 emails. Couldn't find: pricing button." Found marks applied |
 | Nothing understood | Transcript shown with "No changes made" |
-| Needs a model | The grammar declined and no model is set up: transcript shown with "This needs a model. Set one up in Settings." Nothing changes |
+| Needs a model | The grammar declined and no model is set up: transcript shown with "Needs a model: set one up in Settings, or try “blur the emails”." and a Settings key. Nothing changes |
 | Model edit applied | Each mark is named in the summary ("Blurred 4 emails, circled Pricing"), because about 1 model answer in 10 is wrong; one ⌘Z removes the batch |
 | Secrets found, none blurred | Quiet count: "3 possible secrets. ⇧B to blur." Never blocks copying |
 | Never-capture app in frame | That window is blacked out with a label saying why |
@@ -230,7 +231,8 @@ Targets (assumed), not measurements. Baselines are taken once units 4 and 5 exis
 ### Not verified yet
 
 - How smaller local models (3B to 8B) do as the free-form interpreter; only one 27B model was measured, at 90% exact with the grammar first.
-- Speech on macOS 14 and 15. macOS 26 uses the system `SpeechTranscriber` (fast in the spike, no prompt for files); WhisperKit for older systems is still an unverified assumption.
+- Speech on macOS 14 and 15. macOS 26 uses the system `SpeechTranscriber` (fast in the spike, no prompt for files); macOS 14 to 25 use `SFSpeechRecognizer` on device only, unmeasured. WhisperKit was not added and stays the open question for older systems.
+- Everything in unit 7 that needs a live Mac (permission prompts, real voices against the 1.5 s budget, the model path with Ollama): `docs/product/unit7-live-checklist.md`.
 - How often macOS 15+ re-prompts for Screen Recording.
 - Hotkey takeover: decided in unit 4 to read and link, not write (`docs/product/hotkey-takeover.md`). Still unverified on a real Mac: the deep link's landing pane, and whether ⌘⇧4 is free for the app at once after the person turns the system shortcut off.
 - Everything in unit 6 that needs a live Mac (focus staying put during `exhibit capture --window`, the glyph flash, blackout geometry, auto-blur on a real window, MCP from Claude Code): `docs/product/unit6-live-checklist.md`. The bridge's design and residual risks: `docs/product/capture-bridge.md`.

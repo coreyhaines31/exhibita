@@ -122,7 +122,7 @@ import Testing
         #expect(editor.handle(.escape) == .app(.close))
         #expect(editor.handle(.character("s"), modifiers: [.command]) == .app(.save))
         #expect(editor.handle(.character("c"), modifiers: [.command, .shift]) == .app(.copyPath))
-        #expect(editor.handle(.character("d")) == .ignored)
+        #expect(editor.handle(.character("d")) == .app(.dictate))
         #expect(editor.handle(.character("q"), modifiers: [.control]) == .ignored)
     }
 }

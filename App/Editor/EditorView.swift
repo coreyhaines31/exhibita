@@ -10,6 +10,8 @@ struct EditorActions {
     var save: () -> Void = {}
     var copyPath: () -> Void = {}
     var close: () -> Void = {}
+    /// A dictation message's link: Exhibit A's Settings, or System Settings' privacy panes.
+    var openLink: (DictationLink) -> Void = { _ in }
 
     func perform(_ command: EditorCommand) {
         switch command {
@@ -32,12 +34,14 @@ struct EditorView: View {
     let pointsPerPixel: CGFloat
     /// Room on the left of the toolbar for the window's traffic lights. Renders without a window pass 0.
     var titlebarInset: CGFloat = 74
+    /// Hold D or press / to say or type what to change. Nil draws the editor without it.
+    var dictation: DictationSession?
 
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         VStack(spacing: 0) {
-            EditorToolbar(editor: editor, actions: actions, leadingInset: titlebarInset)
+            EditorToolbar(editor: editor, actions: actions, leadingInset: titlebarInset, dictation: dictation)
             Rectangle().fill(Color.black.opacity(scheme == .dark ? 1 : 0.35)).frame(height: 1)
             ZStack {
                 Color(white: scheme == .dark ? 0.06 : 0.16)

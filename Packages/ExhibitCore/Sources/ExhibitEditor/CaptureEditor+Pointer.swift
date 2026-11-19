@@ -14,6 +14,7 @@ extension CaptureEditor {
 
     public func pointerDown(at point: PixelPoint) {
         notice = nil
+        clearFinishedDictation()
         commitText()
         if let selected = selectedMark, let handle = hitTesting.handle(at: point, of: selected) {
             gesture = .resize(selected, handle)

@@ -19,6 +19,8 @@ final class EditorWindows {
     private var windows: [UUID: EditorWindowController] = [:]
     /// Runs before an editor opens, e.g. to close the panel.
     var willOpen: () -> Void = {}
+    /// Opens Settings, for the "needs a model" link.
+    var openSettings: () -> Void = {}
 
     init(model: AppModel, captures: OpenCaptures) {
         self.model = model
@@ -64,6 +66,7 @@ final class EditorWindows {
         let controller = EditorWindowController(capture: capture, screen: screen ?? NSScreen.main,
                                                 exportsFolder: Self.exportsFolder)
         controller.onClose = { [weak self] exported in self?.closed(id, exported: exported) }
+        controller.openSettings = { [weak self] in self?.openSettings() }
         windows[id] = controller
         controller.focus()
     }
@@ -95,17 +98,24 @@ final class EditorWindowController: NSObject, NSWindowDelegate {
     private nonisolated static let logger = Logger(subsystem: Brand.bundleIdentifier, category: "Editor")
 
     let editor: CaptureEditor
+    /// Hold D or press / to say or type what to change.
+    let dictation: DictationSession
     private let capture: OpenCapture
     private let canvas: EditorCanvasModel
     private let exportsFolder: URL
     private var window: EditorWindow?
     private var exported = false
     var onClose: (Bool) -> Void = { _ in }
+    var openSettings: () -> Void = {}
 
     init(capture: OpenCapture, screen: NSScreen?, exportsFolder: URL) {
         self.capture = capture
         self.exportsFolder = exportsFolder
         editor = CaptureEditor(owner: capture.owner)
+        // Creating the transcriber touches neither the microphone nor permissions; the first hold of D does.
+        dictation = DictationSession(editor: editor, original: capture.original,
+                                     transcriber: SpeechTranscription.make(),
+                                     model: { FreeFormSettings.shared.interpreter() })
         canvas = EditorCanvasModel(original: capture.original, scale: capture.owner.document.scale)
         super.init()
         // The first frame is already the renderer's output, so a reopened capture never flashes what its
@@ -148,12 +158,15 @@ final class EditorWindowController: NSObject, NSWindowDelegate {
         window.isMovableByWindowBackground = false
         window.delegate = self
         window.editor = editor
+        window.dictation = dictation
         window.onAppCommand = { [weak self] in self?.perform($0) }
         let actions = EditorActions(copyAndClose: { [weak self] in self?.perform(.copyAndClose) },
                                     save: { [weak self] in self?.perform(.save) },
                                     copyPath: { [weak self] in self?.perform(.copyPath) },
-                                    close: { [weak self] in self?.perform(.close) })
-        let view = EditorView(editor: editor, canvas: canvas, actions: actions, pointsPerPixel: pointsPerPixel)
+                                    close: { [weak self] in self?.perform(.close) },
+                                    openLink: { [weak self] in self?.open($0) })
+        let view = EditorView(editor: editor, canvas: canvas, actions: actions, pointsPerPixel: pointsPerPixel,
+                              dictation: dictation)
         window.contentView = NSHostingView(rootView: view)
         window.setContentSize(size)
         // Centred on the display the capture came from.
@@ -232,6 +245,14 @@ final class EditorWindowController: NSObject, NSWindowDelegate {
         }
     }
 
+    private func open(_ link: DictationLink) {
+        switch link {
+        case .modelSettings: openSettings()
+        case .microphoneSettings: SystemPrivacy.open(.microphone)
+        case .speechSettings: SystemPrivacy.open(.speechRecognition)
+        }
+    }
+
     private func fail(_ message: String, _ error: Error) {
         Self.logger.error("\(message): \(error.localizedDescription)")
         editor.show(message)
@@ -241,15 +262,23 @@ final class EditorWindowController: NSObject, NSWindowDelegate {
     // MARK: - NSWindowDelegate
 
     func windowWillClose(_ notification: Notification) {
+        dictation.close()
         editor.commitText()
         window?.editor = nil
+        window?.dictation = nil
         onClose(exported)
+    }
+
+    /// Letting go of D in another window must not leave the microphone on.
+    func windowDidResignKey(_ notification: Notification) {
+        dictation.release()
     }
 }
 
 /// Routes keys to the editor first. Only keys the editor ignores reach AppKit.
 final class EditorWindow: NSWindow {
     weak var editor: CaptureEditor?
+    weak var dictation: DictationSession?
     var onAppCommand: (EditorCommand) -> Void = { _ in }
 
     override var canBecomeKey: Bool { true }
@@ -257,6 +286,12 @@ final class EditorWindow: NSWindow {
 
     override func keyDown(with event: NSEvent) {
         if !route(event) { super.keyDown(with: event) }
+    }
+
+    /// D up stops listening.
+    override func keyUp(with event: NSEvent) {
+        if event.charactersIgnoringModifiers?.lowercased() == "d" { dictation?.release() }
+        super.keyUp(with: event)
     }
 
     /// ⌘ keys arrive here before `keyDown`; the editor's take precedence over the (absent) menus.
@@ -270,6 +305,8 @@ final class EditorWindow: NSWindow {
         let key = EditorKey.special(keyCode: event.keyCode)
             ?? event.charactersIgnoringModifiers.flatMap { $0.isEmpty ? nil : EditorKey.character($0) }
         guard let key else { return false }
+        // Esc while listening cancels dictation instead of closing.
+        if let dictation, dictation.intercept(key) { return true }
         let modifiers = KeyModifiers(rawValue: event.modifierFlags.rawValue).intersection(.all)
         let typed: EditorKey
         // Labels take what was typed, shifted letters and all; tool keys read the unmodified key.
@@ -281,6 +318,13 @@ final class EditorWindow: NSWindow {
         }
         switch editor.handle(typed, modifiers: modifiers) {
         case .handled: return true
+        case .app(.dictate):
+            // Held keys repeat; only the first press starts listening.
+            if !event.isARepeat { dictation?.press() }
+            return true
+        case .app(.typeInstruction):
+            dictation?.beginTyping()
+            return true
         case .app(let command):
             onAppCommand(command)
             return true
