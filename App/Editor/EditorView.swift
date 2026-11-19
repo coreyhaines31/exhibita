@@ -61,7 +61,8 @@ enum EditorLayout {
     /// The line between the toolbar and the mount.
     static let dividerHeight: CGFloat = 1
     static let mountPadding: CGFloat = 16
-    static let minimumWidth: CGFloat = 820
+    /// Wide enough for the whole toolbar, nameplate included, beside the traffic lights.
+    static let minimumWidth: CGFloat = 900
     /// The share of the screen's visible area the window may take before the capture is scaled down.
     static let screenShare: CGFloat = 0.92
 

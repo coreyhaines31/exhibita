@@ -2,6 +2,7 @@ import AppKit
 @testable import ExhibitA
 import ExhibitCore
 import ExhibitEditor
+import SwiftUI
 import XCTest
 
 /// 2. The spec's seven keystrokes, minus the live capture: capture and edit opens the editor, B and a click blur
@@ -32,6 +33,10 @@ final class JourneyTests: XCTestCase {
         let canvasTop = try XCTUnwrap(controller.canvas.frameInWindow).minY
         XCTAssertEqual(canvasTop, EditorLayout.toolbarHeight + EditorLayout.dividerHeight + EditorLayout.mountPadding,
                        accuracy: 0.01, "the toolbar starts at the top, under the title bar")
+        // Regression: at the old 820-point minimum the nameplate was squeezed to "E".
+        let toolbar = NSHostingView(rootView: EditorToolbar(editor: controller.editor, actions: EditorActions(),
+                                                            leadingInset: 74, dictation: controller.dictation))
+        XCTAssertLessThanOrEqual(toolbar.fittingSize.width, EditorLayout.minimumWidth, "the whole toolbar fits")
 
         let email = try editor.target(.email)
         let button = try editor.target(containing: "Update plan")

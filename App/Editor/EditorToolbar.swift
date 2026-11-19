@@ -17,6 +17,7 @@ struct EditorToolbar: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 Nameplate(Brand.name.uppercased(), isLit: true)
+                    .fixedSize()
                 Divider().frame(height: 26).overlay(theme.fasciaEdge)
                 HStack(spacing: 4) {
                     ForEach(EditorTool.toolbarOrder, id: \.self) { tool in
