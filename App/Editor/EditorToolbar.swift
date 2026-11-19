@@ -21,22 +21,26 @@ struct EditorToolbar: View {
                 Seam()
                 HStack(spacing: 4) {
                     ForEach(EditorTool.toolbarOrder, id: \.self) { tool in
-                        ToolKey(tool: tool, isOn: editor.tool == tool) { editor.choose(tool) }
+                        ToolKey(tool: tool, key: keys.display(for: .tool(tool)), isOn: editor.tool == tool) {
+                            editor.choose(tool)
+                        }
                     }
                 }
                 Seam()
                 HStack(spacing: 6) {
                     ForEach(MarkColor.allCases, id: \.self) { color in
-                        ColorLight(color: color, isOn: editor.currentColor == color) { editor.choose(color) }
+                        ColorLight(color: color, key: keys.display(for: .color(color)),
+                                   isOn: editor.currentColor == color) { editor.choose(color) }
                     }
                 }
                 Seam()
                 HStack(spacing: 4) {
-                    DictateKey(isOn: dictation?.isHeld == true,
+                    DictateKey(key: keys.display(for: .dictate), isOn: dictation?.isHeld == true,
                                press: { dictation?.press() }, release: { dictation?.release() })
-                    LegendKey(key: "/", title: "Type", isOn: dictation?.isTyping == true) { dictation?.beginTyping() }
-                        .accessibilityLabel("Type an instruction, key /")
-                        .help("Type what to change instead of saying it (/)")
+                    let type = keys.display(for: .typeInstruction)
+                    LegendKey(key: type, title: "Type", isOn: dictation?.isTyping == true) { dictation?.beginTyping() }
+                        .accessibilityLabel("Type an instruction, key \(type)")
+                        .help("Type what to change instead of saying it (\(type))")
                 }
                 Seam()
                 HStack(spacing: 4) {
@@ -48,7 +52,7 @@ struct EditorToolbar: View {
                 Spacer(minLength: 0)
             }
             .padding(.leading, leadingInset)
-            StatusStrip(status: editor.status, hint: hint, actions: actions, dictation: dictation)
+            StatusStrip(status: editor.status, keys: keys, hint: hint, actions: actions, dictation: dictation)
         }
         .padding(.horizontal, 14)
         .padding(.top, 10)
@@ -58,6 +62,8 @@ struct EditorToolbar: View {
         .background(BrushedMetal(anodised: theme.isDark))
         .overlay(alignment: .top) { Rectangle().fill(theme.fasciaHighlight).frame(height: 1) }
     }
+
+    private var keys: EditorKeymap { editor.keymap }
 
     /// What the current tool does, in a few words.
     private var hint: String {
@@ -87,14 +93,16 @@ private struct Seam: View {
 /// One tool: its key large, its name small, on a metal key. The current tool's key is a reversed plate.
 private struct ToolKey: View {
     let tool: EditorTool
+    /// The key in effect, which may not be the default.
+    let key: String
     let isOn: Bool
     let action: () -> Void
 
     var body: some View {
-        LegendKey(key: tool.key, title: tool.title, isOn: isOn, action: action)
-            .accessibilityLabel("\(tool.title), key \(tool.key)")
+        LegendKey(key: key, title: tool.title, isOn: isOn, action: action)
+            .accessibilityLabel("\(tool.title), key \(key)")
             .accessibilityAddTraits(isOn ? .isSelected : [])
-            .help("\(tool.title) (\(tool.key))")
+            .help("\(tool.title) (\(key))")
     }
 }
 
@@ -115,18 +123,19 @@ private struct LegendKey: View {
 
 /// D: held with the mouse as with the key. Lit while listening.
 private struct DictateKey: View {
+    let key: String
     let isOn: Bool
     let press: () -> Void
     let release: () -> Void
 
     var body: some View {
-        KeyFace(key: "D", title: "Say", isOn: isOn)
+        KeyFace(key: key, title: "Say", isOn: isOn)
             .gesture(DragGesture(minimumDistance: 0)
                 .onChanged { _ in if !isOn { press() } }
                 .onEnded { _ in release() })
-            .accessibilityLabel("Dictate: hold D and say what to change")
+            .accessibilityLabel("Dictate: hold \(key) and say what to change")
             .accessibilityAddTraits(.isButton)
-            .help("Hold D and say what to change, like \u{201C}blur the emails\u{201D}")
+            .help("Hold \(key) and say what to change, like \u{201C}blur the emails\u{201D}")
     }
 }
 
@@ -141,6 +150,8 @@ private struct KeyFace: View {
         VStack(spacing: 1) {
             Text(key)
                 .font(PanelFont.condensed(15, .bold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
             Text(title.uppercased())
                 .font(PanelFont.condensed(8, .semibold))
                 .tracking(0.4)
@@ -168,6 +179,7 @@ private struct KeyFace: View {
 /// A colour as a pilot light with its key beneath. The colour in use is lit.
 private struct ColorLight: View {
     let color: MarkColor
+    let key: String
     let isOn: Bool
     let action: () -> Void
 
@@ -181,17 +193,19 @@ private struct ColorLight: View {
                     .frame(width: 9, height: 9)
                     .shadow(color: isOn ? color.swatch : .clear, radius: 3)
                     .overlay(Circle().strokeBorder(.black.opacity(isOn ? 0.25 : 0.15), lineWidth: 0.5))
-                Text(color.key)
+                Text(key)
                     .font(PanelFont.condensed(10, .bold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
                     .foregroundStyle(theme.ink2)
             }
             .frame(width: 18, height: 30)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(color.title), key \(color.key)")
+        .accessibilityLabel("\(color.title), key \(key)")
         .accessibilityAddTraits(isOn ? .isSelected : [])
-        .help("\(color.title) (\(color.key))")
+        .help("\(color.title) (\(key))")
     }
 }
 
@@ -199,6 +213,7 @@ private struct ColorLight: View {
 /// keys that finish on the right.
 private struct StatusStrip: View {
     let status: EditorStatus
+    let keys: EditorKeymap
     let hint: String
     let actions: EditorActions
     var dictation: DictationSession?
@@ -221,13 +236,13 @@ private struct StatusStrip: View {
                 // A message that asks for something takes the room of the less used finishing keys; ⌘S and ⇧⌘C
                 // still work, and the keys come back with the next action.
                 FinishKey(keys: "\u{2192}", title: link.title) { actions.openLink(link) }
-                FinishKey(keys: "↩", title: "Copy", action: actions.copyAndClose)
+                FinishKey(keys: keys.display(for: .copyAndClose), title: "Copy", action: actions.copyAndClose)
             } else {
-                FinishKey(keys: "↩", title: "Copy", action: actions.copyAndClose)
-                FinishKey(keys: "⌘S", title: "Save", action: actions.save)
-                FinishKey(keys: "⇧⌘C", title: "Path", action: actions.copyPath)
+                FinishKey(keys: keys.display(for: .copyAndClose), title: "Copy", action: actions.copyAndClose)
+                FinishKey(keys: keys.display(for: .save), title: "Save", action: actions.save)
+                FinishKey(keys: keys.display(for: .copyPath), title: "Path", action: actions.copyPath)
             }
-            FinishKey(keys: "Esc", title: "Close", action: actions.close)
+            FinishKey(keys: keys.display(for: .close), title: "Close", action: actions.close)
         }
         .padding(.horizontal, 7)
         .frame(height: 24)
@@ -242,7 +257,7 @@ private struct StatusStrip: View {
                 Text("\u{201C}\(Self.clipped(transcript, to: said.link == nil ? 60 : 28))\u{201D}")
                     .foregroundStyle(theme.ink2)
                     .fixedSize()
-                Text(said.message)
+                Text(said.message(keys: keys))
                     .foregroundStyle(theme.ink)
                     .truncationMode(.tail)
                     .layoutPriority(1)
@@ -250,7 +265,7 @@ private struct StatusStrip: View {
             .font(PanelFont.body(11.5, .semibold))
             .lineLimit(1)
         } else {
-            Text(status.text ?? hint)
+            Text(status.text(keys: keys) ?? hint)
                 .font(PanelFont.body(11.5, status == .none ? .regular : .semibold))
                 .foregroundStyle(status == .none ? theme.ink2 : theme.ink)
                 .lineLimit(1)

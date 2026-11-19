@@ -12,6 +12,7 @@ final class SettingsWindow {
     private let policyActions: PolicyActions
     private let updates: UpdateSettings
     private var window: NSWindow?
+    private let navigation = SettingsNavigation()
     private var observer: NSObjectProtocol?
 
     init(model: AppModel, actions: SettingsActions, policy: CapturePolicyModel? = nil,
@@ -25,8 +26,10 @@ final class SettingsWindow {
         self.refresh = refresh
     }
 
-    func show() {
+    /// Brings Settings forward, scrolled to `anchor` when given.
+    func show(at anchor: SettingsAnchor? = nil) {
         refresh()
+        if let anchor { navigation.go(to: anchor) }
         if window == nil { window = makeWindow() }
         NSApp.activate()
         window?.makeKeyAndOrderFront(nil)
@@ -42,7 +45,8 @@ final class SettingsWindow {
     private func makeWindow() -> NSWindow {
         let controller = NSHostingController(rootView: SettingsView(model: model, actions: actions, policy: policy,
                                                                     policyActions: policyActions,
-                                                                    updates: updates))
+                                                                    updates: updates,
+                                                                    navigation: navigation))
         controller.sizingOptions = .preferredContentSize
         let window = NSWindow(contentViewController: controller)
         window.title = "\(Brand.name) Settings"

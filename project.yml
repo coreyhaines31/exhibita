@@ -120,6 +120,7 @@ targets:
       - App/Panel
       - App/Settings/SettingsView.swift
       - App/Settings/SettingsSections.swift
+      - App/Settings/ShortcutsSection.swift
       - App/Settings/NeverCaptureSection.swift
       - App/Settings/CapturePolicyModel.swift
       - App/Settings/FreeFormSettings.swift
@@ -132,6 +133,7 @@ targets:
       - App/Editor/EditorCanvas.swift
       - App/Editor/EditorView.swift
       - App/Editor/EditorToolbar.swift
+      - App/Editor/EditorKeyEvent.swift
       - ExhibitAViewTests
     dependencies:
       - package: ExhibitCore

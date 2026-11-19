@@ -10,8 +10,28 @@ struct SettingsActions {
     var purgeAll: () -> Void = {}
 }
 
-/// One pane, grouped like System Settings: hotkeys, permission, privacy, history, free-form instructions,
-/// command line, general.
+/// Sections Settings can be opened at.
+enum SettingsAnchor: String {
+    case hotkeys
+    case shortcuts
+}
+
+/// Where the open Settings window should scroll. The window sets it; the view scrolls when it changes.
+@MainActor
+@Observable
+final class SettingsNavigation {
+    private(set) var anchor: SettingsAnchor?
+    /// Counts requests, so asking for the same section twice scrolls twice.
+    private(set) var requests = 0
+
+    func go(to anchor: SettingsAnchor) {
+        self.anchor = anchor
+        requests += 1
+    }
+}
+
+/// One pane, grouped like System Settings: hotkeys, editor shortcuts, permission, privacy, history, free-form
+/// instructions, command line, general.
 struct SettingsView: View {
     let model: AppModel
     let actions: SettingsActions
@@ -23,12 +43,29 @@ struct SettingsView: View {
     var freeForm = FreeFormSettings.shared
     var updates = UpdateSettings()
     var commandLine = CommandLineTool.app
+    var navigation = SettingsNavigation()
 
     static let width: CGFloat = 540
 
     var body: some View {
+        ScrollViewReader { proxy in
+            form
+                .onChange(of: navigation.requests) { scroll(proxy) }
+                .onAppear { scroll(proxy) }
+        }
+    }
+
+    private func scroll(_ proxy: ScrollViewProxy) {
+        guard let anchor = navigation.anchor else { return }
+        withAnimation { proxy.scrollTo(anchor, anchor: .top) }
+    }
+
+    private var form: some View {
         Form {
             HotkeysSection(model: model, actions: actions, drawsRecorders: drawsRecorders)
+                .id(SettingsAnchor.hotkeys)
+            ShortcutsSection(model: model)
+                .id(SettingsAnchor.shortcuts)
             PermissionSection(state: model.permission, actions: actions)
             if let policy { NeverCaptureSection(policy: policy, actions: policyActions) }
             HistorySection(model: model, actions: actions)

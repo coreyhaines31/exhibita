@@ -96,6 +96,18 @@ public struct HotkeyBindings: Equatable, Sendable {
         custom[action] = nil
     }
 
+    /// Exchanges the two hotkeys' keys. Each side is stored only where it differs from that side's default, so
+    /// swapping twice is back to nothing stored.
+    public mutating func swap() {
+        let edit = combo(for: .captureAndEdit)
+        let clipboard = combo(for: .captureToClipboard)
+        custom = [:]
+        for (action, combo) in [(HotkeyAction.captureAndEdit, clipboard), (.captureToClipboard, edit)]
+        where combo != action.defaultCombo(takenOver: takenOver) {
+            custom[action] = combo
+        }
+    }
+
     /// What to suggest about the system shortcuts: nothing once they are off.
     public var takeoverSuggestion: TakeoverSuggestion {
         takenOver ? .done : .offer

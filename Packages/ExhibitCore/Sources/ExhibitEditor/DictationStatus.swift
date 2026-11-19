@@ -53,36 +53,52 @@ public enum DictationStatus: Equatable, Sendable {
         }
     }
 
-    /// The message after the transcript.
-    public var message: String {
-        switch self {
-        case .preparing: "Getting the microphone ready"
-        case let .downloading(progress, bytes):
-            "Downloading the speech model, \(Int((progress * 100).rounded()))%"
-                + (bytes.map { " of \(Self.megabytes($0))" } ?? "") + ". Esc cancels."
-        case .listening(let text): text.isEmpty ? "Listening. Release D when done." : "Listening"
-        case .interpreting(_, let usingModel):
-            usingModel ? "Asking the local model. This can take several seconds." : "Working"
-        case .applied(_, let summary, let byModel): summary + (byModel ? " Check it; ⌘Z undoes all of it." : "")
-        case .partial(_, let summary, let byModel): summary + (byModel ? " Check it; ⌘Z undoes all of it." : "")
-        case .nothingFound(_, let summary): summary + " No changes made."
-        case .nothingUnderstood: "No changes made."
-        case .needsModel:
-            "Needs a model: set one up in Settings, or try \(Self.grammarExample)."
-        case .modelFailed(_, let reason): "\(reason) No changes made."
-        case .microphoneDenied:
-            "Exhibit A can't use the microphone. Allow it in System Settings, or press / to type."
-        case .speechDenied:
-            "Speech recognition is off for Exhibit A. Allow it in System Settings, or press / to type."
-        case .speechUnavailable(let reason): "\(reason) Press / to type instead."
-        case .downloadStopped(let reason): reason
+    /// The message after the transcript, with the default keys.
+    public var message: String { message(keys: .standard) }
+
+    /// The message after the transcript, naming the keys in effect.
+    public func message(keys: EditorKeymap) -> String {
+        Wording(status: self, dictate: keys.display(for: .dictate), type: keys.display(for: .typeInstruction)).text
+    }
+
+    /// The messages, with the dictate and type keys filled in.
+    private struct Wording {
+        let status: DictationStatus
+        let dictate: String
+        let type: String
+
+        var text: String {
+            switch status {
+            case .preparing: "Getting the microphone ready"
+            case let .downloading(progress, bytes):
+                "Downloading the speech model, \(Int((progress * 100).rounded()))%"
+                    + (bytes.map { " of \(DictationStatus.megabytes($0))" } ?? "") + ". Esc cancels."
+            case .listening(let text): text.isEmpty ? "Listening. Release \(dictate) when done." : "Listening"
+            case .interpreting(_, let usingModel):
+                usingModel ? "Asking the local model. This can take several seconds." : "Working"
+            case .applied(_, let summary, let byModel): summary + (byModel ? " Check it; ⌘Z undoes all of it." : "")
+            case .partial(_, let summary, let byModel): summary + (byModel ? " Check it; ⌘Z undoes all of it." : "")
+            case .nothingFound(_, let summary): summary + " No changes made."
+            case .nothingUnderstood: "No changes made."
+            case .needsModel:
+                "Needs a model: set one up in Settings, or try \(DictationStatus.grammarExample)."
+            case .modelFailed(_, let reason): "\(reason) No changes made."
+            case .microphoneDenied:
+                "Exhibit A can't use the microphone. Allow it in System Settings, or press \(type) to type."
+            case .speechDenied:
+                "Speech recognition is off for Exhibit A. Allow it in System Settings, or press \(type) to type."
+            case .speechUnavailable(let reason): "\(reason) Press \(type) to type instead."
+            case .downloadStopped(let reason): reason
+            }
         }
     }
 
     /// The whole line: the transcript in quotes, then the message.
-    public var text: String {
-        guard let transcript else { return message }
-        return "\u{201C}\(transcript)\u{201D} \(message)"
+    public var text: String { text(keys: .standard) }
+
+    public func text(keys: EditorKeymap) -> String {
+        guard let transcript else { return message(keys: keys) }
+        return "\u{201C}\(transcript)\u{201D} \(message(keys: keys))"
     }
 
     /// The link shown beside the message, if any.

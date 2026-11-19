@@ -75,6 +75,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         wire(capture, to: statusItem)
         editors.willOpen = { [weak statusItem] in statusItem?.close() }
         editors.openSettings = { [weak settingsWindow] in settingsWindow?.show() }
+        model.onKeymapChanged = { [weak editors] in editors?.apply($0) }
         startBridge(store: store, support: support, policy: policy, model: model, captures: editors.captures)
 
         Task { await model.reload() }
@@ -131,6 +132,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func panelActions(model: AppModel) -> PanelActions {
         PanelActions(
             openSettings: { [weak self] in self?.settingsWindow?.show() },
+            openHotkeySettings: { [weak self] in self?.settingsWindow?.show(at: .hotkeys) },
             quit: { NSApp.terminate(nil) },
             allowScreenRecording: { ScreenRecording.request() },
             checkPermissionAgain: { [weak self] in self?.refreshSystemState() },

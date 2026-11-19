@@ -26,6 +26,8 @@ public final class CaptureEditor {
     public internal(set) var dictation: DictationStatus?
     /// Where the pointer is over the capture, in image pixels, for "highlight this". The app sets it on hover.
     @ObservationIgnored public var hoverPoint: PixelPoint?
+    /// The keys in effect: the defaults with whatever the person changed in Settings. The app keeps it current.
+    public var keymap: EditorKeymap = .standard
     /// How far from a thing a click still counts, and how far the pointer must move to be a drag, in image
     /// pixels. The app sets it from the zoom so it is about 4 points on screen.
     public var tolerance: Double
@@ -239,7 +241,7 @@ public final class CaptureEditor {
             }
             commitText()
         }
-        guard let command = EditorKeymap.command(for: key, modifiers: modifiers) else { return .ignored }
+        guard let command = keymap.command(for: key, modifiers: modifiers) else { return .ignored }
         notice = nil
         clearFinishedDictation()
         if command.isAppCommand {
