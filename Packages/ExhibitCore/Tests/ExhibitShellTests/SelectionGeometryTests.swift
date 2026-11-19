@@ -39,6 +39,19 @@ import Testing
         #expect(region.pixelSize == PixelSize(width: 300, height: 50))
     }
 
+    @Test func agentRegionsAreDisplayLocalAndClipped() throws {
+        let retina = DisplayGeometry(id: 4, frame: CGRect(x: -1440, y: 0, width: 1440, height: 900), scale: 2)
+        let region = try #require(SelectionGeometry.region(local: CGRect(x: 10.25, y: 20, width: 100, height: 50),
+                                                           on: retina))
+        #expect(region.displayID == 4)
+        #expect(region.sourceRect == CGRect(x: 10, y: 20, width: 100.5, height: 50))
+        #expect(region.pixelSize == PixelSize(width: 201, height: 100))
+        let clipped = try #require(SelectionGeometry.region(local: CGRect(x: 1400, y: 880, width: 100, height: 100),
+                                                            on: retina))
+        #expect(clipped.sourceRect == CGRect(x: 1400, y: 880, width: 40, height: 20))
+        #expect(SelectionGeometry.region(local: CGRect(x: 2000, y: 0, width: 10, height: 10), on: retina) == nil)
+    }
+
     @Test func halfPointsGrowOutwardToWholePixels() throws {
         let oneX = DisplayGeometry(id: 3, frame: CGRect(x: 0, y: 0, width: 800, height: 600), scale: 1)
         let selection = CGRect(x: 10.4, y: 20.6, width: 99.3, height: 50.2)

@@ -62,6 +62,15 @@ public enum SelectionGeometry {
         return pixelAligned(local, on: display)
     }
 
+    /// A region given in the display's own points, top-left origin (`exhibit capture --region`), clipped to the
+    /// display and grown outward to whole pixels. Nil when nothing of it is on the display.
+    public static func region(local: CGRect, on display: DisplayGeometry) -> CaptureRegion? {
+        let bounds = CGRect(origin: .zero, size: display.frame.size)
+        let clipped = local.standardized.intersection(bounds)
+        guard !clipped.isNull, clipped.width > 0, clipped.height > 0 else { return nil }
+        return pixelAligned(clipped, on: display)
+    }
+
     /// The whole display.
     public static func fullScreen(_ display: DisplayGeometry) -> CaptureRegion {
         let local = CGRect(origin: .zero, size: display.frame.size)
