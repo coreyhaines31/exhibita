@@ -50,8 +50,12 @@ func runInterpreters(_ options: Options) async throws {
     }
     var runs: [(name: String, results: [Scored])] = []
     var notes: [String] = []
-    let grammar = await runner.run(GrammarInterpreter())
-    if options.only.contains("grammar") { runs.append(("A grammar", grammar)) }
+    // Alone, the grammar ships reporting names the screen does not show as not found; ahead of a model it
+    // declines them so the model can try.
+    if options.only.contains("grammar") {
+        runs.append(("A grammar", await runner.run(GrammarInterpreter(unknownNames: .reportNotFound))))
+    }
+    let grammar = await runner.run(GrammarInterpreter(unknownNames: .decline))
     if options.only.contains("apple") {
         if let results = try await runApple(runner) {
             runs.append(("B Apple on-device", results))
