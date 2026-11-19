@@ -46,6 +46,8 @@ Mark each line pass or fail with the macOS version.
 | On a P3 display, capture something saturated, then `sips -g profile original.png` and the same on an exported `-marked.png` | Write down the profile ScreenCaptureKit gives (issue 17). If it is Display P3, the export says Display P3 too and the colours match the screen; if it is sRGB, ScreenCaptureKit converted at capture and only imported P3 files keep P3. |
 | Press ⌥⇧4 again while the overlay is up | Ignored; one overlay, no crash. |
 
+Recorded by `CaptureTests.testRecordsTheColourSpace` on 2026-11-18 (macOS 26.6.2, built-in Liquid Retina XDR): ScreenCaptureKit returns the display's own ICC profile (unnamed, wide gamut, 4064 bytes), not sRGB and not the named Display P3 space; the saved `original.png` and an export keep that profile, and the renderer draws in it. Sections 3 and 4, apart from the hotkey press itself and the editor taking focus (issue 53), are covered by `Scripts/run-e2e-capture.sh` on that Mac's three displays (2x, 2x and 1x).
+
 ## 4. Capture to clipboard (⌃⌥⇧4)
 
 | Step | Expected |
