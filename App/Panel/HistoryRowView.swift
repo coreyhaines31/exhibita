@@ -41,11 +41,13 @@ struct HistoryRowView: View {
                 HStack(spacing: 8) {
                     Button("Open") { actions.open(row.id) }
                         .buttonStyle(PanelButtonStyle(.primary, size: .compact))
+                        .reportingFrame("open \(row.id)", to: actions)
                     Button("Copy") { actions.copy(row.id) }
                     Button("Show in Finder") { actions.reveal(row.id) }
                     Spacer()
                     Button("Delete") { actions.delete(row.id) }
                         .buttonStyle(PanelButtonStyle(.destructive, size: .compact))
+                        .reportingFrame("delete \(row.id)", to: actions)
                 }
                 .buttonStyle(.panelCompact)
             }
@@ -54,12 +56,20 @@ struct HistoryRowView: View {
         .padding(.vertical, 7)
         .background(row.isSelected ? theme.field : Color.clear)
         .contentShape(Rectangle())
+        .reportingFrame("row \(row.id)", to: actions)
         .onTapGesture(count: 2) { actions.open(row.id) }
         .onTapGesture(perform: select)
         .accessibilityElement(children: .combine)
         .accessibilityLabel([row.title, row.tag, row.subtitle, row.expiry].compactMap { $0 }.joined(separator: ", "))
         .accessibilityAddTraits(row.isSelected ? [.isButton, .isSelected] : .isButton)
         .accessibilityAction(named: "Open") { actions.open(row.id) }
+    }
+}
+
+extension View {
+    /// Tells `actions.reportFrame` where this view was laid out, for the end-to-end tests.
+    func reportingFrame(_ name: String, to actions: PanelActions) -> some View {
+        onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { actions.reportFrame(name, $0) }
     }
 }
 

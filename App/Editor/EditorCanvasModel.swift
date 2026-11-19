@@ -14,6 +14,9 @@ final class EditorCanvasModel {
     private(set) var rendered: CGImage?
     private(set) var renderedMarks: [Mark]?
     @ObservationIgnored private var generation = 0
+    /// Where the canvas is laid out in its window, top-left origin, in points. Read by the end-to-end tests to aim
+    /// their clicks.
+    @ObservationIgnored var frameInWindow: CGRect?
 
     init(original: CGImage, scale: Double) {
         self.original = original

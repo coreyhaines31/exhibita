@@ -84,7 +84,9 @@ targets:
       base:
         PRODUCT_NAME: Exhibit A
         PRODUCT_MODULE_NAME: ExhibitA
-        PRODUCT_BUNDLE_IDENTIFIER: com.exhibitaformac.ExhibitA
+        # Scripts/run-e2e.sh sets EXHIBIT_E2E_BUNDLE_SUFFIX=.e2e, so the test host keeps its settings (and the save
+        # panel's) apart from the real app's. Empty otherwise.
+        PRODUCT_BUNDLE_IDENTIFIER: com.exhibitaformac.ExhibitA$(EXHIBIT_E2E_BUNDLE_SUFFIX)
         # App/Assets.xcassets/AppIcon: mac-app-kit's icons/exhibit (the evidence tag), rendered per size level.
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
   # The `exhibit` CLI, compiled from the package's own entry point so it is the same program `swift build` makes,
@@ -147,6 +149,24 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
+  # App-hosted end-to-end tests (Scripts/run-e2e.sh): the bundle runs inside the real Exhibit A app, which shows its
+  # windows, and drives it with synthetic events posted to its own windows. Needs signing, so it has its own scheme
+  # and never runs with the ExhibitA scheme's tests. The app's TestSeam (debug builds only) moves history, the
+  # socket and settings to throwaway places; no permission is ever asked for.
+  ExhibitAE2ETests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - ExhibitAE2ETests
+      # The shared synthetic screenshots, compiled in: ExhibitFixtures is not a package product.
+      - Packages/ExhibitCore/Sources/ExhibitFixtures
+    dependencies:
+      - target: ExhibitA
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Exhibit A.app/Contents/MacOS/Exhibit A"
+        BUNDLE_LOADER: "$(TEST_HOST)"
 schemes:
   ExhibitA:
     build:
@@ -155,3 +175,11 @@ schemes:
     test:
       targets:
         - ExhibitAViewTests
+  ExhibitAE2E:
+    build:
+      targets:
+        ExhibitA: all
+        ExhibitAE2ETests: [test]
+    test:
+      targets:
+        - ExhibitAE2ETests

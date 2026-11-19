@@ -16,7 +16,7 @@ final class EditorWindows {
 
     private let model: AppModel
     let captures: OpenCaptures
-    private var windows: [UUID: EditorWindowController] = [:]
+    private(set) var windows: [UUID: EditorWindowController] = [:]
     /// Runs before an editor opens, e.g. to close the panel.
     var willOpen: () -> Void = {}
     /// Opens Settings, for the "needs a model" link.
@@ -87,7 +87,8 @@ final class EditorWindows {
 
     /// Where ⇧⌘C writes the file whose path it copies. Temporary: the capture itself stays in history.
     static var exportsFolder: URL {
-        FileManager.default.temporaryDirectory.appendingPathComponent("Exhibit A Exports", isDirectory: true)
+        TestSeam.exportsFolder
+            ?? FileManager.default.temporaryDirectory.appendingPathComponent("Exhibit A Exports", isDirectory: true)
     }
 }
 
@@ -101,12 +102,14 @@ final class EditorWindowController: NSObject, NSWindowDelegate {
     /// Hold D or press / to say or type what to change.
     let dictation: DictationSession
     private let capture: OpenCapture
-    private let canvas: EditorCanvasModel
+    let canvas: EditorCanvasModel
     private let exportsFolder: URL
-    private var window: EditorWindow?
+    private(set) var window: EditorWindow?
     private var exported = false
     var onClose: (Bool) -> Void = { _ in }
     var openSettings: () -> Void = {}
+    /// Makes each editor's transcriber. The end-to-end tests swap in a fake so D never reaches the microphone.
+    static var makeTranscriber: @MainActor () -> (any SpeechTranscribing)? = { SpeechTranscription.make() }
 
     init(capture: OpenCapture, screen: NSScreen?, exportsFolder: URL) {
         self.capture = capture
@@ -114,7 +117,7 @@ final class EditorWindowController: NSObject, NSWindowDelegate {
         editor = CaptureEditor(owner: capture.owner)
         // Creating the transcriber touches neither the microphone nor permissions; the first hold of D does.
         dictation = DictationSession(editor: editor, original: capture.original,
-                                     transcriber: SpeechTranscription.make(),
+                                     transcriber: Self.makeTranscriber(),
                                      model: { FreeFormSettings.shared.interpreter() })
         canvas = EditorCanvasModel(original: capture.original, scale: capture.owner.document.scale)
         super.init()
@@ -167,8 +170,13 @@ final class EditorWindowController: NSObject, NSWindowDelegate {
                                     openLink: { [weak self] in self?.open($0) })
         let view = EditorView(editor: editor, canvas: canvas, actions: actions, pointsPerPixel: pointsPerPixel,
                               dictation: dictation)
-        window.contentView = NSHostingView(rootView: view)
-        window.setContentSize(size)
+        let hosting = NSHostingView(rootView: view)
+        // The window's size comes from `EditorLayout`, not from SwiftUI, whose sizing adds the title bar again.
+        hosting.sizingOptions = []
+        window.contentView = hosting
+        // The content spans the whole frame, title bar included (the toolbar sits under it), so the frame is the
+        // size. `setContentSize` would add a title bar's height on top.
+        window.setFrame(NSRect(origin: .zero, size: size), display: false)
         // Centred on the display the capture came from.
         let frame = window.frame
         window.setFrameOrigin(NSPoint(x: visible.midX - frame.width / 2, y: visible.midY - frame.height / 2))

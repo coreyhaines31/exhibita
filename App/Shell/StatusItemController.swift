@@ -5,10 +5,12 @@ import SwiftUI
 @MainActor
 final class StatusItemController {
     private static let autosaveName = "ExhibitA"
-    private let item: NSStatusItem
+    let item: NSStatusItem
     private let popover: NSPopover
     private let hosting: NSHostingController<PanelView>
     private let willShow: () -> Void
+    /// Where the panel's rows and their buttons were laid out, for the end-to-end tests.
+    let frames: PanelFrames
 
     init(model: AppModel, actions: PanelActions, willShow: @escaping () -> Void) {
         self.willShow = willShow
@@ -16,11 +18,15 @@ final class StatusItemController {
         UserDefaults.standard.register(defaults: ["NSStatusItem Preferred Position \(Self.autosaveName)": 1])
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         self.item = item
-        item.autosaveName = Self.autosaveName
+        // Under the end-to-end tests the item's position would be saved into the real app's settings.
+        if !TestSeam.isActive { item.autosaveName = Self.autosaveName }
         item.button?.image = Glyph.image()
         item.button?.toolTip = Brand.name
 
         var panelActions = actions
+        let frames = PanelFrames()
+        self.frames = frames
+        panelActions.reportFrame = { frames.byName[$0] = $1 }
         let popover = NSPopover()
         self.popover = popover
         let openSettings = actions.openSettings
@@ -47,6 +53,8 @@ final class StatusItemController {
     }
 
     var isShown: Bool { popover.isShown }
+    /// The panel's content, for the end-to-end tests' events and pictures.
+    var panelView: NSView? { popover.contentViewController?.view }
 
     func show() {
         guard let button = item.button else { return }
@@ -75,4 +83,10 @@ final class StatusItemController {
             }
         }
     }
+}
+
+/// The panel's reported layout: name to frame, top-left origin, in the panel's coordinates.
+@MainActor
+final class PanelFrames {
+    var byName: [String: CGRect] = [:]
 }
