@@ -1,0 +1,353 @@
+import AppKit
+@testable import ExhibitA
+import ExhibitCore
+import ExhibitEditor
+import ExhibitShell
+import ExhibitStore
+import XCTest
+
+/// 8. Real captures of this Mac's screen, through the path the hotkey takes (`AppDelegate.hotkeyPressed`, the real
+/// `SelectionOverlay`, ScreenCaptureKit) and through the bridge with the real `exhibit` binary. Run only from
+/// `Scripts/run-e2e-capture.sh`; skipped otherwise, and skipped when the test host does not already have Screen
+/// Recording (nothing here asks for it).
+///
+/// Privacy: captures stay in the temporary support directory. Assertions are on sizes, counts, kinds and pixel
+/// statistics; nothing prints text read from a capture, an app name or a window title, and no picture is saved.
+@MainActor
+final class CaptureTests: XCTestCase {
+    private var savedPasteboard: [NSPasteboardItem] = []
+
+    override func setUp() async throws {
+        try E2E.begin()
+        guard TestSeam.allowsCapture else {
+            throw XCTSkip("Real capture is off; Scripts/run-e2e-capture.sh turns it on")
+        }
+        guard ScreenRecording.isGranted else {
+            throw XCTSkip("The test host does not have Screen Recording; nothing was asked for")
+        }
+        savedPasteboard = E2E.copyPasteboard()
+    }
+
+    override func tearDown() async throws {
+        LiveCapture.cancelOverlay()
+        E2E.closeEverything()
+        E2E.restorePasteboard(savedPasteboard)
+    }
+
+    private var before: Set<UUID> { Set(E2E.store.list().map(\.id)) }
+
+    // MARK: - Region
+
+    func testRegionCaptureAndEdit() async throws {
+        let known = before
+        let toOverlay = try await LiveCapture.start(.captureAndEdit)
+        let overlay = LiveCapture.overlay
+        XCTAssertEqual(overlay.windows.count, NSScreen.screens.count, "one panel per display")
+        for screen in NSScreen.screens {
+            let panel = try LiveCapture.panel(on: screen)
+            XCTAssertEqual(panel.level, .screenSaver)
+            XCTAssertTrue(panel.styleMask.contains(.nonactivatingPanel), "non-activating")
+            XCTAssertTrue(panel.isVisible)
+        }
+        XCTAssertTrue(overlay.windows.contains(where: \.isKeyWindow), "a panel takes the keys")
+
+        let screen = LiveCapture.mainScreen
+        let scale = screen.backingScaleFactor
+        let panel = try LiveCapture.panel(on: screen)
+        let up = LiveCapture.drag(on: panel, from: NSPoint(x: 200, y: 200), to: NSPoint(x: 600, y: 500))
+        await E2E.wait("the overlay to close") { !overlay.isActive }
+        XCTAssertFalse(panel.isVisible, "the overlay is gone")
+
+        let (item, savedAt) = try await LiveCapture.waitForCapture(since: known)
+        let shown = try await LiveCapture.editor(for: item.id)
+        let loaded = try E2E.store.load(item.id)
+        XCTAssertEqual(Double(loaded.original.width), 400 * scale, accuracy: 1, "pixels are points times scale")
+        XCTAssertEqual(Double(loaded.original.height), 300 * scale, accuracy: 1)
+        XCTAssertEqual(loaded.document.scale, Double(scale))
+        XCTAssertEqual(loaded.document.size, PixelSize(width: loaded.original.width, height: loaded.original.height))
+        XCTAssertEqual(loaded.document.source?.capturedBy, .person)
+        let window = try XCTUnwrap(shown.controller.window)
+        XCTAssertTrue(window.isVisible)
+        LiveCapture.expectKey(window)
+
+        LiveCapture.send(Events.escape, characters: "\u{1b}", to: window)
+        await E2E.wait("Esc to close the editor") { E2E.editors.windows[item.id] == nil && !window.isVisible }
+        print("E2E: timing hotkey to overlay visible \(LiveCapture.ms(toOverlay))")
+        print("E2E: timing mouse-up to capture saved \(LiveCapture.ms(savedAt - up))")
+        print("E2E: timing mouse-up to editor visible \(LiveCapture.ms(shown.shownAt - up))")
+        print("E2E: timing mouse-up to editor key "
+              + (shown.keyAt.map { LiveCapture.ms($0 - up) } ?? "never (not key; issue \(LiveCapture.activationIssue))"))
+    }
+
+    func testRegionToClipboard() async throws {
+        let known = before
+        let pasteboard = NSPasteboard.general
+        let changeCount = pasteboard.changeCount
+        try await LiveCapture.start(.captureToClipboard)
+        let scale = LiveCapture.mainScreen.backingScaleFactor
+        let panel = try LiveCapture.panel(on: LiveCapture.mainScreen)
+        let up = LiveCapture.drag(on: panel, from: NSPoint(x: 240, y: 160), to: NSPoint(x: 640, y: 460))
+        await E2E.wait("the clipboard") { pasteboard.changeCount != changeCount }
+        let copiedAt = ContinuousClock.now
+        let png = try XCTUnwrap(pasteboard.data(forType: .png), "a PNG on the clipboard")
+        let copied = try PNG.decode(png)
+        XCTAssertEqual(Double(copied.width), 400 * scale, accuracy: 1)
+        XCTAssertEqual(Double(copied.height), 300 * scale, accuracy: 1)
+        let (item, _) = try await LiveCapture.waitForCapture(since: known)
+        XCTAssertEqual(item.capturedBy, .person, "in history too")
+        XCTAssertEqual(item.size, PixelSize(width: copied.width, height: copied.height))
+        await E2E.settle(300)
+        XCTAssertTrue(E2E.editors.windows.isEmpty, "no editor")
+        print("E2E: timing mouse-up to clipboard \(LiveCapture.ms(copiedAt - up))")
+    }
+
+    /// Every display, at its own scale: a capture from each has that display's pixel size.
+    func testRegionOnEveryDisplay() async throws {
+        for (index, screen) in NSScreen.screens.enumerated() {
+            let known = before
+            try await LiveCapture.start(.captureToClipboard)
+            let panel = try LiveCapture.panel(on: screen)
+            _ = LiveCapture.drag(on: panel, from: NSPoint(x: 100, y: 100), to: NSPoint(x: 300, y: 250))
+            let (item, _) = try await LiveCapture.waitForCapture(since: known)
+            let scale = Double(screen.backingScaleFactor)
+            XCTAssertEqual(Double(item.size.width), 200 * scale, accuracy: 1, "display \(index + 1)")
+            XCTAssertEqual(Double(item.size.height), 150 * scale, accuracy: 1, "display \(index + 1)")
+            XCTAssertEqual(item.scale, scale, "display \(index + 1)")
+            print("E2E: display \(index + 1) of \(NSScreen.screens.count) at \(scale)x: \(item.size.width)x"
+                  + "\(item.size.height) px")
+        }
+    }
+
+    // MARK: - Whole screen and cancel
+
+    func testReturnCapturesTheWholeDisplay() async throws {
+        let known = before
+        try await LiveCapture.start(.captureToClipboard)
+        let screen = LiveCapture.screenUnderPointer
+        let start = ContinuousClock.now
+        LiveCapture.key(Events.returnKey, in: try LiveCapture.panel(on: screen))
+        let (item, _) = try await LiveCapture.waitForCapture(since: known)
+        let scale = Double(screen.backingScaleFactor)
+        XCTAssertEqual(Double(item.size.width), screen.frame.width * scale, accuracy: 1)
+        XCTAssertEqual(Double(item.size.height), screen.frame.height * scale, accuracy: 1)
+        await E2E.wait("targets", timeout: 30) { !E2E.editors.captures.isFinding(item.id) }
+        let targetsAt = ContinuousClock.now
+        // The result is written to the bundle on the documents' serial queue just after; a screen with any text
+        // shows targets once that write lands.
+        let deadline = Date().addingTimeInterval(2)
+        while (try? E2E.store.load(item.id).document.targets.isEmpty) != false, Date() < deadline {
+            try? await Task.sleep(for: .milliseconds(20))
+        }
+        let targets = try E2E.store.load(item.id).document.targets
+        XCTAssertFalse(targets.isEmpty, "a whole display has some text: the menu bar at least")
+        print("E2E: timing return to targets ready on a \(item.size.width)x\(item.size.height) capture "
+              + "\(LiveCapture.ms(targetsAt - start)) (\(targets.count) targets)")
+    }
+
+    func testEscapeCancels() async throws {
+        let known = before
+        let pasteboard = NSPasteboard.general
+        let changeCount = pasteboard.changeCount
+        try await LiveCapture.start(.captureAndEdit)
+        let panel = try LiveCapture.panel(on: LiveCapture.screenUnderPointer)
+        LiveCapture.key(Events.escape, in: panel)
+        await E2E.wait("the overlay to close") { !LiveCapture.overlay.isActive }
+        await E2E.settle(500)
+        XCTAssertTrue(LiveCapture.newCaptures(since: known).isEmpty, "nothing saved")
+        XCTAssertTrue(E2E.editors.windows.isEmpty, "no window")
+        XCTAssertFalse(NSApp.windows.contains { $0.isVisible && $0.level == .normal }, "no window at all")
+        XCTAssertEqual(pasteboard.changeCount, changeCount, "the clipboard is untouched")
+    }
+
+    // MARK: - Window pick
+
+    func testSpacePicksAWindow() async throws {
+        guard let (window, point) = LiveCapture.pickableWindow() else {
+            throw XCTSkip("No other app's window is on screen to pick")
+        }
+        let known = before
+        try await LiveCapture.start(.captureToClipboard)
+        let overlay = LiveCapture.overlay
+        LiveCapture.key(0x31, in: try LiveCapture.panel(on: LiveCapture.screenUnderPointer))
+        XCTAssertEqual(overlay.mode, .window, "Space switches to window picking")
+        try LiveCapture.move(toCoreGraphics: point)
+        await E2E.wait("the window under the pointer") { overlay.hovered?.id == window.id }
+        try LiveCapture.click(atCoreGraphics: point)
+        let (item, _) = try await LiveCapture.waitForCapture(since: known)
+        let screen = NSScreen.screens.first { LiveCapture.coreGraphicsFrame(of: $0).contains(point) }
+        let scale = Double(screen?.backingScaleFactor ?? 2)
+        XCTAssertEqual(Double(item.size.width), window.frame.width * scale, accuracy: 2, "the window's size")
+        XCTAssertEqual(Double(item.size.height), window.frame.height * scale, accuracy: 2)
+        let source = try E2E.store.load(item.id).document.source
+        XCTAssertEqual(source?.appName?.isEmpty, false, "the app name is recorded")
+        if window.title?.isEmpty == false {
+            XCTAssertNotNil(source?.windowTitle, "the window title is recorded")
+        }
+        print("E2E: window pick \(item.size.width)x\(item.size.height) px at \(scale)x; app name recorded "
+              + "\(source?.appName != nil), title recorded \(source?.windowTitle != nil)")
+    }
+
+    // MARK: - Targets
+
+    /// Background OCR finishes while the editor is open; its targets land through the document owner and the box
+    /// drawn in the meantime survives.
+    func testTargetsArriveWithoutLosingAMark() async throws {
+        let known = before
+        try await LiveCapture.start(.captureAndEdit)
+        let panel = try LiveCapture.panel(on: LiveCapture.mainScreen)
+        let up = LiveCapture.drag(on: panel, from: NSPoint(x: 160, y: 180), to: NSPoint(x: 760, y: 580))
+        let (item, _) = try await LiveCapture.waitForCapture(since: known)
+        let controller = try await LiveCapture.editor(for: item.id, keyTimeout: 0).controller
+        let editor = controller.editor
+        let loadedBeforeMark = editor.targetsLoaded
+        // The box goes in as the canvas forwards a drag, in image pixels: the window may not be key (issue 53),
+        // and a window that is not key gets no keys and swallows the first click.
+        editor.choose(.box)
+        editor.pointerDown(at: PixelPoint(x: 20, y: 20))
+        editor.pointerDragged(to: PixelPoint(x: 120, y: 90))
+        editor.pointerUp(at: PixelPoint(x: 200, y: 160))
+        let marks = controller.editor.marks
+        XCTAssertEqual(marks.count, 1, "the box is drawn")
+        await E2E.wait("targets", timeout: 30) { controller.editor.targetsLoaded }
+        let readyAt = ContinuousClock.now
+        await E2E.settle(400)
+        let saved = try E2E.store.load(item.id).document
+        XCTAssertEqual(saved.marks, controller.editor.marks, "the box is on disk")
+        XCTAssertEqual(saved.marks.map(\.id), marks.map(\.id), "and was not lost to the targets")
+        XCTAssertEqual(saved.targets.count, controller.editor.document.targets.count, "the targets are on disk")
+        print("E2E: timing mouse-up to targets ready \(LiveCapture.ms(readyAt - up)) (\(saved.targets.count) "
+              + "targets; already read before the mark: \(loadedBeforeMark))")
+    }
+
+    // MARK: - Never capture
+
+    /// Another app's window, listed for the test: blacked out in a whole-screen capture, refused as a pick.
+    func testNeverCaptureBlacksOutAndRefuses() async throws {
+        let screen = LiveCapture.screenUnderPointer
+        guard let (window, point) = LiveCapture.pickableWindow(on: screen),
+              let app = NSRunningApplication(processIdentifier: window.ownerPID),
+              let bundleIdentifier = app.bundleIdentifier else {
+            throw XCTSkip("No other app's window is wholly on the display under the pointer")
+        }
+        let policy = try XCTUnwrap(E2E.app.policy)
+        let listed = NeverCaptureApp(name: app.localizedName ?? bundleIdentifier, bundleIdentifier: bundleIdentifier)
+        let hadIt = policy.policy.neverCapture.contains(listed)
+        policy.add(listed)
+        defer { if !hadIt { policy.remove(listed) } }
+
+        var known = before
+        try await LiveCapture.start(.captureToClipboard)
+        LiveCapture.key(Events.returnKey, in: try LiveCapture.panel(on: screen))
+        let (item, _) = try await LiveCapture.waitForCapture(since: known)
+        let image = try E2E.store.load(item.id).original
+        let scale = Double(screen.backingScaleFactor)
+        let display = LiveCapture.coreGraphicsFrame(of: screen)
+        let local = PixelRect(x: (window.frame.minX - display.minX + 4) * scale,
+                              y: (window.frame.minY - display.minY + 4) * scale,
+                              width: (window.frame.width - 8) * scale, height: (window.frame.height - 8) * scale)
+        let black = LiveCapture.blackFraction(image, in: local)
+        XCTAssertGreaterThan(black, 0.95, "the listed app's window is blacked out")
+        print("E2E: never-capture window area \(String(format: "%.3f", black)) black")
+
+        known = before
+        try await LiveCapture.start(.captureToClipboard)
+        LiveCapture.key(0x31, in: try LiveCapture.panel(on: screen))
+        try LiveCapture.move(toCoreGraphics: point)
+        await E2E.wait("the listed window under the pointer") { LiveCapture.overlay.hovered?.id == window.id }
+        try LiveCapture.click(atCoreGraphics: point)
+        await E2E.wait("the refusal") { E2E.model.captureRefusal != nil }
+        XCTAssertFalse(LiveCapture.overlay.isActive)
+        await E2E.wait("the panel saying why") { E2E.app.statusItem?.isShown == true }
+        await E2E.settle(300)
+        XCTAssertTrue(LiveCapture.newCaptures(since: known).isEmpty, "the pick was not captured")
+    }
+
+    // MARK: - The bridge
+
+    func testBridgeCapturesWithoutTakingFocus() async throws {
+        let statusItem = try XCTUnwrap(E2E.app.statusItem)
+        let visible = LiveCapture.visibleWindows()
+        let key = NSApp.keyWindow
+        let flashes = statusItem.flashes
+        let main = LiveCapture.mainScreen
+        let scale = Double(main.backingScaleFactor)
+
+        let screenResult = try await E2E.exhibit(["capture", "--screen"])
+        XCTAssertEqual(screenResult.status, 0, LiveCapture.summary(screenResult))
+        try checkAgentCapture(screenResult, width: main.frame.width * scale, height: main.frame.height * scale)
+        let regionResult = try await E2E.exhibit(["capture", "--region", "100,100,400,300"])
+        XCTAssertEqual(regionResult.status, 0, LiveCapture.summary(regionResult))
+        let id = try checkAgentCapture(regionResult, width: 400 * scale, height: 300 * scale)
+
+        await E2E.wait("the glyph to blink for each") { statusItem.flashes == flashes + 2 }
+        XCTAssertEqual(LiveCapture.visibleWindows(), visible, "no window appeared")
+        XCTAssertTrue(NSApp.keyWindow === key, "the key window did not change")
+        XCTAssertFalse(LiveCapture.overlay.isActive, "no overlay")
+
+        let emails = try E2E.store.load(id).document.targets.filter { $0.kind == .email }.count
+        let blur = try await E2E.exhibit(["blur", id.uuidString, "--kind", "email", "--allow-missing"])
+        if emails > 0 {
+            XCTAssertEqual(blur.status, 0, LiveCapture.summary(blur))
+            let output = try XCTUnwrap(blur.json["output"] as? String)
+            XCTAssertTrue(output.hasPrefix(E2E.seam.supportDirectory.path), "the export stays in the support folder")
+        } else {
+            // One selector that matched nothing fails even with --allow-missing (docs/cli.md).
+            XCTAssertEqual(LiveCapture.summary(blur), "exit 3 code no_match")
+        }
+        print("E2E: bridge blur --kind email on a capture with \(emails) emails: \(LiveCapture.summary(blur))")
+    }
+
+    /// One `exhibit capture` result: exit 0, an id and PNG in the support directory, tagged agent, the right size,
+    /// and no bundle path once anything was blurred.
+    @discardableResult
+    private func checkAgentCapture(_ result: E2E.CLIResult, width: Double, height: Double) throws -> UUID {
+        let json = result.json
+        let id = try XCTUnwrap((json["id"] as? String).flatMap(UUID.init(uuidString:)), "an id")
+        let image = try XCTUnwrap(json["image"] as? String, "a PNG path")
+        XCTAssertTrue(image.hasPrefix(E2E.seam.supportDirectory.path), "in the temporary support directory")
+        let png = try PNG.decode(Data(contentsOf: URL(fileURLWithPath: image)))
+        XCTAssertEqual(Double(png.width), width, accuracy: 1)
+        XCTAssertEqual(Double(png.height), height, accuracy: 1)
+        XCTAssertEqual(json["capturedBy"] as? String, "agent")
+        let document = try E2E.store.load(id).document
+        XCTAssertEqual(document.source?.capturedBy, .agent, "tagged agent in history")
+        let autoBlur = try XCTUnwrap(json["autoBlur"] as? [String: Any])
+        let blurred = autoBlur["blurred"] as? Int ?? 0
+        XCTAssertEqual(autoBlur["enabled"] as? Bool, true, "auto-blur is on by default")
+        if blurred > 0 {
+            XCTAssertNil(json["bundle"], "no bundle path once something was blurred")
+        } else {
+            XCTAssertNotNil(json["bundle"])
+        }
+        print("E2E: bridge capture \(png.width)x\(png.height) px, \(json["targets"] as? Int ?? -1) targets, "
+              + "\(blurred) blurred, bundle path given \(json["bundle"] != nil)")
+        return id
+    }
+
+    // MARK: - Colour
+
+    /// Recorded, not asserted (`docs/product/unit4-live-checklist.md`, issue 17): the colour space ScreenCaptureKit
+    /// hands back on this display, and what the saved original and an export carry.
+    func testRecordsTheColourSpace() async throws {
+        let screen = LiveCapture.mainScreen
+        let display = try XCTUnwrap(screen.displayID)
+        let geometry = DisplayGeometry(id: display, frame: screen.frame, scale: screen.backingScaleFactor)
+        let local = CGRect(x: 100, y: 100, width: 400, height: 300)
+        let region = try XCTUnwrap(SelectionGeometry.region(local: local, on: geometry))
+        let captured = try await ScreenCapturer.capture(region, policy: CapturePolicy())
+        let saved = try PNG.decode(try PNG.encode(captured.image))
+        let exported = try PNG.decode(try Renderer.renderPNG(original: saved, marks: [], scale: captured.scale))
+        func name(_ image: CGImage) -> String {
+            guard let space = image.colorSpace else { return "none" }
+            let named = (space.name as String?).map { $0.replacingOccurrences(of: "kCGColorSpace", with: "") }
+            let icc = (space.copyICCData() as Data?)?.count ?? 0
+            let render = RenderColorSpace.of(image)
+            let renders = render.map { $0 === space || $0 == space } == true ? "its own space" : "sRGB"
+            return "\(named ?? "unnamed ICC") (wide gamut \(space.isWideGamutRGB), ICC \(icc) bytes, renders in "
+                + "\(renders))"
+        }
+        let shown = screen.colorSpace?.localizedName ?? "unknown"
+        print("E2E: colour display \(shown); live capture \(name(captured.image)); saved PNG \(name(saved)); "
+              + "exported PNG \(name(exported))")
+    }
+}
