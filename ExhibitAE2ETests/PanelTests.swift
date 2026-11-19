@@ -35,6 +35,15 @@ final class PanelTests: XCTestCase {
 
         func click(_ name: String, count: Int = 1) async throws {
             try await PanelTests.ensureShown(controller)
+            // Rows report their frames as they lay out (thumbnails, the selected row growing); aim only once the
+            // target has stopped moving.
+            var last = controller.frames.byName[name]
+            for _ in 0..<12 {
+                await E2E.settle(80)
+                let now = controller.frames.byName[name]
+                if now == last { break }
+                last = now
+            }
             Events.click(at: try center(of: name), in: window, count: count)
             await E2E.settle(350)
         }
