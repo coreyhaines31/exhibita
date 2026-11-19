@@ -1,4 +1,5 @@
 import CoreGraphics
+import ExhibitEditor
 import ExhibitShell
 import ExhibitStore
 import Foundation
@@ -19,6 +20,10 @@ final class AppModel {
     var launchesAtLogin: Bool
     /// Shown beside a hotkey after a refused change.
     private(set) var hotkeyMessages: [HotkeyAction: String] = [:]
+    /// The editor's keys: the defaults with the person's changes on top.
+    private(set) var keymap: EditorKeymap
+    /// Shown under an editor key's row after a refused change, until the next change to that row.
+    private(set) var shortcutMessages: [EditorCommand: String] = [:]
     /// Why the last window pick was not captured, shown at the top of the panel until dismissed or the next
     /// capture starts.
     private(set) var captureRefusal: String?
@@ -35,6 +40,8 @@ final class AppModel {
 
     /// Called after the hotkeys in effect change, so they can be registered again.
     @ObservationIgnored var onBindingsChanged: (HotkeyBindings) -> Void = { _ in }
+    /// Called after the editor's keys change, so open editors use them at once.
+    @ObservationIgnored var onKeymapChanged: (EditorKeymap) -> Void = { _ in }
     @ObservationIgnored var onLaunchAtLoginChanged: (Bool) -> Bool = { $0 }
     /// The time history is shown and swept against; renders fix it so their PNGs don't change from run to run.
     @ObservationIgnored var clock: () -> Date = { Date() }
@@ -47,6 +54,7 @@ final class AppModel {
         self.permission = permission
         bindings = HotkeyBindings(custom: Preferences.customHotkeys, system: system)
         retention = Preferences.retention
+        keymap = Preferences.editorKeymap
         self.launchesAtLogin = launchesAtLogin
     }
 
@@ -145,9 +153,72 @@ final class AppModel {
         hotkeyMessages[action] ?? bindings.issue(for: action)?.message
     }
 
+    // MARK: - Editor keys
+
+    /// A key pressed in a Shortcuts row's recorder. Refused keys leave the row as it was and say why.
+    @discardableResult
+    func recordShortcut(_ key: EditorKey, modifiers: KeyModifiers, for command: EditorCommand) -> Bool {
+        if let issue = keymap.issue(recording: key, modifiers: modifiers, for: command) {
+            shortcutMessages[command] = issue.message
+            return false
+        }
+        guard let shortcut = EditorShortcut(key: key, modifiers: modifiers) else { return false }
+        _ = keymap.assign(shortcut, to: command)
+        shortcutMessages[command] = nil
+        saveKeymap()
+        return true
+    }
+
+    func resetShortcut(_ command: EditorCommand) {
+        if let issue = keymap.reset(command) {
+            shortcutMessages[command] = issue.message
+            return
+        }
+        shortcutMessages[command] = nil
+        saveKeymap()
+    }
+
+    func resetAllShortcuts() {
+        keymap.resetAll()
+        shortcutMessages = [:]
+        saveKeymap()
+    }
+
+    /// What Settings shows under a row: a refusal, or a later default this row's key hides.
+    func shortcutMessage(for command: EditorCommand) -> String? {
+        if let message = shortcutMessages[command] { return message }
+        guard let other = keymap.shadowing(command), let standard = command.defaultShortcut else { return nil }
+        return "\(other.title) also uses \(standard.display), so pick another key here."
+    }
+
+    var shortcutRows: [ShortcutRow] {
+        EditorCommand.remappable.map { command in
+            ShortcutRow(command: command, title: command.title, detail: command.detail,
+                        key: keymap.display(for: command), isCustom: keymap.isCustom(command),
+                        message: shortcutMessage(for: command))
+        }
+    }
+
+    private func saveKeymap() {
+        Preferences.editorKeymap = keymap
+        onKeymapChanged(keymap)
+    }
+
     // MARK: - General
 
     func setLaunchAtLogin(_ enabled: Bool) {
         launchesAtLogin = onLaunchAtLoginChanged(enabled)
     }
+}
+
+/// One row of Settings, Shortcuts: an editor command and its key now.
+struct ShortcutRow: Identifiable, Equatable {
+    let command: EditorCommand
+    let title: String
+    let detail: String
+    let key: String
+    let isCustom: Bool
+    let message: String?
+
+    var id: String { command.id }
 }
