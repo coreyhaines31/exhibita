@@ -58,6 +58,7 @@ Mark each line pass or fail with the macOS version.
 | Hover a button that highlights, press ⌥⇧4 | The highlight is in the capture even if it fades under the overlay. |
 | On each of three displays (2x main, 2x offset to the right, 1x above), drag a region | Each capture has that display's pixel size and is sharp; the dimmed still lines up exactly with the real screen, with no shift or blur. |
 | Keychain Access on screen, press ⌥⇧4 | Its window is black with the label in the still the overlay shows, and in the capture. Space and click it: refused, the panel says why. |
+| A password manager open behind other windows, press ⌥⇧4 (issue 75) | Only the part of it that shows is black; the windows in front of it, the editor included, are captured as they are. |
 | Time from the key to the dim | Write it down; `CaptureTests` print the freeze time as "stills of N displays". |
 
 Recorded by `CaptureTests.testRecordsTheColourSpace` on 2026-11-18 (macOS 26.6.2, built-in Liquid Retina XDR): ScreenCaptureKit returns the display's own ICC profile (unnamed, wide gamut, 4064 bytes), not sRGB and not the named Display P3 space; the saved `original.png` and an export keep that profile, and the renderer draws in it. Sections 3 and 4, apart from the hotkey press itself and the editor taking focus (issue 53), are covered by `Scripts/run-e2e-capture.sh` on that Mac's three displays (2x, 2x and 1x).
