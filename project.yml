@@ -120,6 +120,7 @@ targets:
       - App/Panel
       - App/Settings/SettingsView.swift
       - App/Settings/SettingsSections.swift
+      - App/Settings/ShortcutsSection.swift
       - App/Settings/NeverCaptureSection.swift
       - App/Settings/CapturePolicyModel.swift
       - App/Settings/FreeFormSettings.swift

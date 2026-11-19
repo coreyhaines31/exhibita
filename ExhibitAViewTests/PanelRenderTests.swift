@@ -1,6 +1,7 @@
 import AppKit
 import CoreGraphics
 import ExhibitCore
+import ExhibitEditor
 import ExhibitInterpret
 import ExhibitShell
 import ExhibitStore
@@ -176,6 +177,17 @@ final class PanelRenderTests: XCTestCase {
         try renderSettings(after, name: "settings-taken-over", schemes: [.light])
     }
 
+    func testRendersShortcutSettings() throws {
+        let model = try makeModel()
+        model.recordShortcut(.character("q"), modifiers: [], for: .tool(.arrow))
+        model.recordShortcut(.character("k"), modifiers: [.shift], for: .blurAllSensitive)
+        model.recordShortcut(.character("c"), modifiers: [], for: .tool(.highlight))
+        try renderForm(name: "settings-shortcuts") {
+            HotkeysSection(model: model, actions: SettingsActions(), drawsRecorders: false)
+            ShortcutsSection(model: model)
+        }
+    }
+
     func testRendersFreeFormSettings() throws {
         let model = try makeModel()
         let reachable = FreeFormSettings(settings: ModelSettings(enabled: true, model: "qwen3.8:27b"))
@@ -250,6 +262,24 @@ final class PanelRenderTests: XCTestCase {
                                                                freeForm: freeForm, updates: updates,
                                                                commandLine: commandLine)
                 .background(Color(nsColor: .windowBackgroundColor)))
+            hosting.appearance = NSAppearance(named: scheme == .dark ? .darkAqua : .aqua)
+            hosting.frame = NSRect(origin: .zero, size: hosting.fittingSize)
+            hosting.layoutSubtreeIfNeeded()
+            RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+            let rep = try XCTUnwrap(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds), name)
+            hosting.cacheDisplay(in: hosting.bounds, to: rep)
+            let image = try XCTUnwrap(rep.cgImage, name)
+            try write(image, to: "\(name)-\(scheme == .dark ? "dark" : "light")")
+        }
+    }
+
+    /// A few Settings sections on their own, the same way as `renderSettings`.
+    private func renderForm<Content: View>(name: String, schemes: [ColorScheme] = [.light, .dark],
+                                           @ViewBuilder content: () -> Content) throws {
+        let form = Form(content: content).formStyle(.grouped).frame(width: SettingsView.width)
+            .fixedSize(horizontal: false, vertical: true)
+        for scheme in schemes {
+            let hosting = NSHostingView(rootView: form.background(Color(nsColor: .windowBackgroundColor)))
             hosting.appearance = NSAppearance(named: scheme == .dark ? .darkAqua : .aqua)
             hosting.frame = NSRect(origin: .zero, size: hosting.fittingSize)
             hosting.layoutSubtreeIfNeeded()

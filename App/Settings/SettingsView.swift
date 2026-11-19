@@ -10,8 +10,8 @@ struct SettingsActions {
     var purgeAll: () -> Void = {}
 }
 
-/// One pane, grouped like System Settings: hotkeys, permission, privacy, history, free-form instructions,
-/// command line, general.
+/// One pane, grouped like System Settings: hotkeys, editor shortcuts, permission, privacy, history, free-form
+/// instructions, command line, general.
 struct SettingsView: View {
     let model: AppModel
     let actions: SettingsActions
@@ -29,6 +29,7 @@ struct SettingsView: View {
     var body: some View {
         Form {
             HotkeysSection(model: model, actions: actions, drawsRecorders: drawsRecorders)
+            ShortcutsSection(model: model)
             PermissionSection(state: model.permission, actions: actions)
             if let policy { NeverCaptureSection(policy: policy, actions: policyActions) }
             HistorySection(model: model, actions: actions)
