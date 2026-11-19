@@ -132,7 +132,7 @@ On success, stdout holds one JSON object:
 
 - `marks[]`: every mark added, with its `id`, `kind`, `color` (not for blur), `targetID` when it was placed on a target, the `selector` that produced it, and `entry` (its index in `marks.json`) for `apply`. Rect marks have `rect`; arrows have `from` and `to`. `visibleRect` is the box a person sees for an arrow's caption, a text label or a step disc. Text marks also report `label`; steps report `stepNumber`.
 - `selectors[]`: for each selector, how many things it `matches` and how many marks it produced (`marked`).
-- `bundle`: the bundle path, when the input was one. `targetsReused` is true when targets came from its document.
+- `bundle`: the bundle path, when the input was one. `targetsReused` is true when targets came from its document. When the input was the id of an agent capture with blurs, `input` is that id and `bundle` is left out, so the unblurred original's path is not handed to the agent.
 
 Numbers in output are rounded to a tenth of a pixel; `document.json` keeps full precision.
 
