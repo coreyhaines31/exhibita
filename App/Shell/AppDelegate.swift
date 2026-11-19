@@ -21,6 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Debug builds under the end-to-end tests: throwaway support directory and settings, before anything reads them.
         TestSeam.applyDefaults()
+        if TestSeam.isActive { ScreenRecording.forcedOff = true }
         PanelFont.register()
         if !TestSeam.isActive { LaunchAtLogin.applyDefault() }
 

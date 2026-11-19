@@ -16,6 +16,10 @@ final class BootTests: XCTestCase {
     }
 
     func testBootsCleanAndTheHotkeyExplainsThePermission() async throws {
+        // The seam reads Screen Recording as off whatever TCC says (the test host may inherit it), so nothing here
+        // can capture. What macOS itself says is printed for the record.
+        print("E2E: CGPreflightScreenCaptureAccess in the test host: \(CGPreflightScreenCaptureAccess())")
+        XCTAssertTrue(ScreenRecording.forcedOff)
         guard !ScreenRecording.isGranted else {
             throw XCTSkip("This build has Screen Recording; the hotkey would start a real capture")
         }

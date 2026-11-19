@@ -8,7 +8,8 @@ import Foundation
 /// It turns on when `EXHIBIT_SUPPORT_DIR` is set, or when XCTest hosts the app. Then history, the policy file,
 /// the bridge socket and ⇧⌘C files live under a temporary support directory, preferences go to a throwaway
 /// defaults suite (`EXHIBIT_DEFAULTS_SUITE`), the global hotkeys are not registered, the status item does not save
-/// its position, and Sparkle never starts. Hosted by XCTest without the variables, it makes its own temporary ones,
+/// its position, Sparkle never starts, and Screen Recording reads as off (`ScreenRecording.forcedOff`), so nothing
+/// can capture the screen. Hosted by XCTest without the variables, it makes its own temporary ones,
 /// so a test run never touches the real captures or settings.
 enum TestSeam {
     static let supportVariable = ExhibitPaths.supportOverrideVariable

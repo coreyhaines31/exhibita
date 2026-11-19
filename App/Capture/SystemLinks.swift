@@ -6,7 +6,12 @@ import ExhibitShell
 enum ScreenRecording {
     static let settingsURL = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!
 
-    static var isGranted: Bool { CGPreflightScreenCaptureAccess() }
+    /// Set at launch under the end-to-end tests' seam (debug builds only). The app then reads Screen Recording as
+    /// off whatever macOS says, so a test run can never capture the screen: a test host without a TCC record of
+    /// its own inherits the permission of whatever launched it.
+    nonisolated(unsafe) static var forcedOff = false
+
+    static var isGranted: Bool { !forcedOff && CGPreflightScreenCaptureAccess() }
 
     @MainActor static var state: ScreenRecordingState {
         ScreenRecordingState(preflight: isGranted, hasAsked: Preferences.askedForScreenRecording)
