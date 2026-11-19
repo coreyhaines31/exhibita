@@ -113,3 +113,102 @@ struct LoopbackTransportTests {
         }
     }
 }
+
+/// Which model is in effect and what Settings says about it, for each state of the setting and the discovery.
+struct ModelChoiceTests {
+    static let ollamaURL = URL(string: "http://127.0.0.1:11434")!
+    static let lmStudioURL = URL(string: "http://127.0.0.1:1234/v1")!
+
+    static func discovery(ollama: ServerProbe? = nil, lmStudio: ServerProbe? = nil) -> Discovery {
+        Discovery(probes: [ollama ?? .notRunning(.ollama, ollamaURL),
+                           lmStudio ?? .notRunning(.openAICompatible, lmStudioURL)])
+    }
+
+    static let installed = discovery(ollama: .found(ModelServer(kind: .ollama, url: ollamaURL,
+                                                                models: ["ornith-1.5:9b", "qwen3.8:27b"])))
+
+    @Test func neverChosenUsesTheRecommendedModelWithoutAClick() throws {
+        let settings = ModelSettings()
+        #expect(settings.effectiveChoice == nil)
+        #expect(try settings.endpoint(discovery: nil) == nil, "nothing before discovery answers")
+        #expect(settings.status(discovery: nil) == .checking)
+        let endpoint = try #require(try settings.endpoint(discovery: Self.installed))
+        #expect(endpoint.model == "qwen3.8:27b")
+        #expect(endpoint.chatURL.absoluteString == "http://127.0.0.1:11434/api/chat")
+        let status = settings.status(discovery: Self.installed)
+        #expect(status == .using(model: "qwen3.8:27b", server: .ollama, isDefault: true))
+        #expect(status.message == "Using qwen3.8:27b from Ollama on this Mac.")
+        #expect(!status.isProblem)
+    }
+
+    @Test func choosingNoneIsNotTheSameAsNeverChoosing() throws {
+        let none = ModelSettings(choice: ModelSettings.Choice.none)
+        #expect(try none.endpoint(discovery: Self.installed) == nil, "None stays None with a model installed")
+        #expect(none.status(discovery: Self.installed) == .builtInOnly)
+        let data = try JSONEncoder().encode(none)
+        #expect(try JSONDecoder().decode(ModelSettings.self, from: data).effectiveChoice == ModelSettings.Choice.none)
+        let never = try JSONDecoder().decode(ModelSettings.self, from: JSONEncoder().encode(ModelSettings()))
+        #expect(never.effectiveChoice == nil)
+    }
+
+    @Test func anExplicitChoiceIsNeverOverridden() throws {
+        let fast = ModelSettings(choice: .installed(server: .ollama, url: Self.ollamaURL.absoluteString,
+                                                    model: "ornith-1.5:9b"))
+        #expect(try fast.endpoint(discovery: Self.installed)?.model == "ornith-1.5:9b")
+        #expect(fast.status(discovery: Self.installed) == .using(model: "ornith-1.5:9b", server: .ollama, isDefault: false))
+        // Gone or down: still that model, and the status says what is wrong.
+        let gone = Self.discovery(ollama: .found(ModelServer(kind: .ollama, url: Self.ollamaURL, models: ["llama3:8b"])))
+        #expect(try fast.endpoint(discovery: gone)?.model == "ornith-1.5:9b")
+        let missing = fast.status(discovery: gone)
+        #expect(missing == .chosenMissing(model: "ornith-1.5:9b", server: .ollama))
+        #expect(missing.command == "ollama pull ornith-1.5:9b")
+        let down = fast.status(discovery: Self.discovery())
+        #expect(down == .serverDown(.ollama, model: "ornith-1.5:9b"))
+        #expect(down.command == "ollama serve")
+    }
+
+    @Test func eachProblemSaysHowToFixIt() {
+        let never = ModelSettings()
+        let nothing = never.status(discovery: Self.discovery())
+        #expect(nothing == .noServer)
+        #expect(nothing.message.contains("ollama.com"))
+        #expect(nothing.command == "ollama pull qwen3.8:27b")
+        let empty = never.status(discovery: Self.discovery(ollama: .noModels(ModelServer(kind: .ollama,
+                                                                                        url: Self.ollamaURL, models: []))))
+        #expect(empty == .noModels(.ollama))
+        #expect(empty.command == "ollama pull qwen3.8:27b")
+        let odd = never.status(discovery: Self.discovery(ollama: .badAnswer(.ollama, Self.ollamaURL, "HTTP 500")))
+        #expect(odd == .badAnswer(.ollama))
+        #expect(odd.message.contains("127.0.0.1:11434"))
+        let lmStudio = never.status(discovery: Self.discovery(lmStudio: .noModels(
+            ModelServer(kind: .openAICompatible, url: Self.lmStudioURL, models: []))))
+        #expect(lmStudio == .noModels(.openAICompatible))
+        #expect(lmStudio.command == nil)
+        for status in [nothing, empty, odd, lmStudio] { #expect(status.isProblem) }
+    }
+
+    @Test func otherUsesTheTypedFieldsAndStaysOnThisMac() throws {
+        var other = ModelSettings(endpoint: "http://localhost:1234/v1", model: "", choice: .other)
+        #expect(other.status(discovery: Self.installed) == .otherIncomplete)
+        #expect(try other.endpoint(discovery: Self.installed) == nil)
+        other.model = "my-model"
+        #expect(try other.endpoint(discovery: Self.installed)?.api == .openai)
+        #expect(other.status(discovery: nil) == .usingOther(model: "my-model", endpoint: "http://localhost:1234/v1"))
+        other.endpoint = "http://192.168.1.20:11434"
+        #expect(throws: ModelError.notLoopback("192.168.1.20")) { try other.endpoint(discovery: nil) }
+        guard case .otherInvalid(let detail) = other.status(discovery: nil) else {
+            Issue.record("a host that is not this Mac is a problem")
+            return
+        }
+        #expect(detail.contains("192.168.1.20"))
+    }
+
+    @Test func aSettingFromBeforeTheChoiceKeepsItsModel() throws {
+        let old = Data(#"{"enabled":true,"endpoint":"http://127.0.0.1:11434","model":"qwen3:8b","api":"automatic"}"#.utf8)
+        let settings = try JSONDecoder().decode(ModelSettings.self, from: old)
+        #expect(settings.effectiveChoice == .other)
+        #expect(try settings.endpoint(discovery: Self.installed)?.model == "qwen3:8b")
+        let off = Data(#"{"enabled":false,"endpoint":"http://127.0.0.1:11434","model":"","api":"automatic"}"#.utf8)
+        #expect(try JSONDecoder().decode(ModelSettings.self, from: off).effectiveChoice == nil, "never chosen")
+    }
+}
