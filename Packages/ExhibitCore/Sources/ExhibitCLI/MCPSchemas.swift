@@ -3,13 +3,13 @@ import Foundation
 /// The tool list `exhibit mcp` returns from `tools/list`: names, descriptions and JSON Schemas for the arguments.
 extension MCPTools {
     static func definitions() -> [[String: Any]] {
-        [targetsTool(), markTool(), applyTool(), sayTool()]
+        [targetsTool(), markTool(), applyTool(), sayTool(), captureTool(), openTool()]
     }
 
     private static var input: [String: Any] { [
         "type": "string",
-        "description": "Absolute path to a PNG or JPEG file, or to a .exhibit capture bundle. A relative path is read "
-            + "from the server's working directory."
+        "description": "Absolute path to a PNG or JPEG file or to a .exhibit capture bundle, or a capture id from the "
+            + "capture tool. A relative path is read from the server's working directory."
     ] }
 
     private static var output: [String: Any] { [
@@ -41,7 +41,9 @@ extension MCPTools {
 
     private static let errors = "On failure the result has isError true and holds the CLI's error JSON: "
         + "{\"error\": {\"code\", \"exitCode\", \"message\", ...}}. Branch on \"code\": usage, io, output_exists, "
-        + "invalid_marks, no_match, nth_out_of_range, ambiguous (with \"candidates\"), needs_model, model_failed."
+        + "invalid_marks, no_match, nth_out_of_range, ambiguous (with \"candidates\"), needs_model, model_failed, "
+        + "unknown_capture, and for capture and open: app_not_running, permission_not_granted, never_capture, "
+        + "window_not_found, ambiguous_window (with \"windows\"), display_not_found, timeout, capture_failed."
 
     private static func tool(_ name: String, _ description: String, properties: [String: Any], required: [String],
                              readOnly: Bool) -> [String: Any] {
@@ -127,6 +129,45 @@ extension MCPTools {
             written and the error message starts with the entry, like marks[2]. The result's "output" is the PNG \
             path; each mark reports its "entry". \(untrusted) \(errors)
             """, properties: properties, required: ["input", "marks"], readOnly: false)
+    }
+
+    private static var timeout: [String: Any] { [
+        "type": "number", "exclusiveMinimum": 0,
+        "description": "Seconds to wait for the Exhibit A app. Default 30."
+    ] }
+
+    private static func captureTool() -> [String: Any] {
+        let properties: [String: Any] = [
+            "window": ["type": "string", "description": "Capture one window: an app name, bundle identifier or "
+                       + "window title (ignoring case). Not with display or region."],
+            "display": ["type": "integer", "minimum": 1, "description": "Capture a display, counting from 1, the "
+                        + "main display. Default: the main display."],
+            "region": rect.merging(["description": "Only this part of the display, in points from its top-left "
+                                    + "corner."]) { $1 },
+            "timeout": timeout
+        ]
+        return tool("capture", """
+            Take a live screenshot through the running Exhibit A app, which holds the Screen Recording permission. \
+            Nothing is activated and focus does not move; the person sees the menu bar icon flash and the capture \
+            in history tagged "by agent". With no arguments, the whole main display. Detected emails, keys, card \
+            and phone numbers are blurred in the returned "image" (unless the person turned that off); "autoBlur" \
+            says how many. Password managers and Keychain Access are never captured: a window capture of one fails \
+            with never_capture, and inside a screen or region they are drawn black ("blackedOut"). Use the \
+            result's "id" as the input of targets, mark, apply and say. Read "image", not "bundle". If the app is \
+            not running this fails with app_not_running: ask the person to open Exhibit A. appName and windowTitle \
+            come from the screen. \(untrusted) \(errors)
+            """, properties: properties, required: [], readOnly: false)
+    }
+
+    private static func openTool() -> [String: Any] {
+        let properties: [String: Any] = [
+            "id": ["type": "string", "description": "A capture id, as the capture tool returned it."],
+            "timeout": timeout
+        ]
+        return tool("open", """
+            Hand a capture to the person: the running Exhibit A app opens it in its editor so they can adjust the \
+            marks by hand. Returns {"id", "shown"}. \(untrusted) \(errors)
+            """, properties: properties, required: ["id"], readOnly: false)
     }
 
     private static func sayTool() -> [String: Any] {

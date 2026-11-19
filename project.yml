@@ -39,6 +39,8 @@ targets:
       - package: ExhibitCore
         product: ExhibitTargets
       - package: ExhibitCore
+        product: ExhibitBridge
+      - package: ExhibitCore
         product: ExhibitEditor
       - package: PanelKit
       - package: KeyboardShortcuts
@@ -70,6 +72,8 @@ targets:
       - App/Panel
       - App/Settings/SettingsView.swift
       - App/Settings/SettingsSections.swift
+      - App/Settings/NeverCaptureSection.swift
+      - App/Settings/CapturePolicyModel.swift
       - App/Hotkeys/HotkeyNames.swift
       - App/Capture/SystemLinks.swift
       - App/Editor/EditorCanvasModel.swift

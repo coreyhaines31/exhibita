@@ -63,13 +63,15 @@ struct Exhibit: ParsableCommand {
         discussion: """
             Every command reads a PNG or JPEG file (or a .exhibit capture bundle), writes a new PNG, and prints one \
             JSON object on stdout. Errors print a JSON object with a stable "code" on stderr and exit non-zero: \
-            1 file or other failure, 2 usage, 3 no match, 4 ambiguous, 5 say needs a model, 6 the model failed. \
-            Everything runs on this Mac; nothing is sent anywhere except, for say, to a model endpoint on this \
-            Mac that you configure. Full reference: docs/cli.md.
+            1 file or other failure, 2 usage, 3 no match, 4 ambiguous, 5 say needs a model, 6 the model failed, \
+            7 Exhibit A is not running, 8 no Screen Recording permission, 9 never-capture window, 10 timeout. \
+            Every command takes a capture id in place of a path. capture and open ask the running Exhibit A app \
+            over a private local socket. Everything runs on this Mac; nothing is sent anywhere except, for say, \
+            to a model endpoint on this Mac that you configure. Full reference: docs/cli.md.
             """,
         version: CLI.version,
         subcommands: [Targets.self, Blur.self, Highlight.self, Circle.self, Box.self, Arrow.self, Text.self, Step.self,
-                      Apply.self, Say.self, MCP.self]
+                      Apply.self, Say.self, CaptureCommand.self, Open.self, MCP.self]
     )
 }
 
@@ -165,7 +167,7 @@ struct Targets: ExhibitCommand {
             """
     )
 
-    @Argument(help: ArgumentHelp("A PNG or JPEG file, or a .exhibit bundle.", valueName: "input"))
+    @Argument(help: ArgumentHelp("A PNG or JPEG file, a .exhibit bundle, or a capture id.", valueName: "input"))
     var input: String
 
     func execute() throws -> String {
@@ -205,7 +207,8 @@ struct Blur: MarkCommand {
         discussion: "Example: exhibit blur shot.png --kind email --kind key"
     )
     static let markKind = MarkKind.blur
-    @Argument(help: ArgumentHelp("A PNG or JPEG file, or a .exhibit bundle.", valueName: "input")) var input: String
+    @Argument(help: ArgumentHelp("A PNG or JPEG file, a .exhibit bundle, or a capture id.", valueName: "input"))
+    var input: String
     @OptionGroup(title: "Selectors") var selection: SelectorOptions
     @OptionGroup(title: "Output") var outputOptions: OutputOptions
 
@@ -218,7 +221,8 @@ struct Highlight: MarkCommand {
         discussion: "Example: exhibit highlight shot.png --text \"$49/mo\""
     )
     static let markKind = MarkKind.highlight
-    @Argument(help: ArgumentHelp("A PNG or JPEG file, or a .exhibit bundle.", valueName: "input")) var input: String
+    @Argument(help: ArgumentHelp("A PNG or JPEG file, a .exhibit bundle, or a capture id.", valueName: "input"))
+    var input: String
     @OptionGroup(title: "Selectors") var selection: SelectorOptions
     @OptionGroup var color: ColorOption
     @OptionGroup(title: "Output") var outputOptions: OutputOptions
@@ -232,7 +236,8 @@ struct Circle: MarkCommand {
         discussion: "Example: exhibit circle shot.png --text \"Sign up\""
     )
     static let markKind = MarkKind.circle
-    @Argument(help: ArgumentHelp("A PNG or JPEG file, or a .exhibit bundle.", valueName: "input")) var input: String
+    @Argument(help: ArgumentHelp("A PNG or JPEG file, a .exhibit bundle, or a capture id.", valueName: "input"))
+    var input: String
     @OptionGroup(title: "Selectors") var selection: SelectorOptions
     @OptionGroup var color: ColorOption
     @OptionGroup(title: "Output") var outputOptions: OutputOptions
@@ -246,7 +251,8 @@ struct Box: MarkCommand {
         discussion: "Example: exhibit box shot.png --rect 40,120,300,80"
     )
     static let markKind = MarkKind.box
-    @Argument(help: ArgumentHelp("A PNG or JPEG file, or a .exhibit bundle.", valueName: "input")) var input: String
+    @Argument(help: ArgumentHelp("A PNG or JPEG file, a .exhibit bundle, or a capture id.", valueName: "input"))
+    var input: String
     @OptionGroup(title: "Selectors") var selection: SelectorOptions
     @OptionGroup var color: ColorOption
     @OptionGroup(title: "Output") var outputOptions: OutputOptions
@@ -264,7 +270,8 @@ struct Arrow: MarkCommand {
             """
     )
     static let markKind = MarkKind.arrow
-    @Argument(help: ArgumentHelp("A PNG or JPEG file, or a .exhibit bundle.", valueName: "input")) var input: String
+    @Argument(help: ArgumentHelp("A PNG or JPEG file, a .exhibit bundle, or a capture id.", valueName: "input"))
+    var input: String
     @OptionGroup(title: "Selectors") var selection: SelectorOptions
     @Option(help: ArgumentHelp("Where the tail starts, in pixels. Default: placed automatically.", valueName: "x,y"))
     var from: String?
@@ -286,7 +293,8 @@ struct Text: MarkCommand {
         discussion: "Example: exhibit text shot.png --text \"Renews\" --label \"Too soon\""
     )
     static let markKind = MarkKind.text
-    @Argument(help: ArgumentHelp("A PNG or JPEG file, or a .exhibit bundle.", valueName: "input")) var input: String
+    @Argument(help: ArgumentHelp("A PNG or JPEG file, a .exhibit bundle, or a capture id.", valueName: "input"))
+    var input: String
     @OptionGroup(title: "Selectors") var selection: SelectorOptions
     @Option(help: ArgumentHelp("The words to show.", valueName: "string")) var label: String
     @OptionGroup var color: ColorOption
@@ -308,7 +316,8 @@ struct Step: MarkCommand {
             """
     )
     static let markKind = MarkKind.step
-    @Argument(help: ArgumentHelp("A PNG or JPEG file, or a .exhibit bundle.", valueName: "input")) var input: String
+    @Argument(help: ArgumentHelp("A PNG or JPEG file, a .exhibit bundle, or a capture id.", valueName: "input"))
+    var input: String
     @OptionGroup(title: "Selectors") var selection: SelectorOptions
     @Option(help: ArgumentHelp("The number on the (first) disc. Default 1.", valueName: "n")) var number: Int?
     @OptionGroup var color: ColorOption
@@ -333,7 +342,8 @@ struct Apply: ExhibitCommand {
             """
     )
 
-    @Argument(help: ArgumentHelp("A PNG or JPEG file, or a .exhibit bundle.", valueName: "input")) var input: String
+    @Argument(help: ArgumentHelp("A PNG or JPEG file, a .exhibit bundle, or a capture id.", valueName: "input"))
+    var input: String
     @Argument(help: ArgumentHelp("The marks file.", valueName: "marks.json")) var marks: String
     @OptionGroup(title: "Output") var outputOptions: OutputOptions
 

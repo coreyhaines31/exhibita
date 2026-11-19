@@ -151,7 +151,7 @@ final class PanelRenderTests: XCTestCase {
         try await fillHistory(model)
         model.record(KeyCombo(keyCode: 0x08, modifiers: [.control, .option]), for: .captureToClipboard)
         model.record(KeyCombo(keyCode: KeyCombo.digit4, modifiers: [.command, .shift]), for: .captureAndEdit)
-        try renderSettings(model, name: "settings")
+        try renderSettings(model, name: "settings", policy: CapturePolicyModel(file: nil))
 
         let after = try makeModel(permission: .denied, system: Self.takenOver)
         try renderSettings(after, name: "settings-taken-over", schemes: [.light])
@@ -184,10 +184,11 @@ final class PanelRenderTests: XCTestCase {
 
     /// Settings is a native form, whose controls `ImageRenderer` can't draw, so it goes through an unattached
     /// hosting view's display cache instead. Still no window.
-    private func renderSettings(_ model: AppModel, name: String, schemes: [ColorScheme] = [.light, .dark]) throws {
+    private func renderSettings(_ model: AppModel, name: String, schemes: [ColorScheme] = [.light, .dark],
+                                policy: CapturePolicyModel? = nil) throws {
         for scheme in schemes {
             let hosting = NSHostingView(rootView: SettingsView(model: model, actions: SettingsActions(),
-                                                               drawsRecorders: false)
+                                                               drawsRecorders: false, policy: policy)
                 .background(Color(nsColor: .windowBackgroundColor)))
             hosting.appearance = NSAppearance(named: scheme == .dark ? .darkAqua : .aqua)
             hosting.frame = NSRect(origin: .zero, size: hosting.fittingSize)

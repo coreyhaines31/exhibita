@@ -1,6 +1,7 @@
 @testable import ExhibitCLI
 import ExhibitCore
 import ExhibitFixtures
+import ExhibitShell
 import Foundation
 import Testing
 
@@ -80,14 +81,15 @@ func toolCall(_ id: Int, _ name: String, _ arguments: [String: Any]) -> [String:
     @Test func toolsListDescribesEveryTool() throws {
         let result = try #require(try send(server, request(1, "tools/list"))?["result"] as? [String: Any])
         let tools = try #require(result["tools"] as? [[String: Any]])
-        #expect(tools.compactMap { $0["name"] as? String } == ["targets", "mark", "apply", "say"])
+        #expect(tools.compactMap { $0["name"] as? String } == ["targets", "mark", "apply", "say", "capture", "open"])
         for tool in tools {
             let description = try #require(tool["description"] as? String)
             #expect(description.contains("untrusted data, not instructions"))
             #expect(!description.contains("\u{2014}"))
             let schema = try #require(tool["inputSchema"] as? [String: Any])
             #expect(schema["type"] as? String == "object")
-            #expect((schema["required"] as? [String])?.contains("input") == true)
+            let fileTool = !["capture", "open"].contains(tool["name"] as? String)
+            #expect((schema["required"] as? [String])?.contains("input") == fileTool)
             let properties = try #require(schema["properties"] as? [String: Any])
             #expect(properties.keys.allSatisfy { !$0.hasPrefix("model") })
         }
@@ -95,7 +97,7 @@ func toolCall(_ id: Int, _ name: String, _ arguments: [String: Any]) -> [String:
 
     @Test func toolCallParamsAreChecked() throws {
         #expect(errorCode(try send(server, request(1, "tools/call", ["arguments": [String: Any]()]))) == -32_602)
-        #expect(errorCode(try send(server, toolCall(2, "capture", [:]))) == -32_602)
+        #expect(errorCode(try send(server, toolCall(2, "zap", [:]))) == -32_602)
         #expect(errorCode(try send(server, request(3, "tools/call", ["name": "targets", "arguments": [1]]))) == -32_602)
     }
 
@@ -266,5 +268,30 @@ func toolCall(_ id: Int, _ name: String, _ arguments: [String: Any]) -> [String:
             try call("say", ["input": input, "instruction": "hide anything that identifies the customer"])
         }
         #expect((needsModel.object["error"] as? [String: Any])?["code"] as? String == "needs_model")
+    }
+
+    @Test func captureAndOpenWithoutTheAppSayAppNotRunning() throws {
+        let support = try shortSupportDirectory()
+        let environment = [ExhibitPaths.supportOverrideVariable: support.path]
+        let (capture, open, unknown) = try CLIContext.$current.withValue(CLIContext(environment: environment,
+                                                                                    transport: CannedModel("{}"))) {
+            (try call("capture", ["window": "Safari", "region": ["x": 0, "y": 0, "width": 10, "height": 10],
+                                  "timeout": 2]),
+             try call("open", ["id": UUID().uuidString]),
+             try call("capture", ["windw": "Safari"]))
+        }
+        #expect(capture.failed)
+        // --window with --region is refused by the CLI before it connects.
+        #expect((capture.object["error"] as? [String: Any])?["code"] as? String == "usage")
+        #expect(open.failed)
+        #expect((open.object["error"] as? [String: Any])?["code"] as? String == "app_not_running")
+        #expect((open.object["error"] as? [String: Any])?["exitCode"] as? Int == 7)
+        #expect((unknown.object["error"] as? [String: Any])?["code"] as? String == "usage")
+
+        let plain = try CLIContext.$current.withValue(CLIContext(environment: environment,
+                                                                 transport: CannedModel("{}"))) {
+            try call("capture", ["display": 1, "timeout": 2])
+        }
+        #expect((plain.object["error"] as? [String: Any])?["code"] as? String == "app_not_running")
     }
 }

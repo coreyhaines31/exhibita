@@ -1,3 +1,4 @@
+import ExhibitBridge
 import ExhibitCore
 import Foundation
 
@@ -16,6 +17,14 @@ public enum ExitStatus: Int32, Sendable {
     case needsModel = 5
     /// `say`: the configured model could not be reached, timed out or gave an answer that could not be read.
     case modelFailed = 6
+    /// `capture`, `open`: Exhibit A is not running. The CLI never starts it.
+    case appNotRunning = 7
+    /// `capture`: Exhibit A does not have Screen Recording. The CLI never asks for it.
+    case permissionNotGranted = 8
+    /// `capture`: the window is on the never-capture list.
+    case neverCapture = 9
+    /// `capture`, `open`: Exhibit A did not answer in time.
+    case timeout = 10
 }
 
 /// One thing a selector matched, as reported in an ambiguous error.
@@ -37,6 +46,8 @@ struct CLIError: Error, Equatable {
     var hint: String?
     /// For `say`: what the instruction named that is not on the screen.
     var notFound: [String]?
+    /// For `capture --window`: the windows an ambiguous name could mean.
+    var windows: [WindowSummary]?
 
     static func usage(_ message: String) -> CLIError {
         CLIError(code: "usage", message: message, status: .usage)
@@ -72,11 +83,13 @@ struct CLIError: Error, Equatable {
                 var candidates: [CandidateReport]?
                 var hint: String?
                 var notFound: [String]?
+                var windows: [WindowSummary]?
             }
             var error: Body
         }
         let body = Envelope.Body(code: code, message: message, exitCode: status.rawValue, selectors: selectors,
-                                 candidates: candidates, hint: hint, notFound: notFound)
+                                 candidates: candidates, hint: hint, notFound: notFound,
+                                 windows: windows)
         return OutputJSON.string(Envelope(error: body))
     }
 }

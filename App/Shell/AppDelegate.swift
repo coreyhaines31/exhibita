@@ -1,5 +1,6 @@
 import AppKit
 import ExhibitEditor
+import ExhibitShell
 import ExhibitStore
 import os
 import PanelKit
@@ -14,6 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var hotkeys: HotkeyCenter?
     private var capture: CaptureController?
     private var editors: EditorWindows?
+    private var bridge: BridgeHost?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         PanelFont.register()
@@ -35,7 +37,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Every document write for a capture the editor may have open goes through `OpenCaptures`.
         let editors = EditorWindows(model: model, captures: OpenCaptures(store: store))
         self.editors = editors
+        // The never-capture list and auto-blur, one file for people and agents alike.
+        let support = store.directory.deletingLastPathComponent()
+        let policy = CapturePolicyModel(file: CapturePolicyFile(supportDirectory: support))
         let capture = CaptureController(model: model, editors: editors)
+        capture.policy = { [snapshot = policy.snapshot] in snapshot.current }
         self.capture = capture
         let hotkeys = HotkeyCenter { [weak self] action in
             self?.refreshSystemState()
@@ -47,7 +53,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.hotkeys = hotkeys
 
         let actions = settingsActions(model: model, store: store)
-        let settingsWindow = SettingsWindow(model: model, actions: actions) { [weak self] in
+        let policyActions = PolicyActions(runningApps: { AppPicker.runningApps() },
+                                          chooseApp: { AppPicker.choose { policy.add($0) } })
+        let settingsWindow = SettingsWindow(model: model, actions: actions, policy: policy,
+                                            policyActions: policyActions) { [weak self] in
             self?.refreshSystemState()
         }
         self.settingsWindow = settingsWindow
@@ -58,6 +67,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.statusItem = statusItem
         capture.showPanel = { [weak statusItem] in statusItem?.show() }
         editors.willOpen = { [weak statusItem] in statusItem?.close() }
+        startBridge(store: store, support: support, policy: policy, model: model)
 
         Task { await model.reload() }
     }
@@ -65,6 +75,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         // Marks are saved within 100 ms of every change anyway; this writes the last few.
         editors?.flushAll()
+        bridge?.stop()
+    }
+
+    /// Live captures for `exhibit capture`, without the overlay and without moving focus.
+    private func startBridge(store: CaptureStore, support: URL, policy: CapturePolicyModel, model: AppModel) {
+        let bridge = BridgeHost(store: store, supportDirectory: support, policy: policy.snapshot,
+                                present: { [weak self] id in
+                                    // `exhibit open`: the one place a capture is handed to the person.
+                                    guard let editors = self?.editors else { return false }
+                                    editors.open(id)
+                                    return true
+                                },
+                                didCapture: { [weak self] _ in
+                                    self?.statusItem?.flash()
+                                    await model.reload()
+                                })
+        bridge.start()
+        self.bridge = bridge
     }
 
     /// Permission and the system shortcuts can change in System Settings at any time. They are read again when

@@ -221,7 +221,7 @@ Targets (assumed), not measurements. Baselines are taken once units 4 and 5 exis
 | Core journeys | not assessed | Hand markup is built (units 4 and 5) and unit tested; no live run yet |
 | Redaction not recoverable | not assessed, blocking | Test defined in unit 1 |
 | Originals handling and purge | not assessed, blocking | Unit 4 |
-| Agent capture rules | not assessed | Unit 6 |
+| Agent capture rules | built, not verified live | Unit 6: bridge, never-capture list, tagging and auto-blur tested with a fake capture provider; focus, flash and blackout on a real screen in `docs/product/unit6-live-checklist.md` |
 | Dictation accuracy | not assessed | Measured on synthetic speech only (8% word errors); real voices not assessed |
 | Performance | not assessed | No baseline |
 | Notarization and update path | not assessed, blocking | Never run for this app |
@@ -233,6 +233,7 @@ Targets (assumed), not measurements. Baselines are taken once units 4 and 5 exis
 - Speech on macOS 14 and 15. macOS 26 uses the system `SpeechTranscriber` (fast in the spike, no prompt for files); WhisperKit for older systems is still an unverified assumption.
 - How often macOS 15+ re-prompts for Screen Recording.
 - Hotkey takeover: decided in unit 4 to read and link, not write (`docs/product/hotkey-takeover.md`). Still unverified on a real Mac: the deep link's landing pane, and whether ⌘⇧4 is free for the app at once after the person turns the system shortcut off.
+- Everything in unit 6 that needs a live Mac (focus staying put during `exhibit capture --window`, the glyph flash, blackout geometry, auto-blur on a real window, MCP from Claude Code): `docs/product/unit6-live-checklist.md`. The bridge's design and residual risks: `docs/product/capture-bridge.md`.
 - Everything in unit 4 that needs a live Mac (overlay, capture, permission flow, hotkeys): `docs/product/unit4-live-checklist.md`.
 - Everything in unit 5 that needs a live Mac (the seven-keystroke time, snapping on real pages, force quit, pasting, displays): `docs/product/unit5-live-checklist.md`. The editor opens centred on the capture's display, not exactly in place.
 - Competitor facts (Shotcrisp, Lasso, Shotmark, Snapperon, CleanShot X) come from product pages read on 2026-11-18, not hands-on use.

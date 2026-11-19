@@ -32,7 +32,7 @@ import Testing
         #expect(replies.map { $0["id"] as? Int } == [1, 2, 3])
         #expect(replies.allSatisfy { $0["jsonrpc"] as? String == "2.0" })
         let tools = try #require((replies[1]["result"] as? [String: Any])?["tools"] as? [[String: Any]])
-        #expect(tools.compactMap { $0["name"] as? String } == ["targets", "mark", "apply", "say"])
+        #expect(tools.compactMap { $0["name"] as? String } == ["targets", "mark", "apply", "say", "capture", "open"])
 
         let call = try #require(replies[2]["result"] as? [String: Any])
         #expect(call["isError"] as? Bool == false)
