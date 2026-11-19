@@ -51,7 +51,13 @@ struct GrammarMatcher {
             words.removeLast()
         }
         if let reason = qualifiedKind(words, possessive: possessive, for: mark) { return .decline(reason) }
-        return lookUp(words, for: mark, every: every || isPlural(words))
+        let result = lookUp(words, for: mark, every: every || isPlural(words))
+        // Named in the person's words, UI noun and all: "pricing button", not "pricing".
+        if case .unmatched = result {
+            let named = phrase.drop { GrammarLexicon.determiners.contains($0) || GrammarLexicon.everyWords.contains($0) }
+            return .unmatched(named.joined(separator: " "))
+        }
+        return result
     }
 
     /// A kind with a qualifier ("her email", "the payments key", "the emails on the left") names some targets of
