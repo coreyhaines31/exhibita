@@ -12,12 +12,80 @@ import Testing
                                  ownerName: "Safari", bundleIdentifier: "com.apple.Safari")
 
     @Test func mapsListedWindowsToPixelsOfTheCapture() {
-        // A 2x capture of the region (100, 100) to (500, 400) in global points.
-        let regions = Blackout.regions(windows: [safari, vault], policy: CapturePolicy(),
+        // A 2x capture of the region (100, 100) to (500, 400) in global points; Keychain Access in front.
+        let regions = Blackout.regions(windows: [vault, safari], policy: CapturePolicy(),
                                        captureRect: CGRect(x: 100, y: 100, width: 400, height: 300),
                                        pixelSize: PixelSize(width: 800, height: 600))
         #expect(regions == [Blackout.Region(rect: PixelRect(x: 100, y: 40, width: 400, height: 200),
                                             reason: "Keychain Access is on the never-capture list")])
+    }
+
+    /// Issue 75: Safari wholly in front of Keychain Access shows as it was; nothing is blacked out or reported.
+    @Test func aListedWindowWhollyBehindAnotherIsNotBlackedOut() {
+        let regions = Blackout.regions(windows: [safari, vault], policy: CapturePolicy(),
+                                       captureRect: CGRect(x: 0, y: 0, width: 400, height: 300),
+                                       pixelSize: PixelSize(width: 400, height: 300))
+        #expect(regions.isEmpty)
+        #expect(Blackout.reasons(regions).isEmpty)
+    }
+
+    @Test func onlyTheUncoveredPartIsBlackedOut() {
+        // Safari covers the left half of Keychain Access (x 150 to 250); the right half (250 to 350) stays black.
+        let half = WindowCandidate(id: 2, frame: CGRect(x: 0, y: 0, width: 250, height: 300), layer: 0, ownerPID: 11,
+                                   ownerName: "Safari", bundleIdentifier: "com.apple.Safari")
+        let regions = Blackout.regions(windows: [half, vault], policy: CapturePolicy(),
+                                       captureRect: CGRect(x: 0, y: 0, width: 400, height: 300),
+                                       pixelSize: PixelSize(width: 800, height: 600))
+        #expect(regions.map(\.rect) == [PixelRect(x: 500, y: 240, width: 200, height: 200)])
+        #expect(Blackout.reasons(regions) == ["Keychain Access is on the never-capture list"])
+    }
+
+    /// Menus, popovers, floating panels and overlays (other layers), see-through windows, windows kept out of
+    /// screen capture, other never-capture apps' windows and apps left out of the image cover nothing.
+    @Test func onlyOrdinaryOpaqueWindowsInTheImageCover() {
+        let cover = CGRect(x: 0, y: 0, width: 400, height: 300)
+        let notCovering = [
+            WindowCandidate(id: 5, frame: cover, layer: 101, ownerPID: 11, ownerName: "Safari"),
+            WindowCandidate(id: 6, frame: cover, layer: 0, ownerPID: 11, ownerName: "Safari", alpha: 0.5),
+            WindowCandidate(id: 7, frame: cover, layer: 0, ownerPID: 11, ownerName: "Safari", isShared: false),
+            WindowCandidate(id: 8, frame: cover, layer: 0, ownerPID: 12, ownerName: "1Password"),
+            WindowCandidate(id: 9, frame: cover, layer: 0, ownerPID: 42, ownerName: "Exhibit A")
+        ]
+        for front in notCovering {
+            let regions = Blackout.regions(windows: [front, vault], policy: CapturePolicy(), captureRect: cover,
+                                           pixelSize: PixelSize(width: 400, height: 300), notInImage: [42])
+            #expect(regions.contains { $0.rect == PixelRect(x: 150, y: 120, width: 200, height: 100) },
+                    "window \(front.id) leaves the black")
+        }
+        #expect(Blackout.covers(safari, policy: CapturePolicy()))
+    }
+
+    @Test func visiblePartsSubtractEveryCover() {
+        let frame = CGRect(x: 0, y: 0, width: 100, height: 100)
+        #expect(Blackout.visibleParts(of: frame, minus: []) == [frame])
+        #expect(Blackout.visibleParts(of: frame, minus: [CGRect(x: -10, y: -10, width: 200, height: 200)]).isEmpty)
+        // A hole in the middle leaves four pieces that add back up to the frame less the hole.
+        let ring = Blackout.visibleParts(of: frame, minus: [CGRect(x: 25, y: 25, width: 50, height: 50)])
+        #expect(ring.count == 4)
+        let area: CGFloat = ring.reduce(0) { total, piece in total + piece.width * piece.height }
+        #expect(area == 7500)
+        for (index, piece) in ring.enumerated() {
+            #expect(!piece.intersects(CGRect(x: 25, y: 25, width: 50, height: 50)))
+            for other in ring[(index + 1)...] {
+                let shared = piece.intersection(other)
+                #expect(shared.isNull || shared.width * shared.height == 0, "pieces do not overlap")
+            }
+        }
+        // Two covers side by side leave nothing.
+        #expect(Blackout.visibleParts(of: frame, minus: [CGRect(x: 0, y: 0, width: 50, height: 100),
+                                                         CGRect(x: 50, y: 0, width: 50, height: 100)]).isEmpty)
+    }
+
+    @Test func reasonsAreNamedOncePerApp() {
+        let pieces = [Blackout.Region(rect: PixelRect(x: 0, y: 0, width: 1, height: 1), reason: "A"),
+                      Blackout.Region(rect: PixelRect(x: 2, y: 0, width: 1, height: 1), reason: "B"),
+                      Blackout.Region(rect: PixelRect(x: 4, y: 0, width: 1, height: 1), reason: "A")]
+        #expect(Blackout.reasons(pieces) == ["A", "B"])
     }
 
     @Test func clipsToTheImageGrowsToWholePixelsAndDropsWindowsOutside() {

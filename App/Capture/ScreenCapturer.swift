@@ -59,13 +59,12 @@ enum ScreenCapturer {
                        policy: CapturePolicy) async throws -> FrozenScreen {
         let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
         let listed = content.applications.filter { policy.entry(for: subject(of: $0)) != nil }
-        let listedWindows = neverCaptureWindows(in: content, policy: policy)
+        let ordered = blackoutWindows(in: content, order: windows, policy: policy)
         let jobs = try displays.map { geometry -> StillJob in
             guard let display = content.displays.first(where: { $0.displayID == geometry.id }) else {
                 throw CaptureFailure.displayGone
             }
-            return StillJob(display: display, geometry: geometry, listed: listed, listedWindows: listedWindows,
-                            policy: policy)
+            return StillJob(display: display, geometry: geometry, listed: listed, windows: ordered, policy: policy)
         }
         // All displays at once, so the stills are as close to the same moment as ScreenCaptureKit allows.
         let stills = try await withThrowingTaskGroup(of: DisplayStill.self) { group in
@@ -88,7 +87,8 @@ enum ScreenCapturer {
         var display: SCDisplay
         var geometry: DisplayGeometry
         var listed: [SCRunningApplication]
-        var listedWindows: [WindowCandidate]
+        /// Every window front to back, for `Blackout`.
+        var windows: [WindowCandidate]
         var policy: CapturePolicy
     }
 
@@ -101,7 +101,8 @@ enum ScreenCapturer {
         configuration.height = whole.pixelSize.height
         configuration.showsCursor = false
         let image = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
-        let regions = Blackout.regions(windows: job.listedWindows, policy: policy, captureRect: display.frame,
+        // Exhibit A's own windows are in the still, so they cover a never-capture window like any other.
+        let regions = Blackout.regions(windows: job.windows, policy: policy, captureRect: display.frame,
                                        pixelSize: PixelSize(width: image.width, height: image.height))
         let painted = try Blackout.paint(image, regions: regions, scale: geometry.scale)
         return DisplayStill(display: geometry, image: painted, blackout: regions)
@@ -126,22 +127,40 @@ enum ScreenCapturer {
         context.interpolationQuality = .none
         context.draw(cropped, in: CGRect(x: 0, y: 0, width: cropped.width, height: cropped.height))
         guard let image = context.makeImage() else { throw ExhibitError.renderFailed }
-        let reasons = still.blackout.filter { region in
+        let reasons = Blackout.reasons(still.blackout.filter { region in
             CGRect(x: region.rect.x, y: region.rect.y, width: region.rect.width, height: region.rect.height)
                 .intersects(rect)
-        }.map(\.reason)
+        })
         return CapturedImage(image: image, scale: region.scale, appName: appName, windowTitle: windowTitle,
                              displayID: region.displayID, blackedOut: reasons)
     }
 
-    /// Never-capture apps' windows, in ScreenCaptureKit's global top-left points.
-    private static func neverCaptureWindows(in content: SCShareableContent, policy: CapturePolicy) -> [WindowCandidate] {
-        content.windows.compactMap { window -> WindowCandidate? in
-            guard let app = window.owningApplication, policy.entry(for: subject(of: app)) != nil else { return nil }
+    /// Every window front to back, for `Blackout`: the window server's order (`order`, from `WindowList`) with
+    /// ScreenCaptureKit's frames, app names and bundle identifiers, so the never-capture list matches the windows
+    /// the exclusion left out. A never-capture window ScreenCaptureKit lists but `order` missed goes last, where
+    /// nothing covers it: when its place is unknown, the black stays.
+    private static func blackoutWindows(in content: SCShareableContent, order: [WindowCandidate],
+                                        policy: CapturePolicy) -> [WindowCandidate] {
+        let byID = Dictionary(content.windows.map { ($0.windowID, $0) }, uniquingKeysWith: { first, _ in first })
+        var windows = order.map { listed -> WindowCandidate in
+            guard let window = byID[listed.id] else { return listed }
+            var candidate = listed
+            candidate.frame = window.frame
+            if let app = window.owningApplication {
+                candidate.ownerName = app.applicationName
+                candidate.bundleIdentifier = app.bundleIdentifier
+            }
+            return candidate
+        }
+        let known = Set(order.map(\.id))
+        windows += content.windows.compactMap { window -> WindowCandidate? in
+            guard !known.contains(window.windowID), let app = window.owningApplication,
+                  policy.entry(for: subject(of: app)) != nil else { return nil }
             return WindowCandidate(id: window.windowID, frame: window.frame, layer: window.windowLayer,
                                    ownerPID: app.processID, ownerName: app.applicationName,
                                    bundleIdentifier: app.bundleIdentifier)
         }
+        return windows
     }
 
     /// A live capture for an agent, Exhibit A's own windows left out.
@@ -162,12 +181,14 @@ enum ScreenCapturer {
         let image = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
         // Window and display frames share one global top-left point space.
         let captureRect = region.sourceRect.offsetBy(dx: display.frame.minX, dy: display.frame.minY)
-        let listedWindows = neverCaptureWindows(in: content, policy: policy)
-        let regions = Blackout.regions(windows: listedWindows, policy: policy, captureRect: captureRect,
-                                       pixelSize: PixelSize(width: image.width, height: image.height))
+        // Exhibit A's own windows are not in this image, so they cover nothing.
+        let windows = blackoutWindows(in: content, order: WindowList.onScreen(), policy: policy)
+        let regions = Blackout.regions(windows: windows, policy: policy, captureRect: captureRect,
+                                       pixelSize: PixelSize(width: image.width, height: image.height),
+                                       notInImage: [ownPID])
         let painted = try Blackout.paint(image, regions: regions, scale: region.scale)
         return CapturedImage(image: painted, scale: region.scale, displayID: region.displayID,
-                             blackedOut: regions.map(\.reason))
+                             blackedOut: Blackout.reasons(regions))
     }
 
     static func subject(of app: SCRunningApplication) -> CaptureSubject {
@@ -197,7 +218,7 @@ enum ScreenCapturer {
     }
 }
 
-/// On-screen windows, front to back, for Space-to-pick.
+/// On-screen windows, front to back, for Space-to-pick and for which windows cover a never-capture one.
 enum WindowList {
     static func onScreen() -> [WindowCandidate] {
         let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
@@ -208,9 +229,12 @@ enum WindowList {
                   let frame = CGRect(dictionaryRepresentation: bounds as CFDictionary),
                   let pid = entry[kCGWindowOwnerPID as String] as? Int32
             else { return nil }
+            let sharing = entry[kCGWindowSharingState as String] as? Int ?? Int(CGWindowSharingType.readOnly.rawValue)
             return WindowCandidate(id: UInt32(number), frame: frame, layer: entry[kCGWindowLayer as String] as? Int ?? 0,
                                    ownerPID: pid, ownerName: entry[kCGWindowOwnerName as String] as? String,
-                                   title: entry[kCGWindowName as String] as? String)
+                                   title: entry[kCGWindowName as String] as? String,
+                                   alpha: entry[kCGWindowAlpha as String] as? Double ?? 1,
+                                   isShared: sharing != Int(CGWindowSharingType.none.rawValue))
         }
     }
 }
