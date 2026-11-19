@@ -72,7 +72,8 @@ final class CaptureTests: XCTestCase {
 
         LiveCapture.send(Events.escape, characters: "\u{1b}", to: window)
         await E2E.wait("Esc to close the editor") { E2E.editors.windows[item.id] == nil && !window.isVisible }
-        print("E2E: timing hotkey to overlay visible \(LiveCapture.ms(toOverlay))")
+        print("E2E: timing hotkey to overlay visible \(LiveCapture.ms(toOverlay)) (stills of \(NSScreen.screens.count) "
+              + "displays \(E2E.app.capture?.lastFreeze.map(LiveCapture.ms) ?? "unknown"))")
         print("E2E: timing mouse-up to capture saved \(LiveCapture.ms(savedAt - up))")
         print("E2E: timing mouse-up to editor visible \(LiveCapture.ms(shown.shownAt - up))")
         print("E2E: timing mouse-up to editor key "
@@ -163,7 +164,7 @@ final class CaptureTests: XCTestCase {
 
     func testSpacePicksAWindow() async throws {
         guard let (window, point) = LiveCapture.pickableWindow() else {
-            throw XCTSkip("No other app's window is on screen to pick")
+            throw XCTSkip("No other app's window is wholly on one display to pick")
         }
         let known = before
         try await LiveCapture.start(.captureToClipboard)
@@ -185,6 +186,113 @@ final class CaptureTests: XCTestCase {
         }
         print("E2E: window pick \(item.size.width)x\(item.size.height) px at \(scale)x; app name recorded "
               + "\(source?.appName != nil), title recorded \(source?.windowTitle != nil)")
+    }
+
+    // MARK: - Frozen at the hotkey (issue 72)
+
+    /// The overlay shows a still of every display at its own pixel size, Exhibit A's own window is in it, and
+    /// what changes after the hotkey is not: the window is gone before the drag, and the capture still holds it.
+    func testTheStillHoldsOwnWindowsAndNothingAfterTheHotkey() async throws {
+        let restore = try clearNeverCapture()
+        defer { restore() }
+        let screen = LiveCapture.mainScreen
+        let scale = Double(screen.backingScaleFactor)
+        let window = LiveCapture.solidWindow(at: CGRect(x: screen.frame.minX + 200, y: screen.frame.minY + 200,
+                                                        width: 400, height: 300))
+        defer { window.orderOut(nil) }
+        await E2E.settle(400)
+        let known = before
+        try await LiveCapture.start(.captureToClipboard)
+        let frozen = try XCTUnwrap(LiveCapture.overlay.frozen)
+        XCTAssertEqual(frozen.stills.count, NSScreen.screens.count, "a still of every display")
+        for (index, shown) in NSScreen.screens.enumerated() {
+            let still = try XCTUnwrap(frozen.still(for: try XCTUnwrap(shown.displayID)), "display \(index + 1)")
+            XCTAssertEqual(Double(still.pixelSize.width), shown.frame.width * shown.backingScaleFactor, accuracy: 1)
+            XCTAssertEqual(Double(still.pixelSize.height), shown.frame.height * shown.backingScaleFactor, accuracy: 1)
+        }
+        window.orderOut(nil)
+        await E2E.settle(300)
+        let panel = try LiveCapture.panel(on: screen)
+        _ = LiveCapture.drag(on: panel, from: NSPoint(x: 220, y: 220), to: NSPoint(x: 580, y: 480))
+        let (item, _) = try await LiveCapture.waitForCapture(since: known)
+        let image = try E2E.store.load(item.id).original
+        XCTAssertEqual(Double(image.width), 360 * scale, accuracy: 1, "the drag's size on its display")
+        XCTAssertEqual(Double(image.height), 260 * scale, accuracy: 1)
+        let solid = LiveCapture.solidFraction(image)
+        XCTAssertGreaterThan(solid, 0.98, "Exhibit A's own window, as it was at the hotkey")
+        print("E2E: frozen region of an own window closed after the hotkey: \(String(format: "%.3f", solid)) solid, "
+              + "mean \(LiveCapture.meanColour(image))")
+    }
+
+    /// Space picks Exhibit A's own window too, cut out of the still at the window's frame.
+    func testSpacePicksOwnWindowFromTheStill() async throws {
+        let restore = try clearNeverCapture()
+        defer { restore() }
+        let screen = LiveCapture.mainScreen
+        let scale = Double(screen.backingScaleFactor)
+        let frame = CGRect(x: screen.frame.minX + 240, y: screen.frame.minY + 160, width: 400, height: 300)
+        let window = LiveCapture.solidWindow(at: frame)
+        defer { window.orderOut(nil) }
+        await E2E.settle(400)
+        let known = before
+        try await LiveCapture.start(.captureToClipboard)
+        let overlay = LiveCapture.overlay
+        LiveCapture.key(0x31, in: try LiveCapture.panel(on: LiveCapture.screenUnderPointer))
+        let point = CGPoint(x: frame.midX, y: LiveCapture.mainDisplayHeight - frame.midY)
+        try LiveCapture.move(toCoreGraphics: point)
+        await E2E.wait("our window under the pointer") { overlay.hovered?.id == UInt32(window.windowNumber) }
+        try LiveCapture.click(atCoreGraphics: point)
+        let (item, _) = try await LiveCapture.waitForCapture(since: known)
+        let image = try E2E.store.load(item.id).original
+        XCTAssertEqual(Double(image.width), 400 * scale, accuracy: 1, "the window's size")
+        XCTAssertEqual(Double(image.height), 300 * scale, accuracy: 1)
+        let solid = LiveCapture.solidFraction(image)
+        XCTAssertGreaterThan(solid, 0.98, "the window's own pixels")
+        print("E2E: own window pick \(image.width)x\(image.height) px, \(String(format: "%.3f", solid)) solid, mean "
+              + "\(LiveCapture.meanColour(image))")
+    }
+
+    /// Empties the never-capture list until the returned closure puts it back. A listed app's window is blacked
+    /// out over its whole frame even where windows in front cover it (`Blackout`), so a password manager open
+    /// anywhere behind a test window would turn it black; these tests are about the freeze, not the list.
+    private func clearNeverCapture() throws -> () -> Void {
+        let policy = try XCTUnwrap(E2E.app.policy)
+        let listed = policy.policy.neverCapture
+        for app in listed { policy.remove(app) }
+        return { for app in listed { policy.add(app) } }
+    }
+
+    /// The panel stays open through the hotkey, a click on the overlay and Esc, and closes once a capture is taken.
+    func testThePanelStaysOpenUntilACaptureIsTaken() async throws {
+        let statusItem = try XCTUnwrap(E2E.app.statusItem)
+        statusItem.show()
+        await E2E.wait("the panel") { statusItem.isShown }
+        await E2E.settle(300)
+        let panelWindow = statusItem.panelView?.window
+        let wasKey = panelWindow?.isKeyWindow == true
+        var known = before
+        try await LiveCapture.start(.captureAndEdit)
+        XCTAssertTrue(statusItem.isShown, "the hotkey leaves the panel open")
+        let panel = try LiveCapture.panel(on: LiveCapture.screenUnderPointer)
+        Events.click(at: NSPoint(x: 60, y: 60), in: panel)
+        await E2E.settle(300)
+        XCTAssertTrue(LiveCapture.overlay.isActive, "a click is not a selection")
+        XCTAssertTrue(statusItem.isShown, "a click on the overlay leaves the panel open")
+        LiveCapture.key(Events.escape, in: panel)
+        await E2E.wait("the overlay to close") { !LiveCapture.overlay.isActive }
+        await E2E.settle(400)
+        XCTAssertTrue(statusItem.isShown, "Esc leaves the panel as it was")
+        if wasKey {
+            XCTAssertTrue(panelWindow?.isKeyWindow == true, "and gives it back the keys")
+        }
+        XCTAssertTrue(LiveCapture.newCaptures(since: known).isEmpty, "nothing saved")
+
+        known = before
+        try await LiveCapture.start(.captureToClipboard)
+        LiveCapture.key(Events.returnKey, in: try LiveCapture.panel(on: LiveCapture.screenUnderPointer))
+        _ = try await LiveCapture.waitForCapture(since: known)
+        await E2E.wait("the panel to close") { !statusItem.isShown }
+        print("E2E: panel open through the hotkey, a click and Esc; key given back \(wasKey ? "checked" : "n/a")")
     }
 
     // MARK: - Targets

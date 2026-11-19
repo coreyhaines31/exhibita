@@ -83,6 +83,8 @@ Onboarding offers to take over the system shortcuts: macOS's own screenshot shor
 
 After either hotkey: drag for a region, Space to pick a window, ↩ for the whole screen. A clipboard capture still lands in history, so it can be opened and marked up afterwards.
 
+As with macOS's own screenshots, nothing on screen changes when the hotkey fires (issue 72): every display is frozen as a still before any window of Exhibit A's appears or closes, the overlay shows those stills, and the capture is cut out of them. Exhibit A's own editor and panel, and other apps' open menus and popovers, are captured as they were. A window pick is the window's frame cut out of the still, so a part another window covered shows that window. Never-capture apps are blacked out in the still and refused as picks. Agent captures (`exhibit capture`) are taken live and leave Exhibit A's own windows out.
+
 | Key | Action |
 |---|---|
 | A | Arrow |

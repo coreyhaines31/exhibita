@@ -2,8 +2,10 @@ import AppKit
 import ExhibitShell
 
 /// The dimmed overlay after a hotkey: drag for a region, Space to pick a window, ↩ for the whole screen under
-/// the pointer, Esc to cancel. One borderless non-activating panel per display, so the app under it keeps focus.
-/// The geometry is `SelectionGeometry` and `WindowPicker`; this class only routes events and draws.
+/// the pointer, Esc to cancel. It shows each display's still from the hotkey (`FrozenScreen`), so the screen
+/// looks frozen and what is selected is what was there. One borderless non-activating panel per display, so the
+/// app under it keeps focus; Esc gives the key back to whichever of Exhibit A's windows had it. The geometry is
+/// `SelectionGeometry` and `WindowPicker`; this class only routes events and draws.
 @MainActor
 final class SelectionOverlay {
     enum Outcome {
@@ -22,31 +24,34 @@ final class SelectionOverlay {
     private var displays: [DisplayGeometry] = []
     private var windowList: [WindowCandidate] = []
     private var mainDisplayHeight: CGFloat = 0
+    private weak var previousKey: NSWindow?
     private(set) var mode = Mode.region
     private(set) var dragStart: CGPoint?
     private(set) var dragCurrent: CGPoint?
     private(set) var hovered: WindowCandidate?
+    /// What the panels show while the overlay is up.
+    private(set) var frozen: FrozenScreen?
 
     var isActive: Bool { completion != nil }
 
     /// The panels while the overlay is up, one per display.
     var windows: [NSPanel] { panels }
 
-    func begin(completion: @escaping (Outcome) -> Void) {
+    func begin(_ frozen: FrozenScreen, completion: @escaping (Outcome) -> Void) {
         guard !isActive else { return }
         self.completion = completion
-        let screens = NSScreen.screens
-        mainDisplayHeight = screens.first?.frame.height ?? 0
-        displays = screens.compactMap { screen in
-            screen.displayID.map { DisplayGeometry(id: $0, frame: screen.frame, scale: screen.backingScaleFactor) }
-        }
-        windowList = WindowList.onScreen()
+        self.frozen = frozen
+        mainDisplayHeight = frozen.mainDisplayHeight
+        displays = frozen.displays
+        // The windows at the hotkey, Exhibit A's own included: the overlay is not among them.
+        windowList = frozen.windows
         mode = .region
         dragStart = nil
         dragCurrent = nil
         hovered = nil
+        previousKey = NSApp.keyWindow
         let mouse = NSEvent.mouseLocation
-        panels = screens.map { OverlayPanel(screen: $0, overlay: self) }
+        panels = frozen.stills.map { OverlayPanel(still: $0, overlay: self) }
         for panel in panels {
             panel.orderFrontRegardless()
         }
@@ -68,12 +73,17 @@ final class SelectionOverlay {
             panel.orderOut(nil)
         }
         panels.removeAll()
+        if case .cancelled = outcome, let previousKey, previousKey.isVisible {
+            previousKey.makeKey()
+        }
+        previousKey = nil
+        frozen = nil
         completion(outcome)
     }
 
     private func redraw() {
         for panel in panels {
-            panel.contentView?.needsDisplay = true
+            panel.contentView?.subviews.forEach { $0.needsDisplay = true }
         }
     }
 
@@ -111,7 +121,7 @@ final class SelectionOverlay {
     func mouseMoved(to point: CGPoint) {
         guard mode == .window else { return }
         let cgPoint = SelectionGeometry.coreGraphicsPoint(fromCocoa: point, mainDisplayHeight: mainDisplayHeight)
-        let picked = WindowPicker.pick(at: cgPoint, in: windowList, excludingPID: ProcessInfo.processInfo.processIdentifier)
+        let picked = WindowPicker.pick(at: cgPoint, in: windowList)
         if picked != hovered {
             hovered = picked
             redraw()
@@ -163,27 +173,54 @@ extension NSScreen {
     }
 }
 
-/// A borderless panel over one display. Non-activating, so the frontmost app stays frontmost, but it can take
-/// key so Esc, Space and ↩ reach it.
+/// A borderless panel over one display, showing its still. Non-activating, so the frontmost app stays
+/// frontmost, but it can take key so Esc, Space and ↩ reach it.
 private final class OverlayPanel: NSPanel {
-    init(screen: NSScreen, overlay: SelectionOverlay) {
-        super.init(contentRect: screen.frame, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered,
+    init(still: DisplayStill, overlay: SelectionOverlay) {
+        let frame = still.display.frame
+        super.init(contentRect: frame, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered,
                    defer: false)
-        setFrame(screen.frame, display: false)
+        setFrame(frame, display: false)
         level = .screenSaver
-        isOpaque = false
-        backgroundColor = .clear
+        isOpaque = true
+        backgroundColor = .black
         hasShadow = false
         ignoresMouseEvents = false
         acceptsMouseMovedEvents = true
         isReleasedWhenClosed = false
         hidesOnDeactivate = false
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
-        contentView = OverlayView(overlay: overlay, screenFrame: screen.frame)
+        let content = StillView(image: still.image, size: frame.size)
+        let view = OverlayView(overlay: overlay, screenFrame: frame)
+        view.autoresizingMask = [.width, .height]
+        content.addSubview(view)
+        contentView = content
     }
 
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
+}
+
+/// The display's still, as the layer's contents, so the compositor scales it and a drag redraws only the dim
+/// above it.
+private final class StillView: NSView {
+    private let image: CGImage
+
+    init(image: CGImage, size: CGSize) {
+        self.image = image
+        super.init(frame: CGRect(origin: .zero, size: size))
+        wantsLayer = true
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
+
+    override var wantsUpdateLayer: Bool { true }
+
+    override func updateLayer() {
+        layer?.contentsGravity = .resize
+        layer?.contents = image
+    }
 }
 
 private final class OverlayView: NSView {
