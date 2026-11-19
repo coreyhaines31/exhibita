@@ -70,6 +70,11 @@ final class StatusItemController {
         popover.performClose(nil)
     }
 
+    /// While held, the panel stays open whatever is clicked: the capture overlay sits over it.
+    func holdOpen(_ hold: Bool) {
+        popover.behavior = hold ? .applicationDefined : .transient
+    }
+
     /// How many times `flash` has run, for the end-to-end tests.
     private(set) var flashes = 0
 
