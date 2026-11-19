@@ -1,0 +1,21 @@
+[
+  {
+    "path": "index.html",
+    "title": "Exhibit A: Screenshot Markup for Mac, Free",
+    "description": "Exhibit A is a free Mac menu bar screenshot tool: mark up a capture with single keys, a spoken sentence, or one command from an agent. Coming soon.",
+    "og_title": "Exhibit A: mark up a screenshot in a few keystrokes",
+    "og_description": "Seven marks on seven keys, plain-spoken instructions, and an exhibit command and MCP server for agents. Secrets blur for good. Free for macOS, coming soon.",
+    "body_class": "home",
+    "updated": "2026-11-18"
+  },
+  {
+    "path": "privacy/index.html",
+    "title": "Privacy: What Exhibit A Keeps and Sends",
+    "crumb": "Privacy",
+    "description": "Exhibit A keeps captures on your Mac for 30 days, exports flat images, blurs secrets before agents see them, and has no telemetry, analytics or account.",
+    "og_title": "Exhibit A privacy",
+    "og_description": "Captures stay on your Mac, exports are flat pixels, and agents get secrets blurred. No telemetry, no analytics, no account.",
+    "body_class": "article-page",
+    "updated": "2026-11-18"
+  }
+]

@@ -1,0 +1,185 @@
+name: ExhibitA
+options:
+  bundleIdPrefix: com.exhibitaformac
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_HARDENED_RUNTIME: YES
+    DEVELOPMENT_TEAM: KPQU8X839X
+    CODE_SIGN_STYLE: Automatic
+    DEAD_CODE_STRIPPING: YES
+    ARCHS: "arm64 x86_64"
+    # Sparkle's EdDSA public key for this app. The private key stays in the release Mac's login Keychain under the
+    # "exhibita" account (docs/release/RELEASING.md); Scripts/release.sh refuses to run while this is a placeholder.
+    SPARKLE_PUBLIC_ED_KEY: D7GjEHZVyf5ibp7dCj1RwK/8a04Srfv1/EkSu0kY3VI=
+packages:
+  ExhibitCore:
+    path: Packages/ExhibitCore
+  PanelKit:
+    url: https://github.com/coreyhaines31/panelkit
+    exactVersion: "0.2.1"
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts
+    exactVersion: "2.4.0"
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    exactVersion: "2.10.0"
+targets:
+  ExhibitA:
+    type: application
+    platform: macOS
+    sources:
+      - App
+    dependencies:
+      - package: ExhibitCore
+        product: ExhibitCore
+      - package: ExhibitCore
+        product: ExhibitStore
+      - package: ExhibitCore
+        product: ExhibitShell
+      - package: ExhibitCore
+        product: ExhibitTargets
+      - package: ExhibitCore
+        product: ExhibitBridge
+      - package: ExhibitCore
+        product: ExhibitEditor
+      - package: ExhibitCore
+        product: ExhibitInterpret
+      - package: PanelKit
+      - package: KeyboardShortcuts
+      - package: Sparkle
+      # The `exhibit` command, in Contents/MacOS; the Homebrew cask and Settings link it onto the PATH.
+      - target: ExhibitCLI
+        copy:
+          destination: executables
+        codeSignOnCopy: true
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Exhibit A
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSUIElement: true
+        LSApplicationCategoryType: public.app-category.productivity
+        NSHumanReadableCopyright: Copyright © 2026 Corey Haines. FSL-1.1-MIT.
+        NSMicrophoneUsageDescription: >-
+          Exhibit A listens only while you hold D in the editor, to turn what you say into marks. Audio stays on
+          this Mac and is never saved.
+        NSSpeechRecognitionUsageDescription: >-
+          Exhibit A turns what you say while holding D into text, on this Mac only, to mark up your capture. Audio
+          is never sent anywhere or saved.
+        SUFeedURL: https://github.com/coreyhaines31/exhibita/releases/latest/download/appcast.xml
+        SUPublicEDKey: $(SPARKLE_PUBLIC_ED_KEY)
+        SUEnableAutomaticChecks: true
+    entitlements:
+      path: App/ExhibitA.entitlements
+      properties:
+        com.apple.security.device.audio-input: true
+    settings:
+      base:
+        PRODUCT_NAME: Exhibit A
+        PRODUCT_MODULE_NAME: ExhibitA
+        # Scripts/run-e2e.sh sets EXHIBIT_E2E_BUNDLE_SUFFIX=.e2e, so the test host keeps its settings (and the save
+        # panel's) apart from the real app's. Empty otherwise.
+        PRODUCT_BUNDLE_IDENTIFIER: com.exhibitaformac.ExhibitA$(EXHIBIT_E2E_BUNDLE_SUFFIX)
+        # App/Assets.xcassets/AppIcon: mac-app-kit's icons/exhibit (the evidence tag), rendered per size level.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+  # The `exhibit` CLI, compiled from the package's own entry point so it is the same program `swift build` makes,
+  # built universal with the hardened runtime like the app and signed on copy into it.
+  ExhibitCLI:
+    type: tool
+    platform: macOS
+    sources:
+      - Packages/ExhibitCore/Sources/exhibit
+    dependencies:
+      - package: ExhibitCore
+        product: ExhibitCLI
+    settings:
+      base:
+        PRODUCT_NAME: exhibit
+        PRODUCT_BUNDLE_IDENTIFIER: com.exhibitaformac.ExhibitA.CLI
+        SKIP_INSTALL: YES
+        GENERATE_INFOPLIST_FILE: YES
+        CREATE_INFOPLIST_SECTION_IN_BINARY: YES
+  # Offscreen renders of the panel, Settings and the editor on fixture data, plus view-model checks. Unhosted: it compiles the
+  # views itself and never launches the app or shows a window. History goes to a temporary folder and preferences
+  # to a throwaway defaults suite.
+  ExhibitAViewTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - App/Shell/Brand.swift
+      - App/Shell/Glyph.swift
+      - App/Shell/Preferences.swift
+      - App/Shell/AppModel.swift
+      - App/Panel
+      - App/Settings/SettingsView.swift
+      - App/Settings/SettingsSections.swift
+      - App/Settings/NeverCaptureSection.swift
+      - App/Settings/CapturePolicyModel.swift
+      - App/Settings/FreeFormSettings.swift
+      - App/Settings/FreeFormSection.swift
+      - App/Settings/UpdateSettings.swift
+      - App/Settings/CommandLineSection.swift
+      - App/Hotkeys/HotkeyNames.swift
+      - App/Capture/SystemLinks.swift
+      - App/Editor/EditorCanvasModel.swift
+      - App/Editor/EditorCanvas.swift
+      - App/Editor/EditorView.swift
+      - App/Editor/EditorToolbar.swift
+      - ExhibitAViewTests
+    dependencies:
+      - package: ExhibitCore
+        product: ExhibitCore
+      - package: ExhibitCore
+        product: ExhibitStore
+      - package: ExhibitCore
+        product: ExhibitShell
+      - package: ExhibitCore
+        product: ExhibitEditor
+      - package: ExhibitCore
+        product: ExhibitInterpret
+      - package: PanelKit
+      - package: KeyboardShortcuts
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+  # App-hosted end-to-end tests (Scripts/run-e2e.sh): the bundle runs inside the real Exhibit A app, which shows its
+  # windows, and drives it with synthetic events posted to its own windows. Needs signing, so it has its own scheme
+  # and never runs with the ExhibitA scheme's tests. The app's TestSeam (debug builds only) moves history, the
+  # socket and settings to throwaway places; no permission is ever asked for.
+  ExhibitAE2ETests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - ExhibitAE2ETests
+      # The shared synthetic screenshots, compiled in: ExhibitFixtures is not a package product.
+      - Packages/ExhibitCore/Sources/ExhibitFixtures
+    dependencies:
+      - target: ExhibitA
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Exhibit A.app/Contents/MacOS/Exhibit A"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+schemes:
+  ExhibitA:
+    build:
+      targets:
+        ExhibitA: all
+    test:
+      targets:
+        - ExhibitAViewTests
+  ExhibitAE2E:
+    build:
+      targets:
+        ExhibitA: all
+        ExhibitAE2ETests: [test]
+    test:
+      targets:
+        - ExhibitAE2ETests
