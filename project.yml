@@ -134,6 +134,7 @@ targets:
       - App/Editor/EditorView.swift
       - App/Editor/EditorToolbar.swift
       - App/Editor/EditorKeyEvent.swift
+      - App/Editor/KeyIcon.swift
       - ExhibitAViewTests
     dependencies:
       - package: ExhibitCore
