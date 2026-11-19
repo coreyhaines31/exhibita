@@ -4,7 +4,7 @@ The site in `site/` is built and checked locally (`make lint`) but not deployed.
 
 ## 1. Before launch day
 
-- [ ] Re-export the screenshots in `site/src/assets/shots/` once `docs/samples/app/` is re-rendered with the final accent (`#b42ee8`): `cwebp -q 82 -resize 1200 0 docs/samples/app/editor-applied-light.png -o site/src/assets/shots/editor-applied-light.webp`, and the same for `editor-applied-dark`, `editor-marked-light`, `panel-history-*` (no resize), `docs/samples/all-marks.png` and `docs/samples/cli-demo.png` (`-resize 1140 0`). Look at each one.
+- [ ] If `docs/samples/app/` is re-rendered again before launch, re-export the screenshots in `site/src/assets/shots/` (they already show the final `#b42ee8` light): `cwebp -q 82 -resize 1200 0 docs/samples/app/editor-applied-light.png -o site/src/assets/shots/editor-applied-light.webp`, and the same for `editor-applied-dark`, `editor-marked-light`, `panel-history-*` (no resize), `docs/samples/all-marks.png` and `docs/samples/cli-demo.png` (`-resize 1140 0`). Look at each one.
 - [ ] Corey approves the "Why it exists" paragraph on the homepage (it is a draft in his voice, like the other drafts in `mac-app-kit/site-kit/sections/maker-copy.md`).
 - [ ] Recheck every claim against what was verified live (`docs/product/unit*-live-checklist.md`). The copy states only what the code does; it gives no timings and names no tested clients on purpose.
 
