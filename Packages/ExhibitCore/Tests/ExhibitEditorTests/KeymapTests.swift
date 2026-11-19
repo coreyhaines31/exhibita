@@ -1,5 +1,5 @@
 import ExhibitCore
-import ExhibitEditor
+@testable import ExhibitEditor
 import ExhibitShell
 import Testing
 
@@ -18,8 +18,26 @@ import Testing
         #expect(EditorKeymap.command(for: .character("5"), modifiers: []) == nil)
     }
 
-    @Test func dictateIsLeftForUnitSeven() {
-        #expect(EditorKeymap.command(for: .character("d"), modifiers: []) == nil)
+    @Test func dHeldDictatesAndSlashTypes() {
+        #expect(EditorKeymap.command(for: .character("d"), modifiers: []) == .dictate)
+        #expect(EditorKeymap.command(for: .character("D"), modifiers: []) == .dictate)
+        #expect(EditorKeymap.command(for: .character("d"), modifiers: [.command]) == nil)
+        #expect(EditorKeymap.command(for: .character("/"), modifiers: []) == .typeInstruction)
+        #expect(EditorKeymap.command(for: .character("/"), modifiers: [.shift]) == .typeInstruction,
+                "layouts where / needs ⇧")
+        #expect(EditorCommand.dictate.isAppCommand)
+        #expect(EditorCommand.typeInstruction.isAppCommand)
+    }
+
+    @MainActor @Test func dInALabelBeingTypedIsTheLetter() {
+        let editor = makeEditor()
+        _ = editor.handle(.character("t"))
+        editor.click(PixelPoint(x: 120, y: 140))
+        #expect(editor.handle(.character("d")) == .handled)
+        #expect(editor.handle(.character("/")) == .handled)
+        #expect(editor.editingMark?.style.label == "d/")
+        #expect(editor.handle(.returnKey) == .handled)
+        #expect(editor.handle(.character("d")) == .app(.dictate))
     }
 
     @Test func modifiedKeys() {

@@ -2,13 +2,15 @@ import CoreGraphics
 import ExhibitCore
 import Foundation
 
-/// The status line under the toolbar. A notice from the last action wins; then "reading text" while targets
-/// load; then the quiet count of secrets nothing covers yet. It never blocks copying.
+/// The status line under the toolbar. A notice from the last action wins; then dictation (listening, working,
+/// what it did); then "reading text" while targets load; then the quiet count of secrets nothing covers yet. It
+/// never blocks copying.
 public enum EditorStatus: Equatable, Sendable {
     case none
     case readingText
     case secrets(Int)
     case notice(String)
+    case dictation(DictationStatus)
 
     public var text: String? {
         switch self {
@@ -16,6 +18,7 @@ public enum EditorStatus: Equatable, Sendable {
         case .readingText: "Reading text"
         case .secrets(let count): count == 1 ? "1 possible secret. ⇧B to blur." : "\(count) possible secrets. ⇧B to blur."
         case .notice(let message): message
+        case .dictation(let status): status.text
         }
     }
 }

@@ -21,6 +21,11 @@ public final class CaptureEditor {
     public internal(set) var draft: EditorDraft?
     /// A message from the last action: "Copied", "Reading text", "No text here".
     public internal(set) var notice: String?
+    /// Where dictation or a typed instruction is: listening, working, or what it did. Set by `DictationSession`;
+    /// a finished one goes away on the next action, like a notice.
+    public internal(set) var dictation: DictationStatus?
+    /// Where the pointer is over the capture, in image pixels, for "highlight this". The app sets it on hover.
+    @ObservationIgnored public var hoverPoint: PixelPoint?
     /// How far from a thing a click still counts, and how far the pointer must move to be a drag, in image
     /// pixels. The app sets it from the zoom so it is about 4 points on screen.
     public var tolerance: Double
@@ -55,6 +60,7 @@ public final class CaptureEditor {
 
     public var status: EditorStatus {
         if let notice { return .notice(notice) }
+        if let dictation { return .dictation(dictation) }
         if !targetsLoaded { return .readingText }
         let secrets = uncoveredSecrets
         return secrets.isEmpty ? .none : .secrets(secrets.count)
@@ -179,6 +185,12 @@ public final class CaptureEditor {
     /// Shows a message in the status line until the next action.
     public func show(_ message: String) {
         notice = message
+        clearFinishedDictation()
+    }
+
+    /// Drops what the last instruction did from the status line; one still in progress stays.
+    func clearFinishedDictation() {
+        if dictation?.isLive == false { dictation = nil }
     }
 
     /// Runs a command the editor handles itself.
@@ -190,7 +202,7 @@ public final class CaptureEditor {
         case .undo: undo()
         case .redo: redo()
         case .deleteSelection: deleteSelection()
-        case .copyAndClose, .save, .copyPath, .close: commitText()
+        case .copyAndClose, .save, .copyPath, .close, .dictate, .typeInstruction: commitText()
         }
     }
 
@@ -221,6 +233,7 @@ public final class CaptureEditor {
         }
         guard let command = EditorKeymap.command(for: key, modifiers: modifiers) else { return .ignored }
         notice = nil
+        clearFinishedDictation()
         if command.isAppCommand {
             commitText()
             return .app(command)
