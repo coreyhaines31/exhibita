@@ -1,0 +1,58 @@
+<section class="bx-hero page-hero" aria-labelledby="privacy-title">
+  <div class="bx-wrap page-head">
+    <nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="/">Exhibit A</a></li><li aria-current="page">Privacy</li></ol></nav>
+    <p class="bx-badge"><i aria-hidden="true"></i>No telemetry · No account</p>
+    <h1 id="privacy-title">Privacy</h1>
+    <p class="bx-lede">Exhibit A sees your screen, so here is exactly what it keeps, what it sends, and what it shows an agent.</p>
+  </div>
+</section>
+
+<div class="bx-wrap prose">
+  <section aria-labelledby="captures-title">
+    <h2 id="captures-title">Your captures</h2>
+    <p>Each capture is a folder in <code>~/Library/Application Support/Exhibit A/Captures</code> holding the original image and a <code>document.json</code> with the text found in it and your marks. The folder is excluded from Time Machine and from Spotlight.</p>
+    <p>Captures are kept for 30 days by default, so marks stay editable. Retention is a setting, including deleting a capture once you export it. Purging history deletes the files.</p>
+  </section>
+
+  <section aria-labelledby="export-title">
+    <h2 id="export-title">What an exported image contains</h2>
+    <p>One flat image: no layers, no metadata, no copy of the original. A blur is filled only from pixels outside every blurred area, so what was under it is not in the file.</p>
+    <p>Secret detection (emails, keys, card numbers, phone numbers and faces) is pattern matching and can miss things. Check the image before you send it.</p>
+  </section>
+
+  <section aria-labelledby="voice-title">
+    <h2 id="voice-title">Voice</h2>
+    <p>Exhibit A asks for the microphone and speech recognition only the first time you hold D, and listens only while you hold it. Audio stays in memory, is turned into text on your Mac with on-device recognition, and is never saved or sent. The first time, macOS may download its speech model.</p>
+    <p>Free-form instructions can go to a local model you run. Exhibit A accepts only an address on this Mac, and sends the model your words and a list of the text on screen, with secrets replaced by placeholders. Never the image.</p>
+  </section>
+
+  <section aria-labelledby="agents-title">
+    <h2 id="agents-title">Agents</h2>
+    <ul>
+      <li>The <code>exhibit</code> command works on image files without any permission. Live captures come from the app, over a socket only your user account can open.</li>
+      <li>Every agent capture blinks the menu bar icon and is tagged “by agent” in history.</li>
+      <li>Detected secrets are blurred before the agent gets the image (on by default, a Settings switch), and the agent is not given the path to your unblurred original.</li>
+      <li>Password managers and Keychain Access are never captured, by you or an agent. In a wider capture their windows are drawn black with a label. You can edit the list in Settings.</li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="network-title">
+    <h2 id="network-title">What goes over the network</h2>
+    <ul>
+      <li>The update check against Exhibit A’s releases on GitHub.</li>
+      <li>A one-time speech model download by macOS, if it needs one.</li>
+      <li>Requests to a local model, if you set one up, which stay on your Mac.</li>
+    </ul>
+    <p>That’s all. The app has no telemetry, no analytics, no account and no server of ours.</p>
+  </section>
+
+  <section aria-labelledby="site-title">
+    <h2 id="site-title">exhibitaformac.com</h2>
+    <p>This website (not the app) is static pages. It sets no cookies and loads no analytics, and its fonts are served from this site, not from Google Fonts.</p>
+  </section>
+
+  <section aria-labelledby="remove-title">
+    <h2 id="remove-title">Removing everything</h2>
+    <p>Purge history in Settings, quit Exhibit A and drag it to the Trash. To remove every trace, also delete <code>~/Library/Application Support/Exhibit A</code>, which holds captures, the never-capture list and the agent socket.</p>
+  </section>
+</div>
