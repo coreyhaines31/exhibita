@@ -43,6 +43,7 @@ Mark each line pass or fail with the macOS version.
 | Press ⌥⇧4 then ↩ | The whole display under the pointer is captured, without the overlay, the menu bar glyph's panel or the cursor. |
 | Two displays: start a drag on one and end on the other | The capture stops at the edge of the display where the drag started. |
 | Mixed scales (Retina laptop plus a 1x monitor) | A capture from each has the right pixel size (2x and 1x) and is sharp. |
+| On a P3 display, capture something saturated, then `sips -g profile original.png` and the same on an exported `-marked.png` | Write down the profile ScreenCaptureKit gives (issue 17). If it is Display P3, the export says Display P3 too and the colours match the screen; if it is sRGB, ScreenCaptureKit converted at capture and only imported P3 files keep P3. |
 | Press ⌥⇧4 again while the overlay is up | Ignored; one overlay, no crash. |
 
 ## 4. Capture to clipboard (⌃⌥⇧4)

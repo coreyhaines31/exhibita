@@ -54,9 +54,19 @@ import Testing
         #expect(labelled)
     }
 
-    func solid(width: Int, height: Int, gray: CGFloat) throws -> CGImage {
+    @Test func keepsADisplayP3CapturesColourSpace() throws {
+        let wideSpace = try #require(CGColorSpace(name: CGColorSpace.displayP3))
+        let image = try solid(width: 100, height: 50, gray: 1, space: wideSpace)
+        let painted = try Blackout.paint(image, regions: [Blackout.Region(rect: PixelRect(x: 0, y: 0, width: 20, height: 20),
+                                                                          reason: "1Password is on the never-capture list")],
+                                         scale: 1)
+        #expect(painted.colorSpace?.isWideGamutRGB == true)
+    }
+
+    func solid(width: Int, height: Int, gray: CGFloat,
+               space: CGColorSpace = CGColorSpace(name: CGColorSpace.sRGB)!) throws -> CGImage {
         let context = try #require(CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
-                                             bytesPerRow: 0, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                             bytesPerRow: 0, space: space,
                                              bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
         context.setFillColor(CGColor(gray: gray, alpha: 1))
         context.fill(CGRect(x: 0, y: 0, width: width, height: height))

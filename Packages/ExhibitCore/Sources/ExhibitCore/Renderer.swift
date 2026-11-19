@@ -15,7 +15,7 @@ public enum Renderer {
         let width = original.width
         let height = original.height
         guard width > 0, height > 0,
-              let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
+              let colorSpace = RenderColorSpace.of(original),
               let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
                                       space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
             throw ExhibitError.renderFailed
@@ -60,6 +60,22 @@ public enum Renderer {
     /// Renders and encodes as PNG in one step.
     public static func renderPNG(original: CGImage, marks: [Mark], scale: Double? = nil) throws -> Data {
         try PNG.encode(render(original: original, marks: marks, scale: scale))
+    }
+}
+
+/// The colour space a capture is rendered and exported in.
+public enum RenderColorSpace {
+    /// The original's own space when it is a wide-gamut RGB space with standard range, such as Display P3 from
+    /// most Mac screens, so the export keeps its colours instead of clipping them to sRGB. Anything else (sRGB,
+    /// device RGB, grey, extended-range or HDR spaces) renders in sRGB, as before; an 8-bit context could not
+    /// hold extended or HDR values anyway. Marks are specified in sRGB and converted into the space by
+    /// CoreGraphics, so they look the same either way.
+    public static func of(_ image: CGImage) -> CGColorSpace? {
+        if let space = image.colorSpace, space.model == .rgb, space.supportsOutput, space.isWideGamutRGB,
+           !CGColorSpaceUsesExtendedRange(space), !CGColorSpaceUsesITUR_2100TF(space) {
+            return space
+        }
+        return CGColorSpace(name: CGColorSpace.sRGB)
     }
 }
 

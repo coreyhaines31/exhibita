@@ -17,19 +17,20 @@ func temporaryDirectory() throws -> URL {
     return url
 }
 
-/// Tightly packed RGBA8 premultiplied pixels, top row first.
+/// Tightly packed RGBA8 premultiplied pixels, top row first, in sRGB unless `space` names another (an image
+/// already in that space is read without conversion).
 struct Pixels: Equatable {
     let width: Int
     let height: Int
     let bytes: [UInt8]
 
-    init(_ image: CGImage) {
+    init(_ image: CGImage, space: CFString = CGColorSpace.sRGB) {
         width = image.width
         height = image.height
         var buffer = [UInt8](repeating: 0, count: width * height * 4)
         buffer.withUnsafeMutableBytes { raw in
             let context = CGContext(data: raw.baseAddress, width: image.width, height: image.height, bitsPerComponent: 8,
-                                    bytesPerRow: image.width * 4, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                    bytesPerRow: image.width * 4, space: CGColorSpace(name: space)!,
                                     bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
             context?.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
         }

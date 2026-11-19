@@ -149,6 +149,10 @@ A reader that meets a mark kind it does not know must refuse the document rather
 
 Stroke widths and sizes are multiples of `scale`, so a mark looks the same at 1x and 2x.
 
+## Colour
+
+A capture keeps its colour space from capture to export. `original.png` is written with the image's own ICC profile, and an export renders in the original's space when that is a wide-gamut RGB space with standard range, such as Display P3 (`RenderColorSpace`), and is written with that profile, so wide colours are not clipped. Any other original (sRGB, device RGB, grey, extended-range or HDR) renders in sRGB and is tagged sRGB. Mark colours are defined in sRGB and converted into the export's space, so they look the same either way. The ICC profile is colour data, not identifying metadata: exports keep it and drop text, time and EXIF chunks.
+
 ## Redaction
 
 Export flattens everything into one new PNG: no layers, no metadata beyond colour information, and no copy of the original.

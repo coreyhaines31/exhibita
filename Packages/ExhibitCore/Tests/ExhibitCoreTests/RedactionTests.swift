@@ -132,6 +132,87 @@ import Testing
         #expect(output.pixel(x: 19, y: 31)[0] > 200)
     }
 
+    // MARK: - Wide gamut (Display P3), issue 17
+
+    static var displayP3: CFString { CGColorSpace.displayP3 }
+
+    /// `layered`, in Display P3: saturated P3 colours outside sRGB around the rects, noise from `secret` in them.
+    func layeredP3(secret: UInt64, rects: [PixelRect], width: Int = 640, height: Int = 400) -> CGImage {
+        var pixels = [UInt8](repeating: 255, count: width * height * 4)
+        for y in 0..<height {
+            for x in 0..<width {
+                let offset = (y * width + x) * 4
+                // Bands of pure P3 red, green and blue, which sRGB cannot hold, over a light ground.
+                switch (y / 20) % 4 {
+                case 0: (pixels[offset], pixels[offset + 1], pixels[offset + 2]) = (255, 0, 0)
+                case 1: (pixels[offset], pixels[offset + 1], pixels[offset + 2]) = (0, 255, 0)
+                case 2: (pixels[offset], pixels[offset + 1], pixels[offset + 2]) = (0, 0, 255)
+                default: (pixels[offset], pixels[offset + 1], pixels[offset + 2]) = (UInt8(x % 256), 240, 236)
+                }
+            }
+        }
+        var state = secret
+        for rect in rects {
+            guard let area = PixelArea(rect, width: width, height: height) else { continue }
+            for y in area.minY..<area.maxY {
+                for x in area.minX..<area.maxX {
+                    state = Patch.mix(state)
+                    let offset = (y * width + x) * 4
+                    pixels[offset] = UInt8(state & 0xFF)
+                    pixels[offset + 1] = UInt8((state >> 8) & 0xFF)
+                    pixels[offset + 2] = UInt8((state >> 16) & 0xFF)
+                }
+            }
+        }
+        return image(from: pixels, width: width, height: height, space: Self.displayP3)
+    }
+
+    @Test func holdsInDisplayP3() throws {
+        let rects = [
+            PixelRect(x: 40.5, y: 60, width: 80, height: 20.4),
+            PixelRect(x: 100, y: 70, width: 90, height: 30),
+            PixelRect(x: 590, y: 380, width: 80, height: 40),
+            PixelRect(x: -10, y: -10, width: 50, height: 30)
+        ]
+        let first = layeredP3(secret: 30, rects: rects)
+        let second = layeredP3(secret: 40, rects: rects)
+        #expect(Pixels(first, space: Self.displayP3) != Pixels(second, space: Self.displayP3))
+        for scale in [1.0, 2.0] {
+            let marks = allMarks + rects.map { Mark.blur($0) }
+            let outFirst = try Renderer.render(original: first, marks: marks, scale: scale)
+            let outSecond = try Renderer.render(original: second, marks: marks, scale: scale)
+            #expect(outFirst.colorSpace?.isWideGamutRGB == true, "rendered in the capture's own space")
+            // Compared in P3 itself, so no conversion can hide a difference.
+            #expect(Pixels(outFirst, space: Self.displayP3) == Pixels(outSecond, space: Self.displayP3))
+            #expect(try PNG.encode(outFirst) == PNG.encode(outSecond))
+        }
+    }
+
+    @Test func wideGamutColoursOutsideMarksSurviveRenderAndExport() throws {
+        let original = layeredP3(secret: 1, rects: [])
+        let blur = Mark.blur(PixelRect(x: 300, y: 200, width: 40, height: 20))
+        let output = try Renderer.render(original: original, marks: [blur], scale: 1)
+        let rendered = Pixels(output, space: Self.displayP3)
+        #expect(rendered.pixel(x: 10, y: 5) == [255, 0, 0, 255], "pure P3 red, not clipped to sRGB")
+        #expect(rendered.pixel(x: 10, y: 25) == [0, 255, 0, 255])
+        #expect(rendered.region(CGRect(x: 0, y: 0, width: 640, height: 180)) ==
+                Pixels(original, space: Self.displayP3).region(CGRect(x: 0, y: 0, width: 640, height: 180)))
+
+        let png = try PNG.encode(output)
+        let chunks = pngChunkTypes(png)
+        #expect(chunks.contains("iCCP"), "the colour profile is kept: \(chunks)")
+        #expect(Set(chunks).isSubset(of: ["IHDR", "sRGB", "iCCP", "gAMA", "cHRM", "pHYs", "IDAT", "IEND"]),
+                "no text, time or EXIF chunks: \(chunks)")
+        let decoded = try PNG.decode(png)
+        #expect(decoded.colorSpace?.isWideGamutRGB == true)
+        #expect(Pixels(decoded, space: Self.displayP3) == rendered, "the export decodes to the same P3 pixels")
+    }
+
+    @Test func srgbCapturesStillRenderInSRGB() throws {
+        let output = try Renderer.render(original: capture(secret: 1, area: .zero), marks: allMarks, scale: 1)
+        #expect(output.colorSpace?.name == CGColorSpace.sRGB)
+    }
+
     @Test func exportedPNGHoldsOneFlatImageAndNoExtraData() throws {
         let rect = PixelRect(x: 170, y: 100, width: 90, height: 22)
         let png = try Renderer.renderPNG(original: capture(secret: 5, area: rect.cgRect),
@@ -150,10 +231,10 @@ import Testing
     }
 }
 
-func image(from rgba: [UInt8], width: Int, height: Int) -> CGImage {
+func image(from rgba: [UInt8], width: Int, height: Int, space: CFString = CGColorSpace.sRGB) -> CGImage {
     let provider = CGDataProvider(data: Data(rgba) as CFData)!
     return CGImage(width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: width * 4,
-                   space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                   space: CGColorSpace(name: space)!,
                    bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue),
                    provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent)!
 }
