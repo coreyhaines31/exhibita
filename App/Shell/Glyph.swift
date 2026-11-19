@@ -1,9 +1,16 @@
 import AppKit
 
-/// The menu bar glyph: the evidence tag from the app icon, solid, with its eyelet and the A cut out and the string
-/// looped above. Drawn in code from the same geometry as mac-app-kit's `Scripts/glyphs/glyphs.mjs` (`exhibit`), as
-/// an 18 pt template image. Agent captures blink the status item's opacity, so the drawing has one state.
+/// The menu bar glyph: the exhibit plate from the app icon, reduced to one ink. A window outline, cut clear around a
+/// large solid disc with the A cut out of it (the A's counter stays ink). The plate's own small circled A could not be
+/// read at 18 pt, so the disc is as large as the glyph allows. Drawn in code from the same geometry as mac-app-kit's
+/// `Scripts/glyphs/glyphs.mjs` (`exhibit`), as an 18 pt template image. Agent captures blink the status item's
+/// opacity, so the drawing has one state.
 enum Glyph {
+    static let discCenter = CGPoint(x: 11.5, y: 11.5)
+    static let discRadius: CGFloat = 6
+    /// The window is cut clear inside this radius, leaving a gap between it and the disc.
+    static let clearRadius: CGFloat = 7.1
+
     static func image(size: CGFloat = 18) -> NSImage {
         let image = NSImage(size: NSSize(width: size, height: size), flipped: true) { rect in
             guard let context = NSGraphicsContext.current?.cgContext else { return false }
@@ -13,37 +20,34 @@ enum Glyph {
             context.setFillColor(NSColor.black.cgColor)
             context.setStrokeColor(NSColor.black.cgColor)
 
-            // Tag, eyelet and A in one even-odd fill: the eyelet and the A's outline cut out, its counter stays ink.
-            let tag = CGMutablePath()
-            tag.move(to: CGPoint(x: 3.1, y: 8.1))
-            tag.addLine(to: CGPoint(x: 6.1, y: 4.7))
-            tag.addLine(to: CGPoint(x: 11.9, y: 4.7))
-            tag.addLine(to: CGPoint(x: 14.9, y: 8.1))
-            tag.addLine(to: CGPoint(x: 14.9, y: 16.1))
-            tag.addQuadCurve(to: CGPoint(x: 13.7, y: 17.3), control: CGPoint(x: 14.9, y: 17.3))
-            tag.addLine(to: CGPoint(x: 4.3, y: 17.3))
-            tag.addQuadCurve(to: CGPoint(x: 3.1, y: 16.1), control: CGPoint(x: 3.1, y: 17.3))
-            tag.closeSubpath()
-            tag.addEllipse(in: CGRect(x: 9 - 1.15, y: 7.25 - 1.15, width: 2.3, height: 2.3))
-            addLetterA(to: tag, in: CGRect(x: 5.25, y: 9.4, width: 7.5, height: 6.9))
-            context.addPath(tag)
-            context.fillPath(using: .evenOdd)
-
-            let string = CGMutablePath()
-            string.move(to: CGPoint(x: 8.3, y: 5.6))
-            string.addCurve(to: CGPoint(x: 9.4, y: 1),
-                            control1: CGPoint(x: 7, y: 3.6), control2: CGPoint(x: 7.3, y: 1.1))
-            string.addCurve(to: CGPoint(x: 9.7, y: 5.6),
-                            control1: CGPoint(x: 11.6, y: 0.9), control2: CGPoint(x: 12.1, y: 3.4))
-            context.addPath(string)
-            context.setLineWidth(1.15)
-            context.setLineCap(.round)
+            // Window outline, clipped clear around the disc (even-odd: the whole glyph minus the clearance circle).
+            context.saveGState()
+            let clip = CGMutablePath()
+            clip.addRect(CGRect(x: -1, y: -1, width: 20, height: 20))
+            clip.addEllipse(in: circle(radius: clearRadius))
+            context.addPath(clip)
+            context.clip(using: .evenOdd)
+            context.addPath(CGPath(roundedRect: CGRect(x: 1.75, y: 1.75, width: 10, height: 7.5),
+                                   cornerWidth: 1.3, cornerHeight: 1.3, transform: nil))
+            context.setLineWidth(1.5)
             context.strokePath()
+            context.restoreGState()
+
+            // Disc and A in one even-odd fill: the A's outline cut out, its counter stays ink.
+            let disc = CGMutablePath()
+            disc.addEllipse(in: circle(radius: discRadius))
+            addLetterA(to: disc, in: CGRect(x: 8, y: 8.2, width: 7, height: 6.6))
+            context.addPath(disc)
+            context.fillPath(using: .evenOdd)
             return true
         }
         image.isTemplate = true
         image.accessibilityDescription = Brand.name
         return image
+    }
+
+    private static func circle(radius: CGFloat) -> CGRect {
+        CGRect(x: discCenter.x - radius, y: discCenter.y - radius, width: radius * 2, height: radius * 2)
     }
 
     /// A bold condensed capital A in `box`: the outline, then the counter as a second subpath.
