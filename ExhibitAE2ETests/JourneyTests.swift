@@ -24,12 +24,23 @@ final class JourneyTests: XCTestCase {
         XCTAssertTrue(editor.window.isVisible)
         XCTAssertTrue(editor.window.isKeyWindow, "the editor takes the keys")
         XCTAssertTrue(NSApp.isActive)
-        XCTAssertEqual(editor.map.pointsPerPixel, 0.5, accuracy: 0.001, "a 2x capture shows at its own points")
+        // What the app's layout gives on this screen: the fixture's own points (0.5 for 2x) where it fits, scaled
+        // to fit otherwise, so the Dock or a small display does not change what is checked.
+        let pixelSize = CGSize(width: fixture.image.width, height: fixture.image.height)
+        let visible = try XCTUnwrap(editor.window.screen ?? NSScreen.main).visibleFrame
+        let layoutScale = EditorLayout.pointsPerPixel(pixelSize: pixelSize, scale: fixture.scale,
+                                                   available: CGSize(width: visible.width * EditorLayout.screenShare,
+                                                                     height: visible.height * EditorLayout.screenShare))
+        XCTAssertEqual(editor.map.pointsPerPixel, layoutScale, accuracy: 0.001, "the capture shows at the layout's scale")
+        print("E2E: editor scale \(String(format: "%.3f", layoutScale)) on a \(Int(visible.width))x\(Int(visible.height)) "
+              + "pt visible frame (own points: \(abs(layoutScale - 1 / fixture.scale) < 0.001))")
         // Regression: the content honoured the title bar's safe area, so the toolbar sat under a blank band and the
         // window was a title bar taller than the layout; and the divider's point was left out of the height.
-        let layoutSize = EditorLayout.contentSize(pixelSize: CGSize(width: fixture.image.width,
-                                                                  height: fixture.image.height), pointsPerPixel: 0.5)
-        XCTAssertEqual(editor.window.contentView?.bounds.size, layoutSize, "the window is the layout's size")
+        let layoutSize = EditorLayout.contentSize(pixelSize: pixelSize, pointsPerPixel: layoutScale)
+        // AppKit rounds a scaled layout's fractional points to whole ones.
+        let content = try XCTUnwrap(editor.window.contentView?.bounds.size)
+        XCTAssertEqual(content.width, layoutSize.width, accuracy: 1, "the window is the layout's size")
+        XCTAssertEqual(content.height, layoutSize.height, accuracy: 1, "the window is the layout's size")
         let canvasTop = try XCTUnwrap(controller.canvas.frameInWindow).minY
         XCTAssertEqual(canvasTop, EditorLayout.toolbarHeight + EditorLayout.dividerHeight + EditorLayout.mountPadding,
                        accuracy: 0.01, "the toolbar starts at the top, under the title bar")
