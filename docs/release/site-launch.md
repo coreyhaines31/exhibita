@@ -5,7 +5,7 @@ The site in `site/` is built and checked locally (`make lint`) but not deployed.
 ## 1. Before launch day
 
 - [ ] If `docs/samples/app/` is re-rendered again before launch, re-export the screenshots in `site/src/assets/shots/` (they already show the final `#b42ee8` light): `cwebp -q 82 -resize 1200 0 docs/samples/app/editor-applied-light.png -o site/src/assets/shots/editor-applied-light.webp`, and the same for `editor-applied-dark`, `editor-marked-light`, `panel-history-*` (no resize), `docs/samples/all-marks.png` and `docs/samples/cli-demo.png` (`-resize 1140 0`). Look at each one.
-- [ ] Corey approves the "Why it exists" paragraph on the homepage (it is a draft in his voice, like the other drafts in `mac-app-kit/site-kit/sections/maker-copy.md`).
+- [ ] Corey approves the "Why it exists" paragraph (a draft in his voice, like the other drafts in `mac-app-kit/site-kit/sections/maker-copy.md`). It is off the homepage for launch; the section is kept in `docs/release/maker-note-draft.html`, to go back above the FAQ once approved.
 - [ ] Recheck every claim against what was verified live (`docs/product/unit*-live-checklist.md`). The copy states only what the code does; it gives no timings and names no tested clients on purpose.
 
 ## 2. Vercel project (team `coreys-apps`)
@@ -32,11 +32,13 @@ Then wait for Vercel to show both domains as valid, and check `https://exhibitaf
 
 Siblings load TracerKit, which loads Headstream (and Fathom on some), with one script tag in `base.html`'s head (Kill Cord: `<script async src="https://tracerkit.com/t.js" data-key="tk_...">`).
 
-- [ ] Request a TracerKit site key for `exhibitaformac.com` and a Headstream property under it.
+- [ ] Request a TracerKit site key for `exhibitaformac.com` and a Headstream property under it. Not done at launch: the Headstream project could not be created from an agent session, so the site shipped with no analytics and the privacy page says so.
 - [ ] Add the one script tag to `site/src/layouts/base.html`, before `</head>`.
 - [ ] Rewrite the "exhibitaformac.com" section of `site/src/pages/privacy/index.html`: it currently says the site sets no cookies and loads no analytics. Use Kill Cord's wording (`killcord/site/src/pages/privacy/index.html`, section "killcord.app") as the model.
 
 ## 5. At release: switch the calls to action
+
+Done for v0.1.0 (issue 66): screenshots re-exported, calls to action, Homebrew, headings, FAQ, og card, description and `downloadUrl`.
 
 When v1 is notarized and the cask is in `coreyhaines31/homebrew-tap`:
 
