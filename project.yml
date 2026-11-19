@@ -46,6 +46,11 @@ targets:
         product: ExhibitInterpret
       - package: PanelKit
       - package: KeyboardShortcuts
+      # The `exhibit` command, in Contents/MacOS; the Homebrew cask and Settings link it onto the PATH.
+      - target: ExhibitCLI
+        copy:
+          destination: executables
+        codeSignOnCopy: true
     info:
       path: App/Info.plist
       properties:
@@ -70,6 +75,23 @@ targets:
         PRODUCT_NAME: Exhibit A
         PRODUCT_MODULE_NAME: ExhibitA
         PRODUCT_BUNDLE_IDENTIFIER: com.exhibitaformac.ExhibitA
+  # The `exhibit` CLI, compiled from the package's own entry point so it is the same program `swift build` makes,
+  # built universal with the hardened runtime like the app and signed on copy into it.
+  ExhibitCLI:
+    type: tool
+    platform: macOS
+    sources:
+      - Packages/ExhibitCore/Sources/exhibit
+    dependencies:
+      - package: ExhibitCore
+        product: ExhibitCLI
+    settings:
+      base:
+        PRODUCT_NAME: exhibit
+        PRODUCT_BUNDLE_IDENTIFIER: com.exhibitaformac.ExhibitA.CLI
+        SKIP_INSTALL: YES
+        GENERATE_INFOPLIST_FILE: YES
+        CREATE_INFOPLIST_SECTION_IN_BINARY: YES
   # Offscreen renders of the panel, Settings and the editor on fixture data, plus view-model checks. Unhosted: it compiles the
   # views itself and never launches the app or shows a window. History goes to a temporary folder and preferences
   # to a throwaway defaults suite.
