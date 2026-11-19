@@ -29,6 +29,9 @@ final class SelectionOverlay {
 
     var isActive: Bool { completion != nil }
 
+    /// The panels while the overlay is up, one per display.
+    var windows: [NSPanel] { panels }
+
     func begin(completion: @escaping (Outcome) -> Void) {
         guard !isActive else { return }
         self.completion = completion
@@ -50,6 +53,11 @@ final class SelectionOverlay {
         let key = panels.first { $0.frame.contains(mouse) } ?? panels.first
         key?.makeKey()
         NSCursor.crosshair.push()
+    }
+
+    /// Closes the overlay as Esc does.
+    func cancel() {
+        finish(.cancelled)
     }
 
     private func finish(_ outcome: Outcome) {

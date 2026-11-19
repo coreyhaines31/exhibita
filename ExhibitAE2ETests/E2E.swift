@@ -52,12 +52,17 @@ enum E2E {
 
     static func finish() {
         closeEverything()
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        if !savedPasteboard.isEmpty { pasteboard.writeObjects(savedPasteboard) }
+        restorePasteboard(savedPasteboard)
     }
 
-    private static func copyPasteboard() -> [NSPasteboardItem] {
+    /// Puts back what `copyPasteboard` saved.
+    static func restorePasteboard(_ items: [NSPasteboardItem]) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        if !items.isEmpty { pasteboard.writeObjects(items) }
+    }
+
+    static func copyPasteboard() -> [NSPasteboardItem] {
         (NSPasteboard.general.pasteboardItems ?? []).map { item in
             let copy = NSPasteboardItem()
             for type in item.types {

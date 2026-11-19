@@ -16,12 +16,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var capture: CaptureController?
     private(set) var editors: EditorWindows?
     private(set) var bridge: BridgeHost?
+    /// The never-capture list and auto-blur, as Settings edits them.
+    private(set) var policy: CapturePolicyModel?
     private let updater = Updater()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Debug builds under the end-to-end tests: throwaway support directory and settings, before anything reads them.
         TestSeam.applyDefaults()
-        if TestSeam.isActive { ScreenRecording.forcedOff = true }
+        if TestSeam.isActive, !TestSeam.allowsCapture { ScreenRecording.forcedOff = true }
         PanelFont.register()
         if !TestSeam.isActive { LaunchAtLogin.applyDefault() }
 
@@ -44,6 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // The never-capture list and auto-blur, one file for people and agents alike.
         let support = store.directory.deletingLastPathComponent()
         let policy = CapturePolicyModel(file: CapturePolicyFile(supportDirectory: support))
+        self.policy = policy
         let capture = CaptureController(model: model, editors: editors)
         capture.policy = { [snapshot = policy.snapshot] in snapshot.current }
         self.capture = capture
