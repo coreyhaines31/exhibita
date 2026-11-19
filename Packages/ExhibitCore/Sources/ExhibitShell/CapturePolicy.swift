@@ -54,14 +54,15 @@ public struct CapturePolicy: Equatable, Sendable {
     /// The target kinds auto-blur covers.
     public var autoBlurKinds: [TargetKind]
 
-    /// Password managers and Keychain Access. Entries without a bundle identifier match by name only, because
-    /// their identifier is not verified (`docs/product/capture-bridge.md`).
+    /// Password managers and Keychain Access. An entry matches by bundle identifier or by name, so a wrong
+    /// identifier never loses a match. Dashlane's and LastPass's identifiers come from third-party app catalogs,
+    /// not from an install we checked (`docs/product/capture-bridge.md`).
     public static let defaultNeverCapture: [NeverCaptureApp] = [
         NeverCaptureApp(name: "1Password", bundleIdentifier: "com.1password.1password"),
         NeverCaptureApp(name: "1Password 7", bundleIdentifier: "com.agilebits.onepassword7"),
         NeverCaptureApp(name: "Bitwarden", bundleIdentifier: "com.bitwarden.desktop"),
-        NeverCaptureApp(name: "Dashlane"),
-        NeverCaptureApp(name: "LastPass"),
+        NeverCaptureApp(name: "Dashlane", bundleIdentifier: "com.dashlane.Dashlane"),
+        NeverCaptureApp(name: "LastPass", bundleIdentifier: "com.lastpass.lastpassmacdesktop"),
         NeverCaptureApp(name: "KeePassXC", bundleIdentifier: "org.keepassxc.keepassxc"),
         NeverCaptureApp(name: "Passwords", bundleIdentifier: "com.apple.Passwords"),
         NeverCaptureApp(name: "Passwords", bundleIdentifier: "com.apple.Passwords.MenuBarExtra"),
