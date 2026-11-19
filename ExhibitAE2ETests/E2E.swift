@@ -127,6 +127,54 @@ enum E2E {
         return item.id
     }
 
+    // MARK: - The exhibit CLI
+
+    struct CLIResult {
+        let status: Int32
+        let stdout: String
+        let stderr: String
+
+        var json: [String: Any] {
+            (try? JSONSerialization.jsonObject(with: Data(stdout.utf8))) as? [String: Any] ?? [:]
+        }
+    }
+
+    /// Runs the real `exhibit` binary (`EXHIBIT_E2E_CLI`, built by run-e2e.sh) as a subprocess, pointed at the
+    /// app's temporary support directory, with no model configured. Off the main thread, so the app keeps serving.
+    static func exhibit(_ arguments: [String]) async throws -> CLIResult {
+        let environment = ProcessInfo.processInfo.environment
+        guard let path = environment["EXHIBIT_E2E_CLI"], FileManager.default.isExecutableFile(atPath: path) else {
+            throw XCTSkip("EXHIBIT_E2E_CLI is not set; run Scripts/run-e2e.sh")
+        }
+        var childEnvironment = environment.filter { !$0.key.hasPrefix("EXHIBIT_") && !$0.key.hasPrefix("DYLD_") }
+        childEnvironment[TestSeam.supportVariable] = seam.supportDirectory.path
+        let launch = CLILaunch(url: URL(fileURLWithPath: path), arguments: arguments, environment: childEnvironment)
+        return try await Task.detached { try launch.run() }.value
+    }
+
+    private struct CLILaunch: Sendable {
+        let url: URL
+        let arguments: [String]
+        let environment: [String: String]
+
+        func run() throws -> CLIResult {
+            let process = Process()
+            process.executableURL = url
+            process.arguments = arguments
+            process.environment = environment
+            let out = Pipe()
+            let err = Pipe()
+            process.standardOutput = out
+            process.standardError = err
+            try process.run()
+            let stdout = out.fileHandleForReading.readDataToEndOfFile()
+            let stderr = err.fileHandleForReading.readDataToEndOfFile()
+            process.waitUntilExit()
+            return CLIResult(status: process.terminationStatus, stdout: String(decoding: stdout, as: UTF8.self),
+                             stderr: String(decoding: stderr, as: UTF8.self))
+        }
+    }
+
     // MARK: - Pictures
 
     /// The view as AppKit draws it, from its own display cache: never a screen capture.
