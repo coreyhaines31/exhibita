@@ -50,6 +50,17 @@ final class CopiedNote {
         }
     }
 
+    /// Whether the note is on screen now.
+    var isVisible: Bool { panel?.isVisible == true }
+
+    /// Takes the note away at once, for the end-to-end tests between cases.
+    func dismiss() {
+        dismissal?.cancel()
+        dismissal = nil
+        panel?.orderOut(nil)
+        panel = nil
+    }
+
     private static func makeContent() -> NSView {
         let effect = NSVisualEffectView()
         effect.material = .hudWindow
