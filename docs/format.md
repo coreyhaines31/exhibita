@@ -163,3 +163,35 @@ No pixel inside a blur region is ever read. Two captures that differ only under 
 ## Versions
 
 Readers check `formatVersion` before decoding anything else. A version higher than the reader supports is an error that says to update Exhibit A; it is never read on a best-effort basis. Older versions remain readable.
+
+## Capture policy (policy.json)
+
+The never-capture list and agent auto-blur live in one file, `~/Library/Application Support/Exhibit A/policy.json`, so a team or a managed profile can supply it later. Settings writes it on every change; it does not exist until the first change. Reference implementation: `CapturePolicyFile` in `ExhibitShell`.
+
+```json
+{
+  "agentAutoBlur" : {
+    "enabled" : true,
+    "kinds" : [ "email", "key", "card", "phone" ]
+  },
+  "formatVersion" : 1,
+  "neverCapture" : [
+    { "bundleIdentifier" : "com.1password.1password", "name" : "1Password" },
+    { "name" : "Dashlane" },
+    { "bundleIdentifier" : "com.apple.keychainaccess", "name" : "Keychain Access" }
+  ]
+}
+```
+
+| Field | Type | Notes |
+|---|---|---|
+| `formatVersion` | integer | `1`, required. Unlike capture bundles, a file with a newer version is not an error: it is ignored and the defaults apply. |
+| `neverCapture` | array, optional | Apps never captured, by people or agents. Each has `name` and an optional `bundleIdentifier`; an app matches when either equals it, ignoring case. Missing: the defaults (password managers and Keychain Access, listed in `product/capture-bridge.md`). An empty array means none. |
+| `agentAutoBlur.enabled` | boolean, optional | Blur detected sensitive targets in the image an agent receives. Default `true`. |
+| `agentAutoBlur.kinds` | array of target kinds, optional | Which kinds are blurred. Default `email`, `key`, `card`, `phone`. |
+
+A file that cannot be read applies the defaults, and Settings shows why, so a damaged file never turns protection off.
+
+## Agent copies beside a bundle
+
+An agent capture keeps its flattened copy as `<id>.png` beside the bundle in `Captures`; CLI runs on a capture id write `<id>-marked.png` and up there too. Deleting the capture, by hand, by retention or by purge, deletes them with it. They are exports: flat, no metadata, never read back as captures.
