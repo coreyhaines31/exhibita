@@ -46,12 +46,20 @@ final class SettingsWindow {
         let controller = NSHostingController(rootView: SettingsView(model: model, actions: actions, policy: policy,
                                                                     policyActions: policyActions,
                                                                     updates: updates,
-                                                                    navigation: navigation))
-        controller.sizingOptions = .preferredContentSize
+                                                                    navigation: navigation,
+                                                                    fitsContent: false))
+        // The form is far taller than a laptop screen, so the window takes a height that fits the screen and the
+        // form scrolls inside it.
+        controller.sizingOptions = []
         let window = NSWindow(contentViewController: controller)
         window.title = "\(Brand.name) Settings"
-        window.styleMask = [.titled, .closable]
+        window.styleMask = [.titled, .closable, .resizable]
         window.isReleasedWhenClosed = false
+        let screen = NSScreen.main ?? NSScreen.screens.first
+        let height = SettingsView.windowHeight(onScreenOfHeight: screen?.visibleFrame.height)
+        window.setContentSize(NSSize(width: SettingsView.width, height: height))
+        window.contentMinSize = NSSize(width: SettingsView.width, height: SettingsView.minimumWindowHeight)
+        window.contentMaxSize = NSSize(width: SettingsView.width, height: 10_000)
         window.center()
         observer = NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: window,
                                                           queue: .main) { [weak self] _ in
