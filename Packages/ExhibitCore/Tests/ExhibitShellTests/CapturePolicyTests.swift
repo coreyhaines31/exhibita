@@ -13,6 +13,8 @@ import Testing
             CaptureSubject(bundleIdentifier: "com.bitwarden.desktop", appName: "Bitwarden"),
             CaptureSubject(appName: "Dashlane"),
             CaptureSubject(appName: "LastPass"),
+            CaptureSubject(bundleIdentifier: "com.dashlane.Dashlane", appName: "Dashlane Password Manager"),
+            CaptureSubject(bundleIdentifier: "com.lastpass.lastpassmacdesktop", appName: "LastPass Password Manager"),
             CaptureSubject(bundleIdentifier: "org.keepassxc.keepassxc"),
             CaptureSubject(bundleIdentifier: "com.apple.Passwords", appName: "Passwords")
         ]
