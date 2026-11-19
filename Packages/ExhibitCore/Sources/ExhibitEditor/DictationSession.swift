@@ -180,7 +180,7 @@ public final class DictationSession {
             // Released while macOS asked for permission or the model downloaded: ready for the next press.
             phase = .idle
             editor.dictation = nil
-            editor.show("Ready. Hold D and speak.")
+            editor.show("Ready. Hold \(editor.keymap.display(for: .dictate)) and speak.")
             return
         }
         do {
@@ -212,9 +212,9 @@ public final class DictationSession {
         } catch {
             guard !closed else { return false }
             let cancelled = error is CancellationError || Task.isCancelled
-            finish(.downloadStopped(reason: cancelled ? "Download cancelled. Hold D to try again."
-                                        : "The speech model didn't download: \(error.localizedDescription). "
-                                            + "Hold D to try again."))
+            let again = "Hold \(editor.keymap.display(for: .dictate)) to try again."
+            finish(.downloadStopped(reason: cancelled ? "Download cancelled. \(again)"
+                                        : "The speech model didn't download: \(error.localizedDescription). \(again)"))
             return false
         }
         guard !closed else { return false }

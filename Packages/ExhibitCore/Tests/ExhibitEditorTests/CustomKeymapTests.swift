@@ -174,4 +174,15 @@ import Testing
         #expect(editor.handle(.character("q")) == .handled)
         #expect(editor.tool == .arrow)
     }
+
+    @Test func statusLinesNameTheKeysInEffect() {
+        var keymap = EditorKeymap.standard
+        _ = keymap.assign(EditorShortcut("k", [.shift]), to: .blurAllSensitive)
+        _ = keymap.assign(EditorShortcut("j"), to: .dictate)
+        _ = keymap.assign(EditorShortcut(";"), to: .typeInstruction)
+        #expect(EditorStatus.secrets(2).text(keys: keymap) == "2 possible secrets. ⇧K to blur.")
+        #expect(EditorStatus.secrets(1).text == "1 possible secret. ⇧B to blur.")
+        #expect(DictationStatus.listening(transcript: "").message(keys: keymap) == "Listening. Release J when done.")
+        #expect(DictationStatus.microphoneDenied.message(keys: keymap).hasSuffix("or press ; to type."))
+    }
 }
