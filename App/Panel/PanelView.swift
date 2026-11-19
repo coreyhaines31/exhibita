@@ -25,6 +25,8 @@ struct PanelActions {
 struct PanelView: View {
     let model: AppModel
     let actions: PanelActions
+    /// The version and Check for Updates. Unconfigured (tests, renders, development builds) shows the version only.
+    var updates = UpdateSettings()
 
     var body: some View {
         Panel(accent: Brand.accent) {
@@ -47,7 +49,10 @@ struct PanelView: View {
                 history
             }
         } footer: {
-            Footer(appName: Brand.name, openSettings: actions.openSettings, quit: actions.quit)
+            VStack(spacing: 0) {
+                Footer(appName: Brand.name, openSettings: actions.openSettings, quit: actions.quit)
+                UpdateStrip(updates: updates, actions: actions)
+            }
         }
         .reportingFrame("panel", to: actions)
     }
@@ -110,6 +115,40 @@ struct HotkeyTiles: View {
         .help("Change or swap the hotkeys in Settings")
         .accessibilityLabel("\(action.title), \(combo). \(does). Opens Settings to change it.")
         .reportingFrame("hotkey \(action.rawValue)", to: actions)
+    }
+}
+
+/// Under the footer: the version on the left and Check for Updates on the right (issue 94), so an update is one
+/// click from the menu bar. The check is Sparkle's, the same as Settings' button.
+struct UpdateStrip: View {
+    let updates: UpdateSettings
+    var actions = PanelActions()
+
+    @Environment(\.panelTheme) private var theme
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text("\(Brand.name) \(updates.version)")
+                .font(PanelFont.body(11))
+                .monospacedDigit()
+                .foregroundStyle(theme.sub)
+                .accessibilityLabel("Version \(updates.version)")
+            Spacer(minLength: 8)
+            if updates.isConfigured {
+                Button(action: updates.checkNow) {
+                    Text("Check for Updates…")
+                        .font(PanelFont.body(11))
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(theme.sub)
+                .reportingFrame("check for updates", to: actions)
+            }
+        }
+        .lineLimit(1)
+        .padding(.top, -2)
+        .padding(.bottom, 10)
+        .padding(.horizontal, 14)
     }
 }
 

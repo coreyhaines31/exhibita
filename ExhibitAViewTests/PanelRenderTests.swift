@@ -138,6 +138,9 @@ final class PanelRenderTests: XCTestCase {
         XCTAssertNil(model.captureRefusal)
     }
 
+    /// A released build's updater, so the panel shows the version and Check for Updates.
+    static let updates = UpdateSettings(isConfigured: true, version: "0.1.2", checksAutomatically: true)
+
     static let takenOver = SystemScreenshotShortcuts(symbolicHotKeys: [
         "30": ["enabled": false], "31": ["enabled": false]
     ] as [String: Any])
@@ -236,7 +239,7 @@ final class PanelRenderTests: XCTestCase {
     /// PanelKit's own path: `ImageRenderer` over a backdrop, no window.
     private func renderPanel(_ model: AppModel, name: String, schemes: [ColorScheme] = [.light, .dark]) throws {
         for scheme in schemes {
-            let view = PanelView(model: model, actions: PanelActions())
+            let view = PanelView(model: model, actions: PanelActions(), updates: Self.updates)
                 .padding(24)
                 .background(scheme == .dark ? Color(white: 0.05) : Color(white: 0.8))
                 .environment(\.colorScheme, scheme)

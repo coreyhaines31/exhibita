@@ -12,7 +12,8 @@ final class StatusItemController {
     /// Where the panel's rows and their buttons were laid out, for the end-to-end tests.
     let frames: PanelFrames
 
-    init(model: AppModel, actions: PanelActions, willShow: @escaping () -> Void) {
+    init(model: AppModel, actions: PanelActions, updates: UpdateSettings = UpdateSettings(),
+         willShow: @escaping () -> Void) {
         self.willShow = willShow
         // New status items start at the far left on recent macOS, which is off-screen on a crowded menu bar.
         UserDefaults.standard.register(defaults: ["NSStatusItem Preferred Position \(Self.autosaveName)": 1])
@@ -39,7 +40,14 @@ final class StatusItemController {
             popover.performClose(nil)
             openHotkeySettings()
         }
-        let hosting = NSHostingController(rootView: PanelView(model: model, actions: panelActions))
+        var panelUpdates = updates
+        let checkNow = updates.checkNow
+        panelUpdates.checkNow = {
+            popover.performClose(nil)
+            checkNow()
+        }
+        let hosting = NSHostingController(rootView: PanelView(model: model, actions: panelActions,
+                                                                updates: panelUpdates))
         hosting.sizingOptions = .preferredContentSize
         self.hosting = hosting
         popover.contentViewController = hosting
