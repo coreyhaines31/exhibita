@@ -59,7 +59,7 @@ let package = Package(
         .testTarget(name: "ExhibitShellTests", dependencies: ["ExhibitShell", "ExhibitStore", "ExhibitCore"]),
         .testTarget(name: "ExhibitEditorTests",
                     dependencies: ["ExhibitEditor", "ExhibitCore", "ExhibitStore", "ExhibitShell", "ExhibitFixtures",
-                                   "ExhibitInterpret", "ExhibitPlanning", "ExhibitCLI"]),
+                                   "ExhibitInterpret", "ExhibitPlanning", "ExhibitCLI", "ExhibitBridge"]),
         .testTarget(name: "ExhibitBridgeTests",
                     dependencies: ["ExhibitBridge", "ExhibitShell", "ExhibitStore", "ExhibitCore", "ExhibitFixtures"]),
         .testTarget(name: "ExhibitInterpretTests", dependencies: ["ExhibitInterpret", "ExhibitCore"]),

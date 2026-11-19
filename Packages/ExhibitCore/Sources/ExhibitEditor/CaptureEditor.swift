@@ -40,6 +40,14 @@ public final class CaptureEditor {
         self.owner = owner
         layout = MarkLayout(scale: owner.document.scale, imageSize: owner.document.size)
         self.tolerance = tolerance ?? 4 * owner.document.scale
+        owner.onMarksAdded = { [weak self] added in self?.keepInHistory(added) }
+    }
+
+    /// Marks added outside the editor (an agent capture's auto-blur) join every undo and redo step, so undoing
+    /// the person's own change never takes them away. The person can still delete them.
+    private func keepInHistory(_ added: [Mark]) {
+        undoStack = undoStack.map { $0 + added }
+        redoStack = redoStack.map { $0 + added }
     }
 
     // MARK: - What the views read
