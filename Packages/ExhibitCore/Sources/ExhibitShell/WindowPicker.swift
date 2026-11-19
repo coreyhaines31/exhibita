@@ -31,8 +31,10 @@ public enum WindowPicker {
     public static let minimumSide: CGFloat = 40
 
     /// The frontmost ordinary window under `point`. `windows` must be front to back, as
-    /// `CGWindowListCopyWindowInfo(.optionOnScreenOnly)` returns them. Exhibit A's own windows are skipped.
-    public static func pick(at point: CGPoint, in windows: [WindowCandidate], excludingPID: Int32) -> WindowCandidate? {
+    /// `CGWindowListCopyWindowInfo(.optionOnScreenOnly)` returns them. Windows of `excludingPID`, when given,
+    /// are skipped.
+    public static func pick(at point: CGPoint, in windows: [WindowCandidate],
+                            excludingPID: Int32? = nil) -> WindowCandidate? {
         windows.first { window in
             window.layer == 0 && window.ownerPID != excludingPID
                 && window.frame.width >= minimumSide && window.frame.height >= minimumSide
