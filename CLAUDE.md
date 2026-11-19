@@ -38,7 +38,7 @@ Judge build, test and lint by exit code, never by grepping output.
   - `CaptureDocument.swift`, `Target.swift`, `Mark.swift`: the model. `TargetKind` keeps unknown kinds; `MarkKind` rejects them on purpose.
   - `CaptureBundle.swift`: `<uuid>.exhibit/` with `original.png` and `document.json`, atomic writes, `formatVersion` check.
   - `PNG.swift`: encode (metadata chunks stripped) and decode; `ExhibitError`.
-  - `Renderer.swift`: `Renderer.render(original:marks:scale:)`; `MarkPainter.swift` and `LabelledMarks.swift` draw the marks.
+  - `Renderer.swift`: `Renderer.render(original:marks:scale:)`; `MarkPainter.swift` and `LabelledMarks.swift` draw the marks. `RenderColorSpace`: a wide-gamut original (Display P3) renders and exports in its own space, everything else in sRGB (`docs/format.md`, Colour).
   - `Redaction.swift`: blur fills built only from pixels outside every blur region.
 - `Packages/ExhibitCore/Sources/ExhibitTargets` (library, adds Vision; ExhibitCore stays free of it): `TargetFinder().findTargets(in:)` returns `[Target]` in original pixels, top-left origin, ordered top to bottom then left to right.
   - OCR: `VNRecognizeTextRequest`, accurate, language correction off. One `.text` target per line, with per-word `spans`; `Target.rect(for:)` in ExhibitCore resolves a substring from spans, so selectors never re-run OCR.
