@@ -121,6 +121,7 @@ targets:
       - App/Settings/FreeFormSettings.swift
       - App/Settings/FreeFormSection.swift
       - App/Settings/UpdateSettings.swift
+      - App/Settings/CommandLineSection.swift
       - App/Hotkeys/HotkeyNames.swift
       - App/Capture/SystemLinks.swift
       - App/Editor/EditorCanvasModel.swift
