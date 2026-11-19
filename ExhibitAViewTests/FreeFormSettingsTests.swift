@@ -28,10 +28,42 @@ final class FreeFormSettingsTests: XCTestCase {
         XCTAssertNil(settings.currentInterpreter(), "None is kept with a model installed")
         XCTAssertEqual(FreeFormSettings().settings.choice, ModelSettings.Choice.none, "kept in preferences")
 
-        let fresh = FreeFormSettings(settings: ModelSettings(), discoverer: { installed })
+        // A found server that is not this Mac: the model it gives refuses before sending, so nothing goes out.
+        let elsewhere = Discovery(probes: [.found(ModelServer(kind: .ollama, url: URL(string: "http://192.0.2.1:11434")!,
+                                                              models: ["qwen3.8:27b"]))])
+        let lookups = LookupCounter()
+        let fresh = FreeFormSettings(settings: ModelSettings(), discoverer: {
+            await lookups.increment()
+            return elsewhere
+        })
         XCTAssertNil(fresh.currentInterpreter(), "nothing known before it looks")
-        let found = await fresh.interpreter()
-        XCTAssertNotNil(found, "an instruction that needs a model looks for a server first")
-        XCTAssertEqual(fresh.discovery, installed)
+        let lazy = try XCTUnwrap(fresh.interpreter(), "a model step that looks only when used")
+        var lookupCount = await lookups.value
+        XCTAssertEqual(lookupCount, 0, "asking for the step looks for nothing")
+        do {
+            _ = try await lazy.interpret(InterpretRequest(instruction: "hide anything personal", targets: []))
+            XCTFail("the found model is not on this Mac")
+        } catch {
+            XCTAssertEqual(error as? ModelError, .notLoopback("192.0.2.1"), "the found model was used, and refused")
+        }
+        lookupCount = await lookups.value
+        XCTAssertEqual(lookupCount, 1, "using it looks once")
+        XCTAssertEqual(fresh.discovery, elsewhere)
+
+        let nothing = Discovery(probes: [.notRunning(.ollama, ollama)])
+        let empty = FreeFormSettings(settings: ModelSettings(), discoverer: { nothing })
+        let unavailable = try XCTUnwrap(empty.interpreter())
+        do {
+            _ = try await unavailable.interpret(InterpretRequest(instruction: "hide anything personal", targets: []))
+            XCTFail("no model was found")
+        } catch {
+            XCTAssertTrue(error is ModelUnavailable)
+        }
+        XCTAssertNil(empty.interpreter(), "found nothing just now: needs a model at once, no second look")
     }
+}
+
+private actor LookupCounter {
+    private(set) var value = 0
+    func increment() { value += 1 }
 }
