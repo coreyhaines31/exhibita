@@ -102,6 +102,27 @@ import Testing
         #expect(dictation.editor.marks.map(\.kind) == [.blur])
     }
 
+    @Test func anUnknownNameWithoutAModelIsNamedBesideWhatWasDone() async {
+        let dictation = dictationSession(fixture)
+        dictation.submit("blur the emails and circle the logout button")
+        await dictation.settle()
+        guard case .partial(_, let summary, false) = dictation.editor.dictation else {
+            Issue.record("not partial: \(String(describing: dictation.editor.dictation))")
+            return
+        }
+        #expect(summary == "Blurred 1 email. Couldn't find: logout button.")
+        #expect(dictation.editor.marks.map(\.kind) == [.blur])
+    }
+
+    @Test func anUnknownNameGoesToTheModelWhenOneIsSetUp() async {
+        let answer = Interpretation(operations: [InterpretedOperation(mark: .blur, picks: [.id(fixture.emailID)])])
+        let model = FakeModel(.success(.understood(answer)))
+        let dictation = dictationSession(fixture, model: model)
+        dictation.submit("blur the emails and circle the logout button")
+        await dictation.settle()
+        #expect(model.calls == 1)
+    }
+
     @Test func nothingFoundChangesNothing() async {
         let dictation = dictationSession(fixture)
         dictation.submit("blur the faces")

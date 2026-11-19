@@ -26,7 +26,6 @@ public final class DictationSession {
 
     @ObservationIgnored private let original: CGImage
     @ObservationIgnored private let transcriber: (any SpeechTranscribing)?
-    @ObservationIgnored private let grammar: any Interpreter
     @ObservationIgnored private let model: @MainActor () -> (any Interpreter)?
     @ObservationIgnored private var pointer: PixelPoint?
     @ObservationIgnored private var listening: Task<Void, Never>?
@@ -40,12 +39,10 @@ public final class DictationSession {
     /// `model` is asked each time the grammar declines and returns nil when no model is set up or it is turned
     /// off. `transcriber` is nil when this Mac has no usable speech at all.
     public init(editor: CaptureEditor, original: CGImage, transcriber: (any SpeechTranscribing)?,
-                grammar: any Interpreter = GrammarInterpreter(),
                 model: @escaping @MainActor () -> (any Interpreter)? = { nil }) {
         self.editor = editor
         self.original = original
         self.transcriber = transcriber
-        self.grammar = grammar
         self.model = model
     }
 
@@ -251,11 +248,14 @@ public final class DictationSession {
 
     private func work(_ request: InterpretRequest) async {
         let text = request.instruction
-        let outcome = (try? await grammar.interpret(request)) ?? .declined(reason: "the grammar failed")
-        var interpretation = outcome.interpretation
+        let model = model()
+        // With no model to try next, a name the screen does not show is reported as not found beside what was
+        // done; with one, the grammar declines so the model can read it, as `exhibit say` does.
+        var interpretation = GrammarInterpreter.interpret(request, unknownNames: model == nil ? .reportNotFound : .decline)
+            .interpretation
         let byModel = interpretation == nil
         if interpretation == nil {
-            guard let model = model() else { return finish(.needsModel(transcript: text)) }
+            guard let model else { return finish(.needsModel(transcript: text)) }
             show(.interpreting(transcript: text, usingModel: true))
             do {
                 interpretation = try await model.interpret(request).interpretation
