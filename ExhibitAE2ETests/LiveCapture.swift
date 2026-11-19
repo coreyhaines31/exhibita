@@ -142,7 +142,8 @@ enum LiveCapture {
     // MARK: - Windows to pick
 
     /// Another app's ordinary window that is frontmost at its own centre, on `screen` when given, so a pick at
-    /// that point means this window. Front to back, as the overlay sees them.
+    /// that point means this window. Front to back, as the overlay sees them: since issue 72 the overlay picks
+    /// Exhibit A's own windows too, so one of ours in front (an editor still closing) rules a window out.
     static func pickableWindow(on screen: NSScreen? = nil) -> (window: WindowCandidate, point: CGPoint)? {
         let windows = WindowList.onScreen()
         let own = ProcessInfo.processInfo.processIdentifier
@@ -154,7 +155,7 @@ enum LiveCapture {
             // A pick is cut from one display's still, so its size is the window's only when it is on one display.
             guard NSScreen.screens.contains(where: { coreGraphicsFrame(of: $0).contains(window.frame) }) else { continue }
             guard NSScreen.screens.contains(where: { coreGraphicsFrame(of: $0).contains(center) }) else { continue }
-            if WindowPicker.pick(at: center, in: windows, excludingPID: own)?.id == window.id {
+            if WindowPicker.pick(at: center, in: windows)?.id == window.id {
                 return (window, center)
             }
         }
