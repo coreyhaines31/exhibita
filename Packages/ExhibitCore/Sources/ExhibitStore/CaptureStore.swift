@@ -67,10 +67,12 @@ public struct CaptureStore: Sendable {
         try CaptureBundle.saveDocument(document, to: url(for: document.id))
     }
 
-    /// Stores the targets found after capture. Marks already on the document are kept.
-    public func updateTargets(_ targets: [Target], for id: UUID) throws {
+    /// Stores the targets found after capture, and adds `marks` (an agent capture's auto-blur). Marks already on
+    /// the document are kept.
+    public func updateTargets(_ targets: [Target], adding marks: [Mark] = [], for id: UUID) throws {
         var document = try load(id).document
         document.targets = targets
+        document.marks += marks
         try save(document)
     }
 
