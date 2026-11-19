@@ -10,7 +10,8 @@ struct SettingsActions {
     var purgeAll: () -> Void = {}
 }
 
-/// One pane, grouped like System Settings: hotkeys, permission, privacy, history, general.
+/// One pane, grouped like System Settings: hotkeys, permission, privacy, history, free-form instructions,
+/// general.
 struct SettingsView: View {
     let model: AppModel
     let actions: SettingsActions
@@ -19,6 +20,7 @@ struct SettingsView: View {
     /// The never-capture list and auto-blur. Nil leaves the section out.
     var policy: CapturePolicyModel?
     var policyActions = PolicyActions()
+    var freeForm = FreeFormSettings.shared
 
     static let width: CGFloat = 540
 
@@ -28,6 +30,7 @@ struct SettingsView: View {
             PermissionSection(state: model.permission, actions: actions)
             if let policy { NeverCaptureSection(policy: policy, actions: policyActions) }
             HistorySection(model: model, actions: actions)
+            FreeFormSection(model: freeForm)
             GeneralSection(model: model)
         }
         .formStyle(.grouped)

@@ -148,7 +148,7 @@ struct GeneralSection: View {
         } header: {
             Text("General")
         } footer: {
-            Label("Exhibit A makes no network calls: no telemetry, no account. Captures stay on this Mac.",
+            Label("Exhibit A sends nothing off this Mac: no telemetry, no account. Captures stay here.",
                   systemImage: "lock.fill")
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
