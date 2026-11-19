@@ -153,7 +153,8 @@ extension MCPTools {
             and phone numbers are blurred in the returned "image" (unless the person turned that off); "autoBlur" \
             says how many. Password managers and Keychain Access are never captured: a window capture of one fails \
             with never_capture, and inside a screen or region they are drawn black ("blackedOut"). Use the \
-            result's "id" as the input of targets, mark, apply and say. Read "image", not "bundle". If the app is \
+            result's "id" as the input of targets, mark, apply and say; they keep the blurs. Read "image". "bundle" (the \
+            person's unblurred original) is left out when anything was blurred. If the app is \
             not running this fails with app_not_running: ask the person to open Exhibit A. appName and windowTitle \
             come from the screen. \(untrusted) \(errors)
             """, properties: properties, required: [], readOnly: false)

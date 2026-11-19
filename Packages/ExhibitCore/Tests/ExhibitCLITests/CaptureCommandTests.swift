@@ -106,7 +106,7 @@ private struct FixtureProvider: CaptureProvider {
         let image = try #require(output["image"] as? String)
         #expect(FileManager.default.fileExists(atPath: image))
         #expect(image == store.exportURL(for: try #require(UUID(uuidString: id))).path)
-        #expect(output["bundle"] as? String == store.url(for: try #require(UUID(uuidString: id))).path)
+        #expect(output["bundle"] == nil, "left out once anything was blurred")
 
         // Every command takes the id in place of a path; targets come from the bundle, already found.
         let listed = run(["targets", id])
@@ -116,9 +116,18 @@ private struct FixtureProvider: CaptureProvider {
         #expect(circled.status == .success, "\(circled.stderr)")
         let circledOutput = try json(circled.stdout)
         #expect((circledOutput["output"] as? String)?.hasSuffix("\(id)-marked.png") == true)
+        // Commands on a blurred agent capture's id name the id, never the bundle with the original.
+        #expect(circledOutput["bundle"] == nil)
+        #expect(circledOutput["input"] as? String == id)
+        #expect(try json(listed.stdout)["input"] as? String == id)
         // The auto-blur is a mark on the document, so this render keeps it too.
-        let document = try store.load(try #require(UUID(uuidString: id))).document
-        #expect(document.marks.map(\.kind) == [.blur, .circle])
+        let loaded = try store.load(try #require(UUID(uuidString: id)))
+        #expect(loaded.document.marks.map(\.kind) == [.blur, .circle])
+        let marked = try Data(contentsOf: URL(fileURLWithPath: try #require(circledOutput["output"] as? String)))
+        #expect(marked == (try PNG.encode(Renderer.render(loaded.document, original: loaded.original))))
+        var withoutBlur = loaded.document
+        withoutBlur.marks.removeAll { $0.kind == .blur }
+        #expect(marked != (try PNG.encode(Renderer.render(withoutBlur, original: loaded.original))))
         // Lowercase ids work too.
         #expect(run(["targets", id.lowercased()]).status == .success)
     }

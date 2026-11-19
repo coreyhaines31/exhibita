@@ -56,8 +56,8 @@ struct MarkOutput: Encodable {
 
     init(session: Session, output: URL, placed: [PlacedMark], reports: [SelectorReport]) {
         self.output = output.path
-        input = session.inputURL.path
-        bundle = session.bundle?.url.path
+        input = session.reportedInput
+        bundle = session.reportedBundle
         image = ImageSizeOutput(width: session.imageSize.width, height: session.imageSize.height)
         targetsReused = session.targetsReused
         selectors = reports
@@ -99,7 +99,7 @@ struct TargetsOutput: Encodable {
     var targets: [Entry]
 
     init(session: Session) {
-        input = session.inputURL.path
+        input = session.reportedInput
         image = ImageSizeOutput(width: session.imageSize.width, height: session.imageSize.height)
         targetsReused = session.targetsReused
         targets = session.targets.map {

@@ -160,7 +160,10 @@ public struct AgentCaptureService: Sendable {
         for target in targets where blurs.contains(where: { $0.targetID == target.id }) {
             kinds[target.kind.rawValue, default: 0] += 1
         }
-        return CaptureResult(id: id, bundle: store.url(for: id).path, image: image.path,
+        // The agent was given a redacted image; the unredacted original is not one path away. The id still works
+        // in every command, and those render the document, blurs included.
+        let bundle = policy.agentAutoBlur && !blurs.isEmpty ? nil : store.url(for: id).path
+        return CaptureResult(id: id, bundle: bundle, image: image.path,
                              width: provided.image.width, height: provided.image.height, scale: provided.scale,
                              appName: provided.appName, windowTitle: provided.windowTitle,
                              autoBlur: .init(enabled: policy.agentAutoBlur, blurred: blurs.count, kinds: kinds),
