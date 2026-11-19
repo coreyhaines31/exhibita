@@ -213,6 +213,8 @@ public enum EditorShortcutIssue: Equatable, Sendable {
     case unsupported
     /// The command itself is fixed.
     case notRemappable(EditorCommand)
+    /// macOS or the app needs it everywhere: ⌘Q, ⌘W, ⌘H, ⌘M, ⌘, and the like. The key as shown, then its use.
+    case reserved(String, String)
 
     public var message: String {
         switch self {
@@ -220,6 +222,7 @@ public enum EditorShortcutIssue: Equatable, Sendable {
         case .fixed(let command): "\(EditorKeymap.fixedDisplay(for: command)) is kept for \(command.title)."
         case .unsupported: "Use a letter, number, symbol, Space or ↩, with or without ⌘ ⌥ ⌃ ⇧."
         case .notRemappable(let command): "\(command.title) always uses \(EditorKeymap.fixedDisplay(for: command))."
+        case let .reserved(key, use): "\(key) is kept for \(use) everywhere on the Mac."
         }
     }
 }
@@ -243,6 +246,29 @@ public struct EditorKeymap: Equatable, Sendable {
         (EditorShortcut("z", [.command]), .undo),
         (EditorShortcut("z", [.command, .shift]), .redo)
     ]
+
+    /// Keys macOS or the app itself needs in every window, never given to an editor command.
+    public static let reservedShortcuts: [(EditorShortcut, String)] = [
+        (EditorShortcut("q", [.command]), "Quit"),
+        (EditorShortcut("q", [.command, .shift]), "Log Out"),
+        (EditorShortcut("q", [.command, .control]), "Lock Screen"),
+        (EditorShortcut("w", [.command]), "Close Window"),
+        (EditorShortcut("w", [.command, .option]), "Close All"),
+        (EditorShortcut("h", [.command]), "Hide"),
+        (EditorShortcut("h", [.command, .option]), "Hide Others"),
+        (EditorShortcut("m", [.command]), "Minimize"),
+        (EditorShortcut("m", [.command, .option]), "Minimize All"),
+        (EditorShortcut(",", [.command]), "Settings"),
+        (EditorShortcut(" ", [.command]), "Spotlight"),
+        (EditorShortcut(" ", [.command, .control]), "the Character Viewer"),
+        (EditorShortcut(" ", [.control]), "switching input sources"),
+        (EditorShortcut("`", [.command]), "switching windows"),
+        (EditorShortcut("f", [.command, .control]), "Full Screen")
+    ]
+
+    static func reservedUse(of shortcut: EditorShortcut) -> String? {
+        reservedShortcuts.first { $0.0 == shortcut }?.1
+    }
 
     public static func fixedDisplay(for command: EditorCommand) -> String {
         switch command {
@@ -292,6 +318,7 @@ public struct EditorKeymap: Equatable, Sendable {
     /// Checks a key someone is about to give `command`.
     public func issue(assigning shortcut: EditorShortcut, to command: EditorCommand) -> EditorShortcutIssue? {
         guard command.isRemappable else { return .notRemappable(command) }
+        if let use = Self.reservedUse(of: shortcut) { return .reserved(shortcut.display, use) }
         if let fixed = Self.fixedShortcuts.first(where: { $0.0 == shortcut }) { return .fixed(fixed.1) }
         for other in EditorCommand.remappable where other != command && self.shortcut(for: other) == shortcut {
             return .usedBy(other, shortcut)
@@ -306,6 +333,11 @@ public struct EditorKeymap: Equatable, Sendable {
         case .escape: return .fixed(.close)
         case .delete: return .fixed(.deleteSelection)
         case .character, .returnKey: break
+        }
+        // Tab with ⌘ is the app switcher, and with ⌃ moves between controls; plain Tab is not a shortcut at all.
+        if key == .character("\t"), !modifiers.isDisjoint(with: [.command, .control]) {
+            return .reserved(modifiers.intersection(.all).symbols + "Tab",
+                             modifiers.contains(.command) ? "the app switcher" : "moving between controls")
         }
         guard let shortcut = EditorShortcut(key: key, modifiers: modifiers) else { return .unsupported }
         return issue(assigning: shortcut, to: command)
@@ -346,6 +378,7 @@ public struct EditorKeymap: Equatable, Sendable {
         for command in EditorCommand.remappable {
             guard let shortcut = stored[command.id],
                   !Self.fixedShortcuts.contains(where: { $0.0 == shortcut }),
+                  Self.reservedUse(of: shortcut) == nil,
                   !custom.values.contains(shortcut) else { continue }
             custom[command] = shortcut
         }

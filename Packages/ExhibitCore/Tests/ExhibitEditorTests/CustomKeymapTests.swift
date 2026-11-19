@@ -87,6 +87,28 @@ import Testing
         #expect(keymap.issue(recording: .character("x"), modifiers: [.control], for: .save) == nil)
     }
 
+    @Test func systemAndAppKeysAreRefusedWithTheirUse() {
+        var keymap = EditorKeymap.standard
+        let expected: [String: (EditorKey, KeyModifiers)] = [
+            "⌘Q is kept for Quit everywhere on the Mac.": (.character("q"), [.command]),
+            "⌘W is kept for Close Window everywhere on the Mac.": (.character("w"), [.command]),
+            "⌘H is kept for Hide everywhere on the Mac.": (.character("H"), [.command]),
+            "⌘M is kept for Minimize everywhere on the Mac.": (.character("m"), [.command]),
+            "⌘, is kept for Settings everywhere on the Mac.": (.character(","), [.command]),
+            "⌘Space is kept for Spotlight everywhere on the Mac.": (.character(" "), [.command]),
+            "⌘` is kept for switching windows everywhere on the Mac.": (.character("`"), [.command]),
+            "⌘Tab is kept for the app switcher everywhere on the Mac.": (.character("\t"), [.command])
+        ]
+        for (message, press) in expected {
+            #expect(keymap.issue(recording: press.0, modifiers: press.1, for: .save)?.message == message)
+        }
+        #expect(keymap.assign(EditorShortcut("q", [.command]), to: .save) == .reserved("⌘Q", "Quit"))
+        #expect(keymap.isStandard)
+        #expect(keymap.issue(recording: .character("q"), modifiers: [], for: .save) == nil, "a bare Q is fine")
+        #expect(keymap.issue(recording: .character("q"), modifiers: [.option], for: .save) == nil)
+        #expect(EditorKeymap(stored: ["save": EditorShortcut("w", [.command])]).isStandard, "dropped on load")
+    }
+
     @Test func resetIsRefusedWhenTheDefaultWasTaken() {
         var keymap = EditorKeymap.standard
         _ = keymap.assign(EditorShortcut("q"), to: .tool(.arrow))

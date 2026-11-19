@@ -41,7 +41,8 @@ struct ShortcutsSection: View {
             }
         } footer: {
             Text("Click a key, then press the new one, with or without ⌘ ⌥ ⌃ ⇧. Esc stops recording. "
-                 + "Esc, ⌫, ⌘Z and ⇧⌘Z always close, delete, undo and redo.")
+                 + "Esc, ⌫, ⌘Z and ⇧⌘Z always close, delete, undo and redo, and macOS's own keys such as ⌘Q, "
+                 + "⌘W and ⌘Space stay with macOS.")
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
