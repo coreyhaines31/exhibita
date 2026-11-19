@@ -55,6 +55,16 @@ targets:
         LSUIElement: true
         LSApplicationCategoryType: public.app-category.productivity
         NSHumanReadableCopyright: Copyright © 2026 Corey Haines. FSL-1.1-MIT.
+        NSMicrophoneUsageDescription: >-
+          Exhibit A listens only while you hold D in the editor, to turn what you say into marks. Audio stays on
+          this Mac and is never saved.
+        NSSpeechRecognitionUsageDescription: >-
+          Exhibit A turns what you say while holding D into text, on this Mac only, to mark up your capture. Audio
+          is never sent anywhere or saved.
+    entitlements:
+      path: App/ExhibitA.entitlements
+      properties:
+        com.apple.security.device.audio-input: true
     settings:
       base:
         PRODUCT_NAME: Exhibit A
