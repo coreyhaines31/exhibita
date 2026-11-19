@@ -207,11 +207,12 @@ final class PanelRenderTests: XCTestCase {
     /// hosting view's display cache instead. Still no window.
     private func renderSettings(_ model: AppModel, name: String, schemes: [ColorScheme] = [.light, .dark],
                                 policy: CapturePolicyModel? = nil,
-                                freeForm: FreeFormSettings = FreeFormSettings(settings: ModelSettings())) throws {
+                                freeForm: FreeFormSettings = FreeFormSettings(settings: ModelSettings()),
+                                updates: UpdateSettings = UpdateSettings(version: "0.1.0")) throws {
         for scheme in schemes {
             let hosting = NSHostingView(rootView: SettingsView(model: model, actions: SettingsActions(),
                                                                drawsRecorders: false, policy: policy,
-                                                               freeForm: freeForm)
+                                                               freeForm: freeForm, updates: updates)
                 .background(Color(nsColor: .windowBackgroundColor)))
             hosting.appearance = NSAppearance(named: scheme == .dark ? .darkAqua : .aqua)
             hosting.frame = NSRect(origin: .zero, size: hosting.fittingSize)

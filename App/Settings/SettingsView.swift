@@ -21,6 +21,7 @@ struct SettingsView: View {
     var policy: CapturePolicyModel?
     var policyActions = PolicyActions()
     var freeForm = FreeFormSettings.shared
+    var updates = UpdateSettings()
 
     static let width: CGFloat = 540
 
@@ -31,7 +32,7 @@ struct SettingsView: View {
             if let policy { NeverCaptureSection(policy: policy, actions: policyActions) }
             HistorySection(model: model, actions: actions)
             FreeFormSection(model: freeForm)
-            GeneralSection(model: model)
+            GeneralSection(model: model, updates: updates)
         }
         .formStyle(.grouped)
         .frame(width: Self.width)

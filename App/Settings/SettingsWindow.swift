@@ -10,15 +10,18 @@ final class SettingsWindow {
     private let refresh: () -> Void
     private let policy: CapturePolicyModel?
     private let policyActions: PolicyActions
+    private let updates: UpdateSettings
     private var window: NSWindow?
     private var observer: NSObjectProtocol?
 
     init(model: AppModel, actions: SettingsActions, policy: CapturePolicyModel? = nil,
-         policyActions: PolicyActions = PolicyActions(), refresh: @escaping () -> Void) {
+         policyActions: PolicyActions = PolicyActions(), updates: UpdateSettings = UpdateSettings(),
+         refresh: @escaping () -> Void) {
         self.model = model
         self.actions = actions
         self.policy = policy
         self.policyActions = policyActions
+        self.updates = updates
         self.refresh = refresh
     }
 
@@ -38,7 +41,8 @@ final class SettingsWindow {
 
     private func makeWindow() -> NSWindow {
         let controller = NSHostingController(rootView: SettingsView(model: model, actions: actions, policy: policy,
-                                                                    policyActions: policyActions))
+                                                                    policyActions: policyActions,
+                                                                    updates: updates))
         controller.sizingOptions = .preferredContentSize
         let window = NSWindow(contentViewController: controller)
         window.title = "\(Brand.name) Settings"
