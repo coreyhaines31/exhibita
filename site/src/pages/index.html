@@ -102,7 +102,7 @@
       <p class="bx-intro">Hold D, say it, let go. Speech is turned into text on your Mac. Press / to type the same instruction instead.</p>
       <ul class="facts">
         <li><b>No model needed for plain commands.</b> A built-in grammar knows the seven marks, the kinds of secret and the words on the screen.</li>
-        <li><b>A local model for the rest, if you want one.</b> Point Settings at a model server on this Mac (Ollama or OpenAI-compatible API, loopback only). It gets your words and a list of what’s on screen, never the image.</li>
+        <li><b>A local model for the rest, if you want one.</b> Exhibit A finds a model server on this Mac (Ollama or LM Studio, 127.0.0.1 only) and picks a model for you; Settings lists the others. The model gets your words and a list of what’s on screen, never the image.</li>
         <li><b>Never guesses quietly.</b> It names every mark it made and what it couldn’t find. One ⌘Z removes the whole batch.</li>
       </ul>
     </div>
@@ -150,7 +150,7 @@ exhibit mcp</code></pre>
     <div class="bx-grid">
       <article class="bx-card"><h3>Blur that can’t be undone</h3><p>Exported files are flat pixels with no layers and no copy of the original. A blur is filled from pixels outside it, so what was under it isn’t in the file.</p></article>
       <article class="bx-card"><h3>Never-capture list</h3><p>Password managers and Keychain Access are never captured, by you or an agent. In a wider capture their windows turn black with a label saying why.</p></article>
-      <article class="bx-card"><h3>Nothing leaves without you</h3><p>The update check is the app’s only request of its own; macOS may fetch its speech model once. A model endpoint must be on this Mac.</p></article>
+      <article class="bx-card"><h3>Nothing leaves without you</h3><p>The update check is the only request of the app’s own that leaves your Mac; macOS may fetch its speech model once. A model endpoint must be on this Mac.</p></article>
     </div>
     <p class="band-link"><a href="/privacy/">Read the full privacy details <span aria-hidden="true">→</span></a></p>
   </div>
