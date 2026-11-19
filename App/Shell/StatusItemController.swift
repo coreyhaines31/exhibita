@@ -34,6 +34,11 @@ final class StatusItemController {
             popover.performClose(nil)
             openSettings()
         }
+        let openHotkeySettings = actions.openHotkeySettings
+        panelActions.openHotkeySettings = {
+            popover.performClose(nil)
+            openHotkeySettings()
+        }
         let hosting = NSHostingController(rootView: PanelView(model: model, actions: panelActions))
         hosting.sizingOptions = .preferredContentSize
         self.hosting = hosting
@@ -68,6 +73,11 @@ final class StatusItemController {
 
     func close() {
         popover.performClose(nil)
+    }
+
+    /// While held, the panel stays open whatever is clicked: the capture overlay sits over it.
+    func holdOpen(_ hold: Bool) {
+        popover.behavior = hold ? .applicationDefined : .transient
     }
 
     /// How many times `flash` has run, for the end-to-end tests.

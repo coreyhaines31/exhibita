@@ -22,7 +22,7 @@ final class CrashSafetyTests: XCTestCase {
         await editor.drag(PixelPoint(x: 40, y: 500), PixelPoint(x: 300, y: 700))
         await editor.key("b", .shift)
         let made = editor.editor.marks
-        XCTAssertEqual(made.count, 3, "a box and two blurs")
+        XCTAssertEqual(made.count, 3, "a box and two blurs: \(made.map(\.kind))")
 
         // Past the debounce; no close, no flush, as if the process were killed now.
         await E2E.settle(400)

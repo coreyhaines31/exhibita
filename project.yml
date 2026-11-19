@@ -7,7 +7,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "0.1.0"
+    MARKETING_VERSION: "0.1.1"
     CURRENT_PROJECT_VERSION: "1"
     ENABLE_HARDENED_RUNTIME: YES
     DEVELOPMENT_TEAM: KPQU8X839X
@@ -120,6 +120,7 @@ targets:
       - App/Panel
       - App/Settings/SettingsView.swift
       - App/Settings/SettingsSections.swift
+      - App/Settings/ShortcutsSection.swift
       - App/Settings/NeverCaptureSection.swift
       - App/Settings/CapturePolicyModel.swift
       - App/Settings/FreeFormSettings.swift
@@ -132,6 +133,8 @@ targets:
       - App/Editor/EditorCanvas.swift
       - App/Editor/EditorView.swift
       - App/Editor/EditorToolbar.swift
+      - App/Editor/EditorKeyEvent.swift
+      - App/Editor/KeyIcon.swift
       - ExhibitAViewTests
     dependencies:
       - package: ExhibitCore

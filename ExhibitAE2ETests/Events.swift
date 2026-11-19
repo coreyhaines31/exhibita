@@ -30,6 +30,13 @@ enum Events {
         post(code: code, characters: typed, ignoringModifiers: String(lower), modifiers: modifiers, in: window)
     }
 
+    /// Only the key going down, or only coming up, for keys that are held (dictation).
+    static func key(_ character: Character, down: Bool, in window: NSWindow) {
+        let lower = Character(character.lowercased())
+        post(code: keyCodes[lower] ?? 0, characters: String(lower), ignoringModifiers: String(lower), modifiers: [],
+             in: window, types: [down ? .keyDown : .keyUp])
+    }
+
     static func special(_ code: UInt16, _ modifiers: NSEvent.ModifierFlags = [], in window: NSWindow) {
         let characters: String
         switch code {
@@ -51,8 +58,9 @@ enum Events {
     }
 
     private static func post(code: UInt16, characters: String, ignoringModifiers: String,
-                             modifiers: NSEvent.ModifierFlags, in window: NSWindow) {
-        for type in [NSEvent.EventType.keyDown, .keyUp] {
+                             modifiers: NSEvent.ModifierFlags, in window: NSWindow,
+                             types: [NSEvent.EventType] = [.keyDown, .keyUp]) {
+        for type in types {
             guard let event = NSEvent.keyEvent(with: type, location: .zero, modifierFlags: modifiers,
                                                timestamp: ProcessInfo.processInfo.systemUptime,
                                                windowNumber: window.windowNumber, context: nil,

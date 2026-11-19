@@ -32,6 +32,15 @@ struct HotkeysSection: View {
                 }
             }
             LabeledContent {
+                Button("Swap", action: model.swapHotkeys)
+                    .controlSize(.small)
+            } label: {
+                Text("Swap the two hotkeys")
+                Text("\(HotkeyAction.captureAndEdit.title) gets \(model.bindings.combo(for: .captureToClipboard).display), "
+                     + "\(HotkeyAction.captureToClipboard.title.lowercased()) gets "
+                     + "\(model.bindings.combo(for: .captureAndEdit).display).")
+            }
+            LabeledContent {
                 if model.bindings.takenOver {
                     StatusLight(.go, "Turned off")
                 } else {

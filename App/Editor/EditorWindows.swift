@@ -51,6 +51,11 @@ final class EditorWindows {
         }
     }
 
+    /// Keys changed in Settings reach editors already open.
+    func apply(_ keymap: EditorKeymap) {
+        for controller in windows.values { controller.editor.keymap = keymap }
+    }
+
     /// Writes every open capture's pending marks; for quitting.
     func flushAll() {
         captures.flushAll()
@@ -65,6 +70,7 @@ final class EditorWindows {
         }
         let controller = EditorWindowController(capture: capture, screen: screen ?? NSScreen.main,
                                                 exportsFolder: Self.exportsFolder)
+        controller.editor.keymap = model.keymap
         controller.onClose = { [weak self] exported in self?.closed(id, exported: exported) }
         controller.openSettings = { [weak self] in self?.openSettings() }
         windows[id] = controller
@@ -296,9 +302,9 @@ final class EditorWindow: NSWindow {
         if !route(event) { super.keyDown(with: event) }
     }
 
-    /// D up stops listening.
+    /// The dictate key (D unless changed) coming up stops listening.
     override func keyUp(with event: NSEvent) {
-        if event.charactersIgnoringModifiers?.lowercased() == "d" { dictation?.release() }
+        if let key = EditorKey(event), editor?.keymap.releasesDictation(key) == true { dictation?.release() }
         super.keyUp(with: event)
     }
 
@@ -309,13 +315,10 @@ final class EditorWindow: NSWindow {
     }
 
     private func route(_ event: NSEvent) -> Bool {
-        guard let editor else { return false }
-        let key = EditorKey.special(keyCode: event.keyCode)
-            ?? event.charactersIgnoringModifiers.flatMap { $0.isEmpty ? nil : EditorKey.character($0) }
-        guard let key else { return false }
+        guard let editor, let key = EditorKey(event) else { return false }
         // Esc while listening cancels dictation instead of closing.
         if let dictation, dictation.intercept(key) { return true }
-        let modifiers = KeyModifiers(rawValue: event.modifierFlags.rawValue).intersection(.all)
+        let modifiers = KeyModifiers(event)
         let typed: EditorKey
         // Labels take what was typed, shifted letters and all; tool keys read the unmodified key.
         if editor.editingTextID != nil, case .character = key, let characters = event.characters, !characters.isEmpty,

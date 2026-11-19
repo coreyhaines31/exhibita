@@ -38,13 +38,28 @@ Mark each line pass or fail with the macOS version.
 | Wait a few seconds, `cat document.json` | `targets` lists the text in the region (OCR ran in the background). |
 | Press ⌥⇧4 then Esc | Overlay closes, nothing saved. |
 | Press ⌥⇧4, Space, hover windows | The window under the pointer is clear and outlined; the rest dims. Hint changes to "Click a window". |
-| Click a window | Capture of just that window, no shadow; the row title is the app's name. |
+| Click a window | Capture of just that window's frame, no shadow; the row title is the app's name. Since issue 72 it is cut from the still at the hotkey, so a part covered by another window shows that window, and rounded corners show what was behind them. |
 | Press ⌥⇧4, Space, Space | Back to region mode. |
-| Press ⌥⇧4 then ↩ | The whole display under the pointer is captured, without the overlay, the menu bar glyph's panel or the cursor. |
+| Press ⌥⇧4 then ↩ | The whole display under the pointer is captured, without the overlay or the cursor. Since issue 72 the menu bar glyph's panel is in it when it was open. |
 | Two displays: start a drag on one and end on the other | The capture stops at the edge of the display where the drag started. |
 | Mixed scales (Retina laptop plus a 1x monitor) | A capture from each has the right pixel size (2x and 1x) and is sharp. |
 | On a P3 display, capture something saturated, then `sips -g profile original.png` and the same on an exported `-marked.png` | Write down the profile ScreenCaptureKit gives (issue 17). If it is Display P3, the export says Display P3 too and the colours match the screen; if it is sRGB, ScreenCaptureKit converted at capture and only imported P3 files keep P3. |
 | Press ⌥⇧4 again while the overlay is up | Ignored; one overlay, no crash. |
+
+## 3a. Nothing changes at the hotkey (issue 72)
+
+| Step | Expected |
+|---|---|
+| Open the panel, press ⌥⇧4 | The panel stays open under the dim; nothing on screen moves or redraws. Drag over the panel: the capture shows it. |
+| Panel open, press ⌥⇧4, click once on the overlay, then Esc | The panel is still open and still takes typing, as before the hotkey. |
+| Panel open, press ⌥⇧4, drag a region | The panel closes once the capture is taken. |
+| With an editor open, press ⌥⇧4, drag over the editor (or Space and click it) | The capture is the editor, not what is behind it. |
+| In another app, open a menu or a popover (Safari's downloads, a menu bar extra), then press ⌥⇧4 and drag over it | The menu or popover is in the capture. Note whether it is still open on screen after the overlay closes, and whether the app you were in is still frontmost. |
+| Hover a button that highlights, press ⌥⇧4 | The highlight is in the capture even if it fades under the overlay. |
+| On each of three displays (2x main, 2x offset to the right, 1x above), drag a region | Each capture has that display's pixel size and is sharp; the dimmed still lines up exactly with the real screen, with no shift or blur. |
+| Keychain Access on screen, press ⌥⇧4 | Its window is black with the label in the still the overlay shows, and in the capture. Space and click it: refused, the panel says why. |
+| A password manager open behind other windows, press ⌥⇧4 (issue 75) | Only the part of it that shows is black; the windows in front of it, the editor included, are captured as they are. |
+| Time from the key to the dim | Write it down; `CaptureTests` print the freeze time as "stills of N displays". |
 
 Recorded by `CaptureTests.testRecordsTheColourSpace` on 2026-11-18 (macOS 26.6.2, built-in Liquid Retina XDR): ScreenCaptureKit returns the display's own ICC profile (unnamed, wide gamut, 4064 bytes), not sRGB and not the named Display P3 space; the saved `original.png` and an export keep that profile, and the renderer draws in it. Sections 3 and 4, apart from the hotkey press itself and the editor taking focus (issue 53), are covered by `Scripts/run-e2e-capture.sh` on that Mac's three displays (2x, 2x and 1x).
 

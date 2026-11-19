@@ -72,9 +72,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Task { await model.reload() }
         }
         self.statusItem = statusItem
-        capture.showPanel = { [weak statusItem] in statusItem?.show() }
+        wire(capture, to: statusItem)
         editors.willOpen = { [weak statusItem] in statusItem?.close() }
         editors.openSettings = { [weak settingsWindow] in settingsWindow?.show() }
+        model.onKeymapChanged = { [weak editors] in editors?.apply($0) }
         startBridge(store: store, support: support, policy: policy, model: model, captures: editors.captures)
 
         Task { await model.reload() }
@@ -86,10 +87,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         bridge?.stop()
     }
 
-    /// What either global hotkey does.
+    /// The capture's hold on the panel: open for permission and refusals, held through the overlay, closed once
+    /// a capture is taken.
+    private func wire(_ capture: CaptureController, to statusItem: StatusItemController) {
+        capture.showPanel = { [weak statusItem] in statusItem?.show() }
+        capture.closePanel = { [weak statusItem] in statusItem?.close() }
+        capture.holdPanel = { [weak statusItem] in statusItem?.holdOpen($0) }
+        capture.didFinish = { [weak self] in self?.refreshSystemState() }
+    }
+
+    /// What either global hotkey does. Nothing on screen changes first: the capture freezes the screen, and the
+    /// panel and the system state are left alone until the overlay is done.
     func hotkeyPressed(_ action: HotkeyAction) {
-        refreshSystemState()
-        statusItem?.close()
         capture?.start(action)
     }
 
@@ -123,6 +132,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func panelActions(model: AppModel) -> PanelActions {
         PanelActions(
             openSettings: { [weak self] in self?.settingsWindow?.show() },
+            openHotkeySettings: { [weak self] in self?.settingsWindow?.show(at: .hotkeys) },
             quit: { NSApp.terminate(nil) },
             allowScreenRecording: { ScreenRecording.request() },
             checkPermissionAgain: { [weak self] in self?.refreshSystemState() },

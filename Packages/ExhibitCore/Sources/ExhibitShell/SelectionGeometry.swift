@@ -80,6 +80,39 @@ public enum SelectionGeometry {
         )
     }
 
+    /// A window's frame (Core Graphics global points, as window lists give it) as a region of the display it
+    /// covers most. The parts on other displays are left out, as a drag that crosses displays is clipped.
+    public static func region(forWindow frame: CGRect, in displays: [DisplayGeometry],
+                              mainDisplayHeight: CGFloat) -> CaptureRegion? {
+        let cocoa = cocoaRect(fromCoreGraphics: frame, mainDisplayHeight: mainDisplayHeight)
+        func covered(_ display: DisplayGeometry) -> CGFloat {
+            let overlap = cocoa.intersection(display.frame)
+            return overlap.isNull ? 0 : overlap.width * overlap.height
+        }
+        guard let display = displays.max(by: { covered($0) < covered($1) }), covered(display) > 0 else { return nil }
+        return region(for: cocoa, on: display)
+    }
+
+    /// The pixels of a still of the whole display that `region` covers, top-left origin. The pixels per point
+    /// are measured from the still itself rather than assumed from the scale, then the rectangle is grown outward
+    /// to whole pixels and clipped to the still. Nil when nothing of it is in the still.
+    public static func stillPixels(of region: CaptureRegion, on display: DisplayGeometry,
+                                   stillSize: PixelSize) -> PixelRect? {
+        guard display.frame.width > 0, display.frame.height > 0, stillSize.width > 0, stillSize.height > 0 else {
+            return nil
+        }
+        let scaleX = Double(stillSize.width) / display.frame.width
+        let scaleY = Double(stillSize.height) / display.frame.height
+        let epsilon = 1e-6
+        let source = region.sourceRect.standardized
+        let minX = max(0, Int((source.minX * scaleX + epsilon).rounded(.down)))
+        let minY = max(0, Int((source.minY * scaleY + epsilon).rounded(.down)))
+        let maxX = min(stillSize.width, Int((source.maxX * scaleX - epsilon).rounded(.up)))
+        let maxY = min(stillSize.height, Int((source.maxY * scaleY - epsilon).rounded(.up)))
+        guard maxX > minX, maxY > minY else { return nil }
+        return PixelRect(x: Double(minX), y: Double(minY), width: Double(maxX - minX), height: Double(maxY - minY))
+    }
+
     /// Converts a global Cocoa point (y up from the main display's bottom) to Core Graphics global coordinates
     /// (y down from the main display's top), which window lists use.
     public static func coreGraphicsPoint(fromCocoa point: CGPoint, mainDisplayHeight: CGFloat) -> CGPoint {

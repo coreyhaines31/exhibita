@@ -14,8 +14,9 @@ public enum EditorTool: String, CaseIterable, Sendable {
     /// The tools in the order the toolbar shows them, with select last.
     public static let toolbarOrder: [EditorTool] = [.arrow, .circle, .blur, .highlight, .text, .box, .step, .select]
 
-    /// The single key that picks the tool. The keys are the interface; the toolbar only teaches them.
-    public var key: String {
+    /// The single key that picks the tool until someone changes it (`EditorKeymap`). The keys are the interface;
+    /// the toolbar only teaches them.
+    public var defaultKey: String {
         switch self {
         case .select: "V"
         case .arrow: "A"
@@ -62,8 +63,8 @@ public enum EditorTool: String, CaseIterable, Sendable {
 }
 
 extension MarkColor {
-    /// The colour key, 1 to 4.
-    public var key: String {
+    /// The colour key until someone changes it, 1 to 4.
+    public var defaultKey: String {
         switch self {
         case .red: "1"
         case .yellow: "2"

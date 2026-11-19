@@ -45,7 +45,8 @@ Build the app as in `unit4-live-checklist.md` and the CLI with `swift build -c r
 | Step | Expected |
 |---|---|
 | Open Keychain Access; `exhibit capture --window "Keychain Access"` | Exit 9, `never_capture`, naming Keychain Access. Nothing new in history. |
-| With Keychain Access on screen, `exhibit capture` | Its whole window area is black with "Hidden by Exhibit A: Keychain Access is on the never-capture list"; `blackedOut` names it; nothing behind it shows. Check that the box sits exactly over the window on a Retina and a 1x display, and on a display left of or above the main one. |
+| With Keychain Access on screen, `exhibit capture` | Its window area is black with "Hidden by Exhibit A: Keychain Access is on the never-capture list"; `blackedOut` names it; nothing behind it shows. Check that the box sits exactly over the window on a Retina and a 1x display, and on a display left of or above the main one. |
+| Put another app's window over half of Keychain Access, `exhibit capture` (issue 75) | The window in front shows as it is; only the uncovered half of Keychain Access is black. With Keychain Access wholly behind other windows, nothing is black and `blackedOut` is empty. |
 | Hotkey, drag a region over Keychain Access | The same black, labelled box in the saved capture. |
 | Hotkey, Space, click Keychain Access's window | A beep; nothing is saved. |
 | With 1Password, Bitwarden, KeePassXC or Passwords installed, repeat the window check | Refused. Note each app's real bundle identifier; Dashlane and LastPass are matched by name only. |

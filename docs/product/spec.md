@@ -81,7 +81,13 @@ Two global hotkeys, matching the two things Corey does most. Both are remappable
 
 Onboarding offers to take over the system shortcuts: macOS's own screenshot shortcuts have to be turned off in System Settings → Keyboard → Keyboard Shortcuts → Screenshots first, and the app links straight to that pane. The app reads those settings and links to the pane; it does not change them itself (`docs/product/hotkey-takeover.md`). Once they are off, its defaults move to ⌘⇧4 and ⌃⌘⇧4 by themselves.
 
+The panel's two hotkey tiles say what each one does and open Settings at Hotkeys, which also has a Swap button that exchanges the two keys.
+
 After either hotkey: drag for a region, Space to pick a window, ↩ for the whole screen. A clipboard capture still lands in history, so it can be opened and marked up afterwards.
+
+As with macOS's own screenshots, nothing on screen changes when the hotkey fires (issue 72): every display is frozen as a still before any window of Exhibit A's appears or closes, the overlay shows those stills, and the capture is cut out of them. Exhibit A's own editor and panel, and other apps' open menus and popovers, are captured as they were. A window pick is the window's frame cut out of the still, so a part another window covered shows that window. Never-capture apps are blacked out in the still and refused as picks. Agent captures (`exhibit capture`) are taken live and leave Exhibit A's own windows out.
+
+The editor's keys below are the defaults. Every one can be changed in Settings, Shortcuts (issue 77) except Esc, ⌫, ⌘Z and ⇧⌘Z, which mean the same in every Mac app (and Esc also cancels dictation and the key recorder). Keys macOS or the app needs everywhere (⌘Q, ⌘W, ⌘H, ⌘M, ⌘, ⌘Space, ⌘` and ⌘Tab among them) are refused with what they are kept for. A key is a letter, number, symbol, Space or ↩, with or without ⌘ ⌥ ⌃ ⇧; ⇧ counts on letters only, because on some layouts symbols need it. A key another command has is refused with that command's name. Only changes are stored, so a default that moves in a later version reaches everyone who left that command alone. The toolbar, tooltips and status messages show the keys in effect. While a text label is being typed, letters and ⇧ letters type text whatever they are mapped to.
 
 | Key | Action |
 |---|---|
@@ -96,11 +102,12 @@ After either hotkey: drag for a region, Space to pick a window, ↩ for the whol
 | D (hold) | Dictate |
 | / | Type an instruction instead of saying it; same path as D |
 | 1–4 | Colour |
-| ⌘Z | Undo, including dictated marks |
+| V | Select: move, resize, ⌫ deletes |
+| ⌘Z, ⇧⌘Z | Undo, including dictated marks, and redo (fixed) |
 | ↩ | Copy image and close |
 | ⌘S | Save a file |
 | ⌘⇧C | Copy the file path |
-| Esc | Close; the capture stays in history |
+| Esc | Close; the capture stays in history (fixed) |
 
 Blurring one email and pointing at a button: hotkey, drag, B, click, A, drag, ↩.
 

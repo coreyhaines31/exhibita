@@ -35,6 +35,15 @@ final class PanelTests: XCTestCase {
 
         func click(_ name: String, count: Int = 1) async throws {
             try await PanelTests.ensureShown(controller)
+            // Rows report their frames as they lay out (thumbnails, the selected row growing); aim only once the
+            // target has stopped moving.
+            var last = controller.frames.byName[name]
+            for _ in 0..<12 {
+                await E2E.settle(80)
+                let now = controller.frames.byName[name]
+                if now == last { break }
+                last = now
+            }
             Events.click(at: try center(of: name), in: window, count: count)
             await E2E.settle(350)
         }
@@ -77,6 +86,15 @@ final class PanelTests: XCTestCase {
         }
     }
 
+    /// Clicks a row to select it. A synthetic click on the popover is now and then lost while it is still
+    /// becoming key (issue 79); then it is shown again and clicked once more, and the log says so.
+    private func select(_ id: UUID, in panel: Panel) async throws {
+        try await panel.click("row \(id)")
+        guard E2E.model.selected != id else { return }
+        print("E2E: panel row click lost once; clicking again")
+        try await panel.click("row \(id)")
+    }
+
     func testHistoryNewestFirstThenDeleteAndOpen() async throws {
         let ids = try seedThree()
         await E2E.model.reload()
@@ -88,7 +106,7 @@ final class PanelTests: XCTestCase {
 
         // Select the middle row, then Delete.
         let middle = ids[1]
-        try await panel.click("row \(middle)")
+        try await select(middle, in: panel)
         XCTAssertEqual(E2E.model.selected, middle, "a click selects the row")
         try await panel.click("delete \(middle)")
         await E2E.wait("the delete") { !E2E.model.items.contains { $0.id == middle } }
@@ -106,7 +124,7 @@ final class PanelTests: XCTestCase {
         // Selecting a row and pressing Open opens it too.
         let newest = ids[2]
         let again = try await showPanel()
-        try await again.click("row \(newest)")
+        try await select(newest, in: again)
         XCTAssertEqual(E2E.model.selected, newest)
         try await again.click("open \(newest)")
         await E2E.wait("the editor from Open") { E2E.editors.windows[newest]?.window?.isVisible == true }

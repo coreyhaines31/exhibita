@@ -6,8 +6,8 @@ import ExhibitStore
 import ExhibitTargets
 import os
 
-/// From a hotkey to a saved capture: permission check, overlay, ScreenCaptureKit, history, the clipboard, and
-/// targets found in the background.
+/// From a hotkey to a saved capture: permission check, a still of every display, the overlay over it, history,
+/// the clipboard, and targets found in the background.
 @MainActor
 final class CaptureController {
     private nonisolated static let logger = Logger(subsystem: Brand.bundleIdentifier, category: "Capture")
@@ -15,38 +15,82 @@ final class CaptureController {
     private let model: AppModel
     private let editors: EditorWindows
     let overlay = SelectionOverlay()
+    /// Confirms a capture that went straight to the clipboard, which opens no window.
+    let copiedNote = CopiedNote()
     /// The never-capture list and auto-blur, read fresh for every capture.
     var policy: () -> CapturePolicy = { CapturePolicy() }
-    /// Opens the panel: to explain the permission, or with a new capture selected.
+    /// Opens the panel: to explain the permission, or why a window pick was refused.
     var showPanel: () -> Void = {}
+    /// Closes the panel once a capture is taken. Until then it stays as it was.
+    var closePanel: () -> Void = {}
+    /// Keeps the panel open while the overlay is up: a click on the overlay would close a transient popover.
+    var holdPanel: (Bool) -> Void = { _ in }
+    /// Runs once the overlay is done, to refresh what the panel shows now that nothing is frozen.
+    var didFinish: () -> Void = {}
+    private var isFreezing = false
+    /// How long the last freeze took, from the hotkey to every display's still, for the end-to-end timings.
+    private(set) var lastFreeze: Duration?
 
     init(model: AppModel, editors: EditorWindows) {
         self.model = model
         self.editors = editors
     }
 
+    /// The hotkey. Before any window of Exhibit A's appears, closes or changes, every display is frozen as a
+    /// still; the overlay shows the stills and the capture is cut out of them, so it is exactly what was on
+    /// screen when the key was pressed.
     func start(_ action: HotkeyAction) {
-        guard !overlay.isActive else { return }
-        model.clearCaptureRefusal()
-        model.permission = ScreenRecording.state
-        guard model.permission == .granted else {
+        guard !overlay.isActive, !isFreezing else { return }
+        // Read without touching the model: a model change would redraw the panel before the freeze.
+        let permission = ScreenRecording.state
+        guard permission == .granted else {
+            model.clearCaptureRefusal()
+            model.permission = permission
             showPanel()
             return
         }
-        overlay.begin { [weak self] outcome in
-            guard let self else { return }
-            Task { await self.finish(outcome, action: action) }
+        let screens = NSScreen.screens
+        let displays = screens.compactMap { screen in
+            screen.displayID.map { DisplayGeometry(id: $0, frame: screen.frame, scale: screen.backingScaleFactor) }
+        }
+        let mainDisplayHeight = screens.first?.frame.height ?? 0
+        let windows = WindowList.onScreen()
+        let policy = policy()
+        let started = ContinuousClock.now
+        isFreezing = true
+        Task {
+            let frozen: FrozenScreen
+            do {
+                frozen = try await ScreenCapturer.freeze(displays, windows: windows,
+                                                         mainDisplayHeight: mainDisplayHeight, policy: policy)
+            } catch {
+                isFreezing = false
+                Self.logger.error("Freezing the screen failed: \(error.localizedDescription)")
+                NSSound.beep()
+                didFinish()
+                return
+            }
+            isFreezing = false
+            lastFreeze = ContinuousClock.now - started
+            holdPanel(true)
+            overlay.begin(frozen) { [weak self] outcome in
+                guard let self else { return }
+                holdPanel(false)
+                Task { await self.finish(outcome, frozen: frozen, action: action) }
+            }
         }
     }
 
-    private func finish(_ outcome: SelectionOverlay.Outcome, action: HotkeyAction) async {
+    private func finish(_ outcome: SelectionOverlay.Outcome, frozen: FrozenScreen, action: HotkeyAction) async {
+        defer { didFinish() }
         let captured: CapturedImage
         do {
             switch outcome {
             case .cancelled:
+                // Everything stays as it was, the panel included.
                 return
             case .region(let region):
-                captured = try await ScreenCapturer.capture(region, policy: policy())
+                captured = try ScreenCapturer.cut(region, from: frozen)
             case .window(let window):
                 let bundle = NSRunningApplication(processIdentifier: window.ownerPID)?.bundleIdentifier
                 let subject = CaptureSubject(bundleIdentifier: bundle, appName: window.ownerName)
@@ -57,13 +101,21 @@ final class CaptureController {
                     showPanel()
                     return
                 }
-                captured = try await ScreenCapturer.capture(windowID: window.id)
+                // The window's own frame cut out of the still: what was visible of it at the hotkey.
+                guard let region = SelectionGeometry.region(forWindow: window.frame, in: frozen.displays,
+                                                            mainDisplayHeight: frozen.mainDisplayHeight) else {
+                    throw CaptureFailure.windowGone
+                }
+                captured = try ScreenCapturer.cut(region, from: frozen, appName: window.ownerName,
+                                                  windowTitle: window.title)
             }
         } catch {
             Self.logger.error("Capture failed: \(error.localizedDescription)")
             NSSound.beep()
             return
         }
+        model.clearCaptureRefusal()
+        closePanel()
         await save(captured, action: action)
     }
 
@@ -85,7 +137,13 @@ final class CaptureController {
         editors.captures.beginFinding(id)
         switch action {
         case .captureToClipboard:
-            copyToClipboard(captured.image)
+            if copyToClipboard(captured.image) {
+                copiedNote.show(on: Self.screen(for: captured.displayID))
+                Self.logger.info("Captured to the clipboard")
+            } else {
+                Self.logger.error("Copying the capture failed")
+                NSSound.beep()
+            }
         case .captureAndEdit:
             // The same document `create` wrote, so the editor opens without reading it back.
             let document = CaptureDocument(id: id, createdAt: item.createdAt, size: item.size, scale: captured.scale,
@@ -93,6 +151,7 @@ final class CaptureController {
                                                                  windowTitle: captured.windowTitle,
                                                                  capturedBy: .person))
             editors.open(document: document, original: captured.image, on: Self.screen(for: captured.displayID))
+            Self.logger.info("Captured and opened the editor")
         }
         findTargets(in: captured, id: id)
         await model.reload()
@@ -120,11 +179,13 @@ final class CaptureController {
         }
     }
 
-    func copyToClipboard(_ image: CGImage) {
-        guard let png = try? PNG.encode(image) else { return }
+    /// False when the image could not be encoded or the clipboard refused it.
+    @discardableResult
+    func copyToClipboard(_ image: CGImage) -> Bool {
+        guard let png = try? PNG.encode(image) else { return false }
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        pasteboard.setData(png, forType: .png)
+        return pasteboard.setData(png, forType: .png)
     }
 
     func copyCapture(_ id: UUID) {

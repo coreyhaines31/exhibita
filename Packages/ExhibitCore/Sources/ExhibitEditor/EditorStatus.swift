@@ -12,13 +12,19 @@ public enum EditorStatus: Equatable, Sendable {
     case notice(String)
     case dictation(DictationStatus)
 
-    public var text: String? {
+    /// The line with the default keys.
+    public var text: String? { text(keys: .standard) }
+
+    /// The line naming the keys in effect.
+    public func text(keys: EditorKeymap) -> String? {
         switch self {
-        case .none: nil
-        case .readingText: "Reading text"
-        case .secrets(let count): count == 1 ? "1 possible secret. ⇧B to blur." : "\(count) possible secrets. ⇧B to blur."
-        case .notice(let message): message
-        case .dictation(let status): status.text
+        case .none: return nil
+        case .readingText: return "Reading text"
+        case .secrets(let count):
+            let blur = keys.display(for: .blurAllSensitive)
+            return count == 1 ? "1 possible secret. \(blur) to blur." : "\(count) possible secrets. \(blur) to blur."
+        case .notice(let message): return message
+        case .dictation(let status): return status.text(keys: keys)
         }
     }
 }

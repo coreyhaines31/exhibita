@@ -8,22 +8,22 @@ import Testing
         let expected: [String: EditorTool] = ["a": .arrow, "c": .circle, "b": .blur, "h": .highlight, "t": .text,
                                               "r": .box, "n": .step, "v": .select]
         for (letter, tool) in expected {
-            #expect(EditorKeymap.command(for: .character(letter), modifiers: []) == .tool(tool))
-            #expect(EditorKeymap.command(for: .character(letter.uppercased()), modifiers: []) == .tool(tool))
+            #expect(EditorKeymap.standard.command(for: .character(letter), modifiers: []) == .tool(tool))
+            #expect(EditorKeymap.standard.command(for: .character(letter.uppercased()), modifiers: []) == .tool(tool))
         }
-        #expect(EditorKeymap.command(for: .character("1"), modifiers: []) == .color(.red))
-        #expect(EditorKeymap.command(for: .character("2"), modifiers: []) == .color(.yellow))
-        #expect(EditorKeymap.command(for: .character("3"), modifiers: []) == .color(.blue))
-        #expect(EditorKeymap.command(for: .character("4"), modifiers: []) == .color(.green))
-        #expect(EditorKeymap.command(for: .character("5"), modifiers: []) == nil)
+        #expect(EditorKeymap.standard.command(for: .character("1"), modifiers: []) == .color(.red))
+        #expect(EditorKeymap.standard.command(for: .character("2"), modifiers: []) == .color(.yellow))
+        #expect(EditorKeymap.standard.command(for: .character("3"), modifiers: []) == .color(.blue))
+        #expect(EditorKeymap.standard.command(for: .character("4"), modifiers: []) == .color(.green))
+        #expect(EditorKeymap.standard.command(for: .character("5"), modifiers: []) == nil)
     }
 
     @Test func dHeldDictatesAndSlashTypes() {
-        #expect(EditorKeymap.command(for: .character("d"), modifiers: []) == .dictate)
-        #expect(EditorKeymap.command(for: .character("D"), modifiers: []) == .dictate)
-        #expect(EditorKeymap.command(for: .character("d"), modifiers: [.command]) == nil)
-        #expect(EditorKeymap.command(for: .character("/"), modifiers: []) == .typeInstruction)
-        #expect(EditorKeymap.command(for: .character("/"), modifiers: [.shift]) == .typeInstruction,
+        #expect(EditorKeymap.standard.command(for: .character("d"), modifiers: []) == .dictate)
+        #expect(EditorKeymap.standard.command(for: .character("D"), modifiers: []) == .dictate)
+        #expect(EditorKeymap.standard.command(for: .character("d"), modifiers: [.command]) == nil)
+        #expect(EditorKeymap.standard.command(for: .character("/"), modifiers: []) == .typeInstruction)
+        #expect(EditorKeymap.standard.command(for: .character("/"), modifiers: [.shift]) == .typeInstruction,
                 "layouts where / needs ⇧")
         #expect(EditorCommand.dictate.isAppCommand)
         #expect(EditorCommand.typeInstruction.isAppCommand)
@@ -41,20 +41,20 @@ import Testing
     }
 
     @Test func modifiedKeys() {
-        #expect(EditorKeymap.command(for: .character("B"), modifiers: [.shift]) == .blurAllSensitive)
-        #expect(EditorKeymap.command(for: .character("z"), modifiers: [.command]) == .undo)
-        #expect(EditorKeymap.command(for: .character("Z"), modifiers: [.command, .shift]) == .redo)
-        #expect(EditorKeymap.command(for: .character("s"), modifiers: [.command]) == .save)
-        #expect(EditorKeymap.command(for: .character("C"), modifiers: [.command, .shift]) == .copyPath)
-        #expect(EditorKeymap.command(for: .character("a"), modifiers: [.option]) == nil)
-        #expect(EditorKeymap.command(for: .character("a"), modifiers: [.shift]) == nil)
-        #expect(EditorKeymap.command(for: .character("c"), modifiers: [.command]) == nil)
+        #expect(EditorKeymap.standard.command(for: .character("B"), modifiers: [.shift]) == .blurAllSensitive)
+        #expect(EditorKeymap.standard.command(for: .character("z"), modifiers: [.command]) == .undo)
+        #expect(EditorKeymap.standard.command(for: .character("Z"), modifiers: [.command, .shift]) == .redo)
+        #expect(EditorKeymap.standard.command(for: .character("s"), modifiers: [.command]) == .save)
+        #expect(EditorKeymap.standard.command(for: .character("C"), modifiers: [.command, .shift]) == .copyPath)
+        #expect(EditorKeymap.standard.command(for: .character("a"), modifiers: [.option]) == nil)
+        #expect(EditorKeymap.standard.command(for: .character("a"), modifiers: [.shift]) == nil)
+        #expect(EditorKeymap.standard.command(for: .character("c"), modifiers: [.command]) == nil)
     }
 
     @Test func specialKeys() {
-        #expect(EditorKeymap.command(for: .returnKey, modifiers: []) == .copyAndClose)
-        #expect(EditorKeymap.command(for: .escape, modifiers: []) == .close)
-        #expect(EditorKeymap.command(for: .delete, modifiers: []) == .deleteSelection)
+        #expect(EditorKeymap.standard.command(for: .returnKey, modifiers: []) == .copyAndClose)
+        #expect(EditorKeymap.standard.command(for: .escape, modifiers: []) == .close)
+        #expect(EditorKeymap.standard.command(for: .delete, modifiers: []) == .deleteSelection)
         #expect(EditorKey.special(keyCode: 0x24) == .returnKey)
         #expect(EditorKey.special(keyCode: 0x4C) == .returnKey)
         #expect(EditorKey.special(keyCode: 0x35) == .escape)
@@ -65,7 +65,7 @@ import Testing
     }
 
     @Test func everyToolHasItsOwnKey() {
-        let keys = EditorTool.allCases.map(\.key)
+        let keys = EditorTool.allCases.map(\.defaultKey)
         #expect(Set(keys).count == keys.count)
         #expect(EditorTool.toolbarOrder.count == EditorTool.allCases.count)
     }

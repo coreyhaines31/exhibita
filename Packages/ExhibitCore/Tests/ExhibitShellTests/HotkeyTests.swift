@@ -156,4 +156,20 @@ let controlShiftCommand = 0x160000
         bindings.system = SystemScreenshotShortcuts(symbolicHotKeys: symbolicHotKeys([30: Entry(true, 21, 0x1A0000)]))
         #expect(bindings.issue(for: .captureAndEdit) == .takenBySystem(.saveSelection))
     }
+
+    @Test func swapExchangesTheKeysAndStoresOnlyDifferences() {
+        var bindings = HotkeyBindings()
+        bindings.swap()
+        #expect(bindings.combo(for: .captureAndEdit).display == "⌃⌥⇧4")
+        #expect(bindings.combo(for: .captureToClipboard).display == "⌥⇧4")
+        #expect(bindings.issue(for: .captureAndEdit) == nil)
+        bindings.swap()
+        #expect(bindings.custom.isEmpty, "swapped back is the defaults, nothing stored")
+
+        _ = bindings.assign(KeyCombo(keyCode: 0x08, modifiers: [.control, .option]), to: .captureToClipboard)
+        bindings.swap()
+        #expect(bindings.combo(for: .captureAndEdit).display == "⌃⌥C")
+        #expect(bindings.combo(for: .captureToClipboard).display == "⌥⇧4")
+        #expect(bindings.custom.count == 2)
+    }
 }
