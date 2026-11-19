@@ -22,8 +22,9 @@ public protocol SpeechTranscribing: AnyObject {
     func prepare() async -> SpeechReadiness
     /// Downloads the on-device speech model, reporting progress from 0 to 1. Cancelling the calling task stops it.
     func download(progress: @escaping @MainActor (Double) -> Void) async throws
-    /// Starts listening. Partial transcripts arrive as they are heard, each one the whole text so far.
-    func start(partial: @escaping @MainActor (String) -> Void) async throws
+    /// Starts listening. `hints` are words on the screen, so "Pricing" is heard as Pricing. Partial transcripts
+    /// arrive as they are heard, each one the whole text so far.
+    func start(hints: [String], partial: @escaping @MainActor (String) -> Void) async throws
     /// Stops listening and returns the final transcript, empty when nothing was said.
     func finish() async -> String
     /// Stops listening and drops what was heard.

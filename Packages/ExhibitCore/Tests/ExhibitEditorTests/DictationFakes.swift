@@ -66,8 +66,11 @@ final class FakeTranscriber: SpeechTranscribing {
         readiness = .ready
     }
 
-    func start(partial: @escaping @MainActor (String) -> Void) async throws {
+    private(set) var hints: [String] = []
+
+    func start(hints: [String], partial: @escaping @MainActor (String) -> Void) async throws {
         startCalls += 1
+        self.hints = hints
         self.partial = partial
     }
 

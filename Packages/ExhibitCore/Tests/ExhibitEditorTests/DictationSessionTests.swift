@@ -60,6 +60,7 @@ import Testing
         dictation.press()
         #expect(speech.prepareCalls == 1)
         #expect(speech.startCalls == 1)
+        #expect(speech.hints == ["Renews on December 1, 2026", "Update plan"], "screen words, never masked secrets")
     }
 
     @Test func escWhileListeningCancelsAndChangesNothing() async {

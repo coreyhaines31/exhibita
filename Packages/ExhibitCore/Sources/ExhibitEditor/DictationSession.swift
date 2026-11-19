@@ -187,7 +187,9 @@ public final class DictationSession {
             return
         }
         do {
-            try await transcriber.start { [weak self] text in self?.heard(text) }
+            try await transcriber.start(hints: Self.hints(from: editor.document.targets)) { [weak self] text in
+                self?.heard(text)
+            }
         } catch {
             return finish(.speechUnavailable(reason: "Speech couldn't start: \(error.localizedDescription)."))
         }
@@ -284,6 +286,17 @@ public final class DictationSession {
 
 extension DictationSession {
     static let busyMessage = "Still working on the last instruction. Try again when it finishes."
+
+    /// Text lines on the screen, for speech to favour. Masked lines (secrets) are left out; at most 100.
+    static func hints(from targets: [Target]) -> [String] {
+        var seen = Set<String>()
+        let lines = targets.compactMap { target -> String? in
+            guard target.kind == .text, let text = target.text?.trimmingCharacters(in: .whitespaces), !text.isEmpty,
+                  text.count <= 60, !text.contains("\u{2022}"), seen.insert(text).inserted else { return nil }
+            return text
+        }
+        return Array(lines.prefix(100))
+    }
 
     /// What a person sees when speech can't start, or nil when it can (perhaps after a download).
     static func status(blockedBy readiness: SpeechReadiness) -> DictationStatus? {
