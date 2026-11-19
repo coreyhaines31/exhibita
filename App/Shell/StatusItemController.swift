@@ -9,6 +9,8 @@ final class StatusItemController {
     private let popover: NSPopover
     private let hosting: NSHostingController<PanelView>
     private let willShow: () -> Void
+    /// Where the panel's rows and their buttons were laid out, for the end-to-end tests.
+    let frames: PanelFrames
 
     init(model: AppModel, actions: PanelActions, willShow: @escaping () -> Void) {
         self.willShow = willShow
@@ -22,6 +24,9 @@ final class StatusItemController {
         item.button?.toolTip = Brand.name
 
         var panelActions = actions
+        let frames = PanelFrames()
+        self.frames = frames
+        panelActions.reportFrame = { frames.byName[$0] = $1 }
         let popover = NSPopover()
         self.popover = popover
         let openSettings = actions.openSettings
@@ -78,4 +83,10 @@ final class StatusItemController {
             }
         }
     }
+}
+
+/// The panel's reported layout: name to frame, top-left origin, in the panel's coordinates.
+@MainActor
+final class PanelFrames {
+    var byName: [String: CGRect] = [:]
 }

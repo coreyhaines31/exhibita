@@ -14,6 +14,9 @@ struct PanelActions {
     var copy: (UUID) -> Void = { _ in }
     var reveal: (UUID) -> Void = { _ in }
     var delete: (UUID) -> Void = { _ in }
+    /// Where a row or one of its buttons was laid out, by name ("row <id>", "open <id>", "delete <id>"),
+    /// in the panel's top-left coordinates. Read by the end-to-end tests to aim their clicks.
+    var reportFrame: (String, CGRect) -> Void = { _, _ in }
 }
 
 /// What opens from the menu bar: the hotkeys on the fascia, then the permission, the empty state or history.
@@ -44,6 +47,7 @@ struct PanelView: View {
         } footer: {
             Footer(appName: Brand.name, openSettings: actions.openSettings, quit: actions.quit)
         }
+        .reportingFrame("panel", to: actions)
     }
 
     private var showsSummary: Bool {
