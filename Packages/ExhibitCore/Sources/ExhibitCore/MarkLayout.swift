@@ -22,6 +22,35 @@ public struct MarkLayout: Sendable {
         Self.labelSize(text, metrics: metrics)
     }
 
+    /// The box the renderer's ink for `mark` reaches, strokes and padding included (shadows and an arrow's caption
+    /// left out), so a selection outline drawn outside it never covers the mark's colour.
+    public func inkBox(of mark: Mark) -> PixelRect {
+        let bounds = mark.bounds.cgRect
+        let ink: CGRect
+        switch mark.kind {
+        case .box:
+            let reach = metrics.boxPadding + metrics.stroke / 2
+            ink = bounds.insetBy(dx: -reach, dy: -reach)
+        case .circle:
+            let radiusX = bounds.width / 2 * 2.0.squareRoot() + metrics.circlePadding + metrics.stroke / 2
+            let radiusY = bounds.height / 2 * 2.0.squareRoot() + metrics.circlePadding + metrics.stroke / 2
+            ink = CGRect(x: bounds.midX - radiusX, y: bounds.midY - radiusY, width: radiusX * 2, height: radiusY * 2)
+        case .highlight:
+            ink = bounds.insetBy(dx: -metrics.highlightPadding.width, dy: -metrics.highlightPadding.height)
+        case .text:
+            ink = CGRect(origin: bounds.origin, size: labelSize(mark.style.label ?? ""))
+        case .step:
+            let radius = metrics.stepDiameter / 2
+            ink = CGRect(x: bounds.midX - radius, y: bounds.midY - radius, width: radius * 2, height: radius * 2)
+        case .arrow:
+            let reach = metrics.arrowHeadHalfWidth
+            ink = bounds.insetBy(dx: -reach, dy: -reach)
+        case .blur:
+            ink = bounds
+        }
+        return PixelRect(x: ink.minX, y: ink.minY, width: ink.width, height: ink.height)
+    }
+
     /// The box an arrow's caption is drawn in, beyond the tail on the far side from the head.
     public func captionRect(from tail: PixelPoint, to tip: PixelPoint, label: String) -> PixelRect? {
         guard !label.isEmpty else { return nil }

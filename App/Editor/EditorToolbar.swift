@@ -18,19 +18,19 @@ struct EditorToolbar: View {
             HStack(spacing: 10) {
                 Nameplate(Brand.name.uppercased(), isLit: true)
                     .fixedSize()
-                Divider().frame(height: 26).overlay(theme.fasciaEdge)
+                Seam()
                 HStack(spacing: 4) {
                     ForEach(EditorTool.toolbarOrder, id: \.self) { tool in
                         ToolKey(tool: tool, isOn: editor.tool == tool) { editor.choose(tool) }
                     }
                 }
-                Divider().frame(height: 26).overlay(theme.fasciaEdge)
+                Seam()
                 HStack(spacing: 6) {
                     ForEach(MarkColor.allCases, id: \.self) { color in
                         ColorLight(color: color, isOn: editor.currentColor == color) { editor.choose(color) }
                     }
                 }
-                Divider().frame(height: 26).overlay(theme.fasciaEdge)
+                Seam()
                 HStack(spacing: 4) {
                     DictateKey(isOn: dictation?.isHeld == true,
                                press: { dictation?.press() }, release: { dictation?.release() })
@@ -38,7 +38,7 @@ struct EditorToolbar: View {
                         .accessibilityLabel("Type an instruction, key /")
                         .help("Type what to change instead of saying it (/)")
                 }
-                Divider().frame(height: 26).overlay(theme.fasciaEdge)
+                Seam()
                 HStack(spacing: 4) {
                     KeyCap("arrow.uturn.backward", accessibilityLabel: "Undo, ⌘Z") { editor.undo() }
                         .disabled(!editor.canUndo)
@@ -71,6 +71,16 @@ struct EditorToolbar: View {
         case .box: "Click text to box it, or drag."
         case .step: "Click to place step \(editor.nextStepNumber)."
         }
+    }
+}
+
+/// A vertical rule between groups of keys, as tall as the keys. A drawn line rather than `Divider`, whose
+/// AppKit-backed rule ignores its frame in a live window and runs the full height of the toolbar.
+private struct Seam: View {
+    @Environment(\.panelTheme) private var theme
+
+    var body: some View {
+        Rectangle().fill(theme.fasciaEdge).frame(width: 1, height: 26)
     }
 }
 

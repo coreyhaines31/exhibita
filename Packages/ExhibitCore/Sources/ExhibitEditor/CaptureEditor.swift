@@ -104,9 +104,9 @@ public final class CaptureEditor {
         editingTextID.flatMap { id in marks.first { $0.id == id } }
     }
 
-    /// The box around the selected mark, for drawing a selection outline.
+    /// The box the selected mark's ink reaches, for drawing a selection outline outside it.
     public var selectionBox: PixelRect? {
-        selectedMark.map { hitTesting.visibleBox(of: $0) }
+        selectedMark.map { layout.inkBox(of: $0) }
     }
 
     // MARK: - Changes and undo
