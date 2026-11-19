@@ -81,7 +81,7 @@ public enum DictationStatus: Equatable, Sendable {
             case .nothingFound(_, let summary): summary + " No changes made."
             case .nothingUnderstood: "No changes made."
             case .needsModel:
-                "Needs a model: set one up in Settings, or try \(DictationStatus.grammarExample)."
+                "Needs a local model: choose one in Settings, or try \(DictationStatus.grammarExample)."
             case .modelFailed(_, let reason): "\(reason) No changes made."
             case .microphoneDenied:
                 "Exhibit A can't use the microphone. Allow it in System Settings, or press \(type) to type."

@@ -124,7 +124,7 @@ final class EditorWindowController: NSObject, NSWindowDelegate {
         // Creating the transcriber touches neither the microphone nor permissions; the first hold of D does.
         dictation = DictationSession(editor: editor, original: capture.original,
                                      transcriber: Self.makeTranscriber(),
-                                     model: { FreeFormSettings.shared.interpreter() })
+                                     model: { await FreeFormSettings.shared.interpreter() })
         canvas = EditorCanvasModel(original: capture.original, scale: capture.owner.document.scale)
         super.init()
         // The first frame is already the renderer's output, so a reopened capture never flashes what its

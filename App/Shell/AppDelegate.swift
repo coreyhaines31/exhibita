@@ -27,6 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PanelFont.register()
         if !TestSeam.isActive { LaunchAtLogin.applyDefault() }
         updater.start()
+        lookForModelServers()
 
         let store = CaptureStore(directory: (try? TestSeam.capturesDirectory())
             ?? FileManager.default.temporaryDirectory.appendingPathComponent("Exhibit A Captures"))
@@ -92,6 +93,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         capture.closePanel = { [weak statusItem] in statusItem?.close() }
         capture.holdPanel = { [weak statusItem] in statusItem?.holdOpen($0) }
         capture.didFinish = { [weak self] in self?.refreshSystemState() }
+    }
+
+    /// A model server on this Mac, so a never-chosen setting has its default before the first instruction. The
+    /// end-to-end tests find nothing, so they never reach a real model.
+    private func lookForModelServers() {
+        FreeFormSettings.shared.discoverer = TestSeam.isActive ? FreeFormSettings.offline : FreeFormSettings.live
+        FreeFormSettings.shared.refresh()
     }
 
     /// What either global hotkey does. Nothing on screen changes first: the capture freezes the screen, and the

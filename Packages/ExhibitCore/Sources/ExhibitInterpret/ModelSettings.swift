@@ -1,7 +1,9 @@
 import Foundation
 
-/// The app's free-form instructions setting: off by default; when on, a local model the person runs. Stored as
-/// it was typed, and turned into a `ModelEndpoint` only when used, so a bad value is reported, never sent.
+/// The app's setting for instructions in the person's own words: which local model, if any, reads what the
+/// built-in commands can't. Never chosen means the recommended installed model; `.none` means built-in commands
+/// only. Stored as it was typed, and turned into a `ModelEndpoint` only when used, so a bad value is reported,
+/// never sent.
 public struct ModelSettings: Codable, Equatable, Sendable {
     public enum APIChoice: String, Codable, CaseIterable, Sendable {
         /// From the URL: a path with `/v1` is OpenAI-compatible, anything else Ollama.
@@ -26,19 +28,103 @@ public struct ModelSettings: Codable, Equatable, Sendable {
         }
     }
 
+    /// What the person picked in Settings. Nil until they pick, which is not the same as `.none`.
+    public enum Choice: Codable, Equatable, Sendable {
+        /// Built-in commands only, no model.
+        case none
+        /// A model a found server listed.
+        case installed(server: ModelServer.Kind, url: String, model: String)
+        /// The typed `endpoint`, `model` and `api`.
+        case other
+    }
+
+    /// The typed fields' switch from before there was a choice; read only to keep an old setting (`effectiveChoice`).
     public var enabled: Bool
     public var endpoint: String
     public var model: String
     public var api: APIChoice
+    /// Nil when the person has never chosen: then the recommended installed model is used (`Discovery.defaultChoice`).
+    public var choice: Choice?
 
     public static let defaultEndpoint = ModelEndpoint.defaultURL.absoluteString
 
     public init(enabled: Bool = false, endpoint: String = Self.defaultEndpoint, model: String = "",
-                api: APIChoice = .automatic) {
+                api: APIChoice = .automatic, choice: Choice? = nil) {
         self.enabled = enabled
         self.endpoint = endpoint
         self.model = model
         self.api = api
+        self.choice = choice
+    }
+
+    /// The choice in effect: a setting saved before there was a choice that had a model turned on counts as Other.
+    public var effectiveChoice: Choice? {
+        if let choice { return choice }
+        return enabled && !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .other : nil
+    }
+
+    /// The model the editor uses, given what discovery found (nil before it has run). An explicit choice is used as
+    /// chosen, found or not, so a problem shows as the model's own error; never chosen means the default, if any
+    /// server has a model. Throws for an Other endpoint that is not this Mac or not usable.
+    public func endpoint(discovery: Discovery?) throws -> ModelEndpoint? {
+        switch effectiveChoice {
+        case .none?:
+            return nil
+        case let .installed(server, url, model)?:
+            guard let url = URL(string: url) else { throw ModelError.invalidEndpoint("\"\(url)\" is not a URL") }
+            return try ModelEndpoint(url: url, model: model, api: server.api)
+        case .other?:
+            guard !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+            return try configuredEndpoint()
+        case nil:
+            guard let picked = discovery?.defaultChoice else { return nil }
+            return try ModelEndpoint(url: picked.server.url, model: picked.model, api: picked.server.kind.api)
+        }
+    }
+
+    /// The one line Settings shows under the picker.
+    public func status(discovery: Discovery?) -> ModelStatus {
+        switch effectiveChoice {
+        case .none?: .builtInOnly
+        case .other?: otherStatus()
+        case let .installed(server, _, model)?: discovery.map { Self.status(of: model, on: server, in: $0) } ?? .checking
+        case nil: discovery.map(Self.defaultStatus) ?? .checking
+        }
+    }
+
+    private func otherStatus() -> ModelStatus {
+        guard !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return .otherIncomplete }
+        do {
+            let endpoint = try configuredEndpoint()
+            return .usingOther(model: endpoint.model, endpoint: endpoint.url.absoluteString)
+        } catch {
+            return .otherInvalid((error as? ModelError)?.description ?? error.localizedDescription)
+        }
+    }
+
+    private static func status(of model: String, on server: ModelServer.Kind, in discovery: Discovery) -> ModelStatus {
+        switch discovery.probe(for: server) {
+        case .found(let found)? where found.models.contains(model): .using(model: model, server: server, isDefault: false)
+        case .found?: .chosenMissing(model: model, server: server)
+        case .noModels?: .chosenMissing(model: model, server: server)
+        case .notRunning?, .notLoopback?: .serverDown(server, model: model)
+        case .badAnswer?: .badAnswer(server)
+        case nil: .using(model: model, server: server, isDefault: false)
+        }
+    }
+
+    /// Never chosen: the default in use, or why there is none, most useful first.
+    private static func defaultStatus(_ discovery: Discovery) -> ModelStatus {
+        if let picked = discovery.defaultChoice {
+            return .using(model: picked.model, server: picked.server.kind, isDefault: true)
+        }
+        for probe in discovery.probes {
+            if case .noModels(let server) = probe { return .noModels(server.kind) }
+        }
+        for probe in discovery.probes {
+            if case .badAnswer(let kind, _, _) = probe { return .badAnswer(kind) }
+        }
+        return .noServer
     }
 
     /// The endpoint to use, or nil when free-form instructions are off or no model is named. Throws

@@ -23,7 +23,7 @@ Same shape as Midnight Oil and Kill Cord: the app is free with its source availa
 | Capture, all seven marks, redaction, history | Yes | |
 | CLI and MCP for agents | Yes | |
 | Voice with the built-in grammar | Yes | |
-| Free-form instructions | A local model the user runs (an Ollama or LM Studio endpoint) | Hosted interpretation, no setup |
+| Free-form instructions | A local model the user runs (an Ollama or LM Studio endpoint), found on this Mac and picked by default (issue 96) | Hosted interpretation, no setup |
 | Cloud | | Share links, synced history across Macs |
 | Teams | | Shared library, team-wide never-capture and auto-redact rules, shared mark styles, managed deployment |
 
@@ -156,7 +156,7 @@ exhibit mcp                                   # stdio MCP server, same commands
 | Listening / interpreting | Live transcript while held, then a short working state; no success before marks exist |
 | Partial match | "Blurred 4 emails. Couldn't find: pricing button." Found marks applied |
 | Nothing understood | Transcript shown with "No changes made" |
-| Needs a model | The grammar declined and no model is set up: transcript shown with "Needs a model: set one up in Settings, or try “blur the emails”." and a Settings key. Nothing changes |
+| Needs a model | The grammar declined and no model is set up: transcript shown with "Needs a local model: choose one in Settings, or try “blur the emails”." and a Settings key. Nothing changes |
 | Model edit applied | Each mark is named in the summary ("Blurred 4 emails, circled Pricing"), because about 1 model answer in 10 is wrong; one ⌘Z removes the batch |
 | Secrets found, none blurred | Quiet count: "3 possible secrets. ⇧B to blur." Never blocks copying |
 | Never-capture app in frame | That window is blacked out with a label saying why |
@@ -173,7 +173,7 @@ Purge history and "discard original" ask for confirmation. Everything else is un
 | Users, orgs, roles | N/A | Single user, local app |
 | Feedback to the builder | Yes | "Report a problem" opens a prefilled GitHub issue; nothing attached or sent automatically |
 | Security | Yes | Controls below |
-| Analytics | N/A | Zero telemetry. Network calls: Sparkle update check and a one-time speech model download. A local model endpoint, if the user sets one, stays on their machine |
+| Analytics | N/A | Zero telemetry. Network calls: Sparkle update check and a one-time speech model download. A local model endpoint stays on their machine; the app also asks 127.0.0.1 for the model servers' lists at launch and in Settings, which never leaves the Mac |
 | Agent access | Yes | CLI and MCP share the app's capture rules |
 
 Controls:

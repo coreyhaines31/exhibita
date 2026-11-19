@@ -191,15 +191,32 @@ final class PanelRenderTests: XCTestCase {
         }
     }
 
+    /// Each state of "Instructions in your own words", on its own: the default in use with no click, no server,
+    /// a server with no models, a chosen model no longer installed, and Other.
     func testRendersFreeFormSettings() throws {
-        let model = try makeModel()
-        let reachable = FreeFormSettings(settings: ModelSettings(enabled: true, model: "qwen3.8:27b"))
-        reachable.probe = .reachable(model: "qwen3.8:27b", seconds: 6.4)
-        try renderSettings(model, name: "settings-free-form", freeForm: reachable)
-        let remote = FreeFormSettings(settings: ModelSettings(enabled: true, endpoint: "http://192.168.1.20:11434",
-                                                              model: "qwen3:8b"))
-        remote.probe = .notLoopback("192.168.1.20")
-        try renderSettings(model, name: "settings-free-form-not-loopback", schemes: [.light], freeForm: remote)
+        let ollama = URL(string: "http://127.0.0.1:11434")!
+        let lmStudio = URL(string: "http://127.0.0.1:1234/v1")!
+        let installed = Discovery(probes: [
+            .found(ModelServer(kind: .ollama, url: ollama, models: ["ornith-1.5:9b", "qwen3.8:27b"])),
+            .notRunning(.openAICompatible, lmStudio)
+        ])
+        let nothing = Discovery(probes: [.notRunning(.ollama, ollama), .notRunning(.openAICompatible, lmStudio)])
+        let empty = Discovery(probes: [.noModels(ModelServer(kind: .ollama, url: ollama, models: [])),
+                                       .notRunning(.openAICompatible, lmStudio)])
+        let states: [(String, FreeFormSettings)] = [
+            ("settings-free-form", FreeFormSettings(settings: ModelSettings(), discovery: installed)),
+            ("settings-free-form-no-server", FreeFormSettings(settings: ModelSettings(), discovery: nothing)),
+            ("settings-free-form-no-models", FreeFormSettings(settings: ModelSettings(), discovery: empty)),
+            ("settings-free-form-missing", FreeFormSettings(
+                settings: ModelSettings(choice: .installed(server: .ollama, url: ollama.absoluteString,
+                                                           model: "llama3.2:3b")), discovery: installed)),
+            ("settings-free-form-other", FreeFormSettings(
+                settings: ModelSettings(endpoint: "http://127.0.0.1:8080/v1", model: "my-model", choice: .other),
+                discovery: installed))
+        ]
+        for (name, settings) in states {
+            try renderForm(name: name) { FreeFormSection(model: settings) }
+        }
     }
 
     /// The command line row unlinked and the updater configured. The fake app bundle sits at a fixed /tmp path so
@@ -215,15 +232,6 @@ final class PanelRenderTests: XCTestCase {
         let updates = UpdateSettings(isConfigured: true, version: "0.1.0", checksAutomatically: true)
         try renderSettings(model, name: "settings-command-line", updates: updates, commandLine: tool)
         try? FileManager.default.removeItem(atPath: "/tmp/exhibita-render")
-    }
-
-    func testFreeFormIsOffByDefaultAndSavesWhatChanges() throws {
-        let settings = FreeFormSettings()
-        XCTAssertFalse(settings.settings.enabled)
-        XCTAssertNil(settings.interpreter(), "no model unless one is turned on")
-        settings.settings = ModelSettings(enabled: true, model: "qwen3:8b")
-        XCTAssertEqual(FreeFormSettings().settings.model, "qwen3:8b", "kept in preferences")
-        XCTAssertNotNil(settings.interpreter())
     }
 
     // MARK: - Rendering
