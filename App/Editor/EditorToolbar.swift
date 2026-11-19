@@ -35,6 +35,12 @@ struct EditorToolbar: View {
                 }
                 Seam()
                 HStack(spacing: 4) {
+                    let secrets = keys.display(for: .blurAllSensitive)
+                    LegendKey(icon: .blurSecrets, key: secrets, title: "Secrets", isOn: false) {
+                        editor.blurAllSensitive()
+                    }
+                    .accessibilityLabel("Blur secrets, key \(secrets)")
+                    .help("Blur every email, key, card and phone number found (\(secrets))")
                     DictateKey(key: keys.display(for: .dictate), isOn: dictation?.isHeld == true,
                                press: { dictation?.press() }, release: { dictation?.release() })
                     let type = keys.display(for: .typeInstruction)
