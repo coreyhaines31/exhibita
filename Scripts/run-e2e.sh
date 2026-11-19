@@ -29,13 +29,18 @@ TOKEN="$(uuidgen | cut -c1-8 | tr 'A-Z' 'a-z')"
 SUPPORT="$(mktemp -d "${TMPDIR:-/tmp}/xa-e2e-$TOKEN")"
 SUITE="com.exhibitaformac.e2e.$TOKEN"
 REAL_PREFS="$HOME/Library/Preferences/com.exhibitaformac.ExhibitA.plist"
+# The test host is the same app under its own bundle identifier, so its own settings (the save panel writes some)
+# land in a domain of their own, removed afterwards.
+HOST_DOMAIN="com.exhibitaformac.ExhibitA.e2e"
 prefs_hash() { if [ -f "$REAL_PREFS" ]; then shasum "$REAL_PREFS" | cut -d' ' -f1; else echo none; fi; }
 BEFORE="$(prefs_hash)"
 
 cleanup() {
-    pkill -f "$ROOT/build/DerivedData/.*/Exhibit A.app/Contents/MacOS/Exhibit A" 2>/dev/null
-    defaults delete "$SUITE" >/dev/null 2>&1
-    [ -f "$HOME/Library/Preferences/$SUITE.plist" ] && trash "$HOME/Library/Preferences/$SUITE.plist"
+    pkill -f "$ROOT/build/E2EDerivedData/.*/Exhibit A.app/Contents/MacOS/Exhibit A" 2>/dev/null
+    for domain in "$SUITE" "$HOST_DOMAIN"; do
+        defaults delete "$domain" >/dev/null 2>&1
+        [ -f "$HOME/Library/Preferences/$domain.plist" ] && trash "$HOME/Library/Preferences/$domain.plist"
+    done
     [ -d "$SUPPORT" ] && trash "$SUPPORT"
     git -C "$ROOT" checkout -- Packages/ExhibitCore/Package.resolved 2>/dev/null
 }
@@ -55,7 +60,7 @@ TEST_RUNNER_EXHIBIT_SUPPORT_DIR="$SUPPORT" \
 TEST_RUNNER_EXHIBIT_DEFAULTS_SUITE="$SUITE" \
 TEST_RUNNER_EXHIBIT_E2E_CLI="$EXHIBIT_BIN" \
 xcodebuild -project ExhibitA.xcodeproj -scheme ExhibitAE2E -configuration Debug \
-    -derivedDataPath build/DerivedData -allowProvisioningUpdates test "$@" >"$LOGS/test.log" 2>&1
+    -derivedDataPath build/E2EDerivedData EXHIBIT_E2E_BUNDLE_SUFFIX=.e2e test "$@" >"$LOGS/test.log" 2>&1
 status=$?
 end=$(date +%s)
 

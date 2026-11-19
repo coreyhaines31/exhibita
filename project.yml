@@ -84,7 +84,9 @@ targets:
       base:
         PRODUCT_NAME: Exhibit A
         PRODUCT_MODULE_NAME: ExhibitA
-        PRODUCT_BUNDLE_IDENTIFIER: com.exhibitaformac.ExhibitA
+        # Scripts/run-e2e.sh sets EXHIBIT_E2E_BUNDLE_SUFFIX=.e2e, so the test host keeps its settings (and the save
+        # panel's) apart from the real app's. Empty otherwise.
+        PRODUCT_BUNDLE_IDENTIFIER: com.exhibitaformac.ExhibitA$(EXHIBIT_E2E_BUNDLE_SUFFIX)
   # The `exhibit` CLI, compiled from the package's own entry point so it is the same program `swift build` makes,
   # built universal with the hardened runtime like the app and signed on copy into it.
   ExhibitCLI:
