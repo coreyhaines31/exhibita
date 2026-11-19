@@ -10,7 +10,7 @@ Mark each line pass or fail with the macOS version.
 
 | Step | Expected |
 |---|---|
-| Open Exhibit A.app | The crop-corners glyph appears in the menu bar. No Dock icon, no window, no system prompt. |
+| Open Exhibit A.app | The exhibit plate glyph (a window outline and a circled A) appears in the menu bar. No Dock icon, no window, no system prompt. |
 | Click the glyph | Panel: "Exhibit A needs Screen Recording", with Allow Screen Recording… and Check Again. Pilot light unlit. |
 | `ls ~/Library/Application\ Support/Exhibit\ A/Captures` | Exists, holds only `.metadata_never_index`. |
 | `tmutil isexcluded ~/Library/Application\ Support/Exhibit\ A/Captures` | `[Excluded]`. |
