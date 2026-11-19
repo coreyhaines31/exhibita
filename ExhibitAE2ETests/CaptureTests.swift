@@ -84,6 +84,7 @@ final class CaptureTests: XCTestCase {
         let known = before
         let pasteboard = NSPasteboard.general
         let changeCount = pasteboard.changeCount
+        let notes = E2E.app.capture!.copiedNote.shown
         try await LiveCapture.start(.captureToClipboard)
         let scale = LiveCapture.mainScreen.backingScaleFactor
         let panel = try LiveCapture.panel(on: LiveCapture.mainScreen)
@@ -96,6 +97,7 @@ final class CaptureTests: XCTestCase {
         XCTAssertEqual(Double(copied.height), 300 * scale, accuracy: 1)
         let (item, _) = try await LiveCapture.waitForCapture(since: known)
         XCTAssertEqual(item.capturedBy, .person, "in history too")
+        XCTAssertEqual(E2E.app.capture!.copiedNote.shown, notes + 1, "the copy is confirmed on screen")
         XCTAssertEqual(item.size, PixelSize(width: copied.width, height: copied.height))
         await E2E.settle(300)
         XCTAssertTrue(E2E.editors.windows.isEmpty, "no editor")
