@@ -46,7 +46,8 @@ let package = Package(
         .target(name: "ExhibitShell", dependencies: ["ExhibitCore", "ExhibitStore"]),
         // The editor's brain: tools, keys, gestures, snapping, selection, undo, and the one owner of an open
         // capture's document. No AppKit, so all of it is tested here; the app draws it and forwards events.
-        .target(name: "ExhibitEditor", dependencies: ["ExhibitCore", "ExhibitStore", "ExhibitShell"]),
+        .target(name: "ExhibitEditor", dependencies: ["ExhibitCore", "ExhibitStore", "ExhibitShell", "ExhibitInterpret",
+                                                      "ExhibitPlanning"]),
         // The capture bridge: the CLI asks the running app for live captures over a Unix socket. The protocol, the
         // socket server and client, and the agent capture pipeline behind a capture provider. No AppKit.
         .target(name: "ExhibitBridge", dependencies: ["ExhibitCore", "ExhibitStore", "ExhibitShell", "ExhibitTargets"]),
@@ -57,7 +58,8 @@ let package = Package(
         .testTarget(name: "ExhibitStoreTests", dependencies: ["ExhibitStore", "ExhibitCore", "ExhibitFixtures"]),
         .testTarget(name: "ExhibitShellTests", dependencies: ["ExhibitShell", "ExhibitStore", "ExhibitCore"]),
         .testTarget(name: "ExhibitEditorTests",
-                    dependencies: ["ExhibitEditor", "ExhibitCore", "ExhibitStore", "ExhibitShell", "ExhibitFixtures"]),
+                    dependencies: ["ExhibitEditor", "ExhibitCore", "ExhibitStore", "ExhibitShell", "ExhibitFixtures",
+                                   "ExhibitInterpret", "ExhibitPlanning", "ExhibitCLI"]),
         .testTarget(name: "ExhibitBridgeTests",
                     dependencies: ["ExhibitBridge", "ExhibitShell", "ExhibitStore", "ExhibitCore", "ExhibitFixtures"]),
         .testTarget(name: "ExhibitInterpretTests", dependencies: ["ExhibitInterpret", "ExhibitCore"]),
