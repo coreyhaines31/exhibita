@@ -16,7 +16,7 @@ settings:
     ARCHS: "arm64 x86_64"
     # Sparkle's EdDSA public key for this app. The private key stays in the release Mac's login Keychain under the
     # "exhibita" account (docs/release/RELEASING.md); Scripts/release.sh refuses to run while this is a placeholder.
-    SPARKLE_PUBLIC_ED_KEY: REPLACE_WITH_SPARKLE_PUBLIC_ED_KEY
+    SPARKLE_PUBLIC_ED_KEY: D7GjEHZVyf5ibp7dCj1RwK/8a04Srfv1/EkSu0kY3VI=
 packages:
   ExhibitCore:
     path: Packages/ExhibitCore
