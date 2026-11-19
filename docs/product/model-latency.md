@@ -62,3 +62,21 @@ After the changes, a warm model on a new screen still spends about 4.5 s reading
 - The llama.cpp runner, which may resume from any prefix and so make repeated instructions on one screen cheap.
 - LM Studio and llama.cpp servers with the new `/v1` switches: only Ollama's `/v1` was checked. A server that refuses them gets the request again without them.
 - Held-out 2 with these changes: not rerun.
+
+## Smaller models (2026-11-18)
+
+Same development file (`instructions.json`, `--split all`, 62 instructions), same Mac, shortened listing, one run each. The grammar answers 38 of the 62 in every row; the model answers the rest.
+
+| Model | Download | Exact, all 62 | Exact, of the model's own answers | Missed redaction targets | Model step median | Model step p90 |
+|---|---|---|---|---|---|---|
+| `qwen3.8:27b` | 18 GB | 58 (94%) | about 21 of 24 | 0 | 6.7 to 7.3 s | 9.4 to 13.9 s |
+| `ornith-1.5:9b` | 6.6 GB | 52 (84%) | 15 of 24 | 1, semantic | 2.2 s | 3.1 s |
+| `bonsai-2:4b` | 1.6 GB | 42 (68%) | 5 of 19, 5 declined | 6 | 1.8 s | 2.2 s |
+| Bar | | 85% on held-out | | 0 kind or literal | 3 s | 10 s |
+
+- `ornith-1.5:9b` meets the speed bar and reads the listing about four times faster (984 tokens in 1.4 s). It gets the easy free-form cases and fails the ones that need reasoning across rows ("the customer that is past due", "the remove button for mei", "the biggest customer"), and on "hide anything that identifies the customer" it left one identifying line unblurred.
+- `bonsai-2:4b` is not usable: it reports most things as not found and missed six redaction targets.
+- No model tested meets both bars. The choice is speed with a 9B model or accuracy with a 27B one.
+- Not run on held-out 2, so these are development-set numbers and will flatter both.
+
+Raw rows: `eval/interpreter/results/A_then_model_ornith-1.5-9b-all.json`, `A_then_model_bonsai-2-4b-all.json`.
