@@ -14,7 +14,7 @@ The look is the Mac app family's Brushed design: `src/assets/brushed.css`, `font
 
 Screenshots in `src/assets/shots/` are WebP copies of the committed offscreen renders in `docs/samples/app/` and `docs/samples/`. When those renders change, re-export them (`cwebp -q 82 -resize 1200 0 in.png -o out.webp`).
 
-Copy rules: no em dashes anywhere user-facing, "free, source available" (never "open source"), and only what the app does today. Exhibit A is unreleased: the call to action is "Coming soon" and there is no download or GitHub link yet. `docs/release/site-launch.md` lists what changes at launch.
+Copy rules: no em dashes anywhere user-facing, "free, source available" (never "open source"), and only what the app does today. The calls to action link the latest release DMG (`{{download_url}}`, set in `scripts/build.py`), the source on GitHub and the Homebrew cask. `docs/release/site-launch.md` is the launch checklist.
 
 ## Preview
 

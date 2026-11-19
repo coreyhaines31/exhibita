@@ -13,8 +13,11 @@ layout = Template((source / 'layouts/base.html').read_text())
 partials = {name: (source / f'layouts/{name}.html').read_text().strip() for name in ('header', 'footer')}
 
 
+download_url = 'https://github.com/coreyhaines31/exhibita/releases/latest/download/ExhibitA.dmg'
+
+
 def fill(text):
-    return text
+    return text.replace('{{download_url}}', download_url)
 
 
 shared = {name: fill(partials[name]) for name in ('header', 'footer')}
@@ -30,6 +33,7 @@ app = {
     'operatingSystem': 'macOS 14 or later',
     'license': 'https://fsl.software/FSL-1.1-MIT.template.md',
     'image': site + 'og.png',
+    'downloadUrl': 'https://github.com/coreyhaines31/exhibita/releases/latest',
     'offers': {'@type': 'Offer', 'price': '0', 'priceCurrency': 'USD'},
 }
 
