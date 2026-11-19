@@ -1,0 +1,222 @@
+<section class="bx-hero hero" aria-labelledby="hero-title">
+  <div class="bx-wrap bx-hero-grid">
+    <div class="hero-copy">
+      <p class="bx-badge"><i aria-hidden="true"></i>Free · Source available · macOS 14+</p>
+      <h1 id="hero-title">Mark up a screenshot <span>in a few keystrokes.</span></h1>
+      <p class="bx-lede">Exhibit A is a menu bar screenshot tool. Press one key per mark, say what you want changed, or let an agent do it with one command. Emails, keys and card numbers blur so the pixels underneath are gone from the file.</p>
+      <div class="bx-cta">
+        <span class="bx-btn soon-btn">Coming soon</span>
+        <a class="bx-btn sec" href="#agents">See the command line <span aria-hidden="true">↓</span></a>
+      </div>
+      <p class="bx-meta">Free with no account · Captures stay on your Mac · macOS 14 Sonoma or later</p>
+    </div>
+    <figure class="stage" aria-labelledby="stage-caption">
+      <div class="bx-mount stage-mount">
+        <span class="bx-screw"></span><span class="bx-screw"></span><span class="bx-screw"></span><span class="bx-screw"></span>
+        <picture>
+          <source srcset="/shots/editor-applied-dark.webp" media="(prefers-color-scheme: dark)">
+          <img class="shot" src="/shots/editor-applied-light.webp" alt="The Exhibit A editor: a metal toolbar with one key per mark, a status line reading Blurred 1 email, circled Update plan, and a billing page with the email blurred and the Update plan button circled in red." width="1200" height="763">
+        </picture>
+      </div>
+      <figcaption id="stage-caption">The editor after “blur the emails and circle update plan”, rendered from the app’s code on a sample screen.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="bx-section problem" id="problem" aria-labelledby="problem-title">
+  <div class="bx-wrap problem-grid">
+    <div>
+      <span class="bx-eyebrow">The problem</span>
+      <h2 id="problem-title">Pointing at one thing takes too many clicks.</h2>
+    </div>
+    <div class="problem-copy">
+      <p>Take the screenshot, click the thumbnail, open Markup, hunt the toolbar for a shape. There’s still no quick way to hide an email before you send it.</p>
+      <p>Exhibit A opens the capture in place with every tool on one key, finds the text and the secrets in it, and copies the finished image when you press Return.</p>
+    </div>
+  </div>
+</section>
+
+<section class="bx-section" id="how" aria-labelledby="how-title">
+  <div class="bx-wrap">
+    <span class="bx-eyebrow">What it does</span>
+    <h2 id="how-title">Capture, mark, copy.</h2>
+    <p class="bx-intro">Every capture is one document: the image, the text and secrets found in it, and your marks. Hand, voice and the command line all write the same marks, and one renderer draws them.</p>
+    <div class="bx-grid">
+      <article class="bx-card"><span class="bx-led">By hand</span><h3>One key per mark</h3><p>A for an arrow, C for a circle, B for blur. Click a line of text and the mark snaps to it. ⇧B blurs every detected secret at once.</p></article>
+      <article class="bx-card"><span class="bx-led">By voice</span><h3>Hold D and say it</h3><p>“Blur the emails and circle pricing.” Speech becomes text on your Mac, and the marks appear where you can still move them.</p></article>
+      <article class="bx-card"><span class="bx-led">By agent</span><h3>One command</h3><p>An agent runs <code>exhibit</code> on a capture or any image file and gets back a finished PNG and a JSON report.</p></article>
+    </div>
+  </div>
+</section>
+
+<section class="bx-section" id="marks" aria-labelledby="marks-title">
+  <div class="bx-wrap marks-grid">
+    <div>
+      <span class="bx-eyebrow">Marks</span>
+      <h2 id="marks-title">Seven marks, one key each.</h2>
+      <p class="bx-intro">Press the hotkey, drag a region (Space picks a window, Return takes the whole screen), then mark it up without reaching for a toolbar.</p>
+      <ul class="keys" aria-label="Editor keys">
+        <li><kbd>A</kbd>Arrow</li>
+        <li><kbd>C</kbd>Circle</li>
+        <li><kbd>B</kbd>Blur</li>
+        <li><kbd>H</kbd>Highlight</li>
+        <li><kbd>T</kbd>Text label</li>
+        <li><kbd>R</kbd>Box</li>
+        <li><kbd>N</kbd>Numbered step</li>
+        <li><kbd>⇧B</kbd>Blur every secret</li>
+        <li><kbd>1–4</kbd>Colour</li>
+        <li><kbd>⌘Z</kbd>Undo</li>
+        <li><kbd>↩</kbd>Copy and close</li>
+        <li><kbd>Esc</kbd>Close, kept in history</li>
+      </ul>
+      <p class="fine">Blur one email and point at a button: hotkey, drag, B, click, A, drag, ↩.</p>
+    </div>
+    <figure class="plate-figure">
+      <img src="/shots/all-marks.webp" alt="A sample billing page with all seven marks: two numbered steps, a box, a caption reading Click here with an arrow to Update plan, a circle around the price, a yellow highlight, a text label and blurred email and API key." width="1140" height="720" loading="lazy">
+      <figcaption>All seven marks on a sample screen, drawn by the renderer that hand, voice and the command line share.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="bx-section" id="hotkeys" aria-labelledby="hotkeys-title">
+  <div class="bx-wrap hotkeys-grid">
+    <div>
+      <span class="bx-eyebrow">Hotkeys</span>
+      <h2 id="hotkeys-title">Hotkeys that stay out of macOS’s way.</h2>
+      <p class="bx-intro">Two global hotkeys, both remappable. Capture and edit opens the editor in place. Capture to clipboard puts the image on the clipboard with no window, and it still lands in history to mark up later.</p>
+    </div>
+    <dl class="readings" aria-label="Default hotkeys">
+      <div><dt><code>⌥⇧4</code> and <code>⌃⌥⇧4</code></dt><dd>The defaults while macOS’s own screenshot shortcuts are on.</dd></div>
+      <div><dt><code>⌘⇧4</code> and <code>⌃⌘⇧4</code></dt><dd>Where they move once you turn macOS’s shortcuts off. Exhibit A links to that setting and never changes it for you.</dd></div>
+    </dl>
+  </div>
+</section>
+
+<section class="bx-section" id="voice" aria-labelledby="voice-title">
+  <div class="bx-wrap honest-grid">
+    <div>
+      <span class="bx-eyebrow">Voice</span>
+      <h2 id="voice-title">Say what to change.</h2>
+      <p class="bx-intro">Hold D, say it, let go. Speech is turned into text on your Mac. Press / to type the same instruction instead.</p>
+      <ul class="facts">
+        <li><b>No model needed for plain commands.</b> A built-in grammar knows the seven marks, the kinds of secret and the words on the screen.</li>
+        <li><b>A local model for the rest, if you want one.</b> Point Settings at a model server on this Mac (Ollama or OpenAI-compatible API, loopback only). It gets your words and a list of what’s on screen, never the image.</li>
+        <li><b>Never guesses quietly.</b> It names every mark it made and what it couldn’t find. One ⌘Z removes the whole batch.</li>
+      </ul>
+    </div>
+    <dl class="readings" aria-label="What you can say">
+      <div><dt><code>blur the emails</code></dt><dd>Every email on the screen blurred.</dd></div>
+      <div><dt><code>circle Pricing and point at Sign up</code></dt><dd>A circle on “Pricing” and an arrow to “Sign up”.</dd></div>
+      <div><dt><code>highlight this</code></dt><dd>The line of text under the pointer.</dd></div>
+      <div><dt><code>hide anything that identifies the customer</code></dt><dd>Needs judgement, so it goes to your local model. With none set up, nothing changes and Exhibit A says so.</dd></div>
+      <div><dt><span class="bx-led ca">Couldn’t find: logout link</span></dt><dd>What it found is marked; what it didn’t is named.</dd></div>
+    </dl>
+  </div>
+</section>
+
+<section class="bx-section" id="agents" aria-labelledby="agents-title">
+  <div class="bx-wrap">
+    <span class="bx-eyebrow">For agents</span>
+    <h2 id="agents-title">One command, a finished image.</h2>
+    <p class="bx-intro">The <code>exhibit</code> command marks up a PNG, a JPEG or a capture from the app, writes a new PNG and prints one JSON object. Commands on files need no permissions and make no network calls.</p>
+    <div class="agents-grid">
+      <pre class="bx-code cli"><code>exhibit capture --window "Safari"
+exhibit targets shot.png
+exhibit blur shot.png --kind email --kind key
+exhibit arrow shot.png --to "Update plan" --label "Click here"
+exhibit say shot.png "blur the emails and circle pricing"
+exhibit mcp</code></pre>
+      <figure class="plate-figure">
+        <img src="/shots/cli-demo.webp" alt="A sample billing page marked up by the exhibit command: the price circled, an arrow with the caption Change your plan here pointing at Update plan, and the email and API key blurred." width="1140" height="720" loading="lazy">
+        <figcaption>Made by the <code>exhibit</code> command on a sample screen.</figcaption>
+      </figure>
+    </div>
+    <div class="bx-grid">
+      <article class="bx-card"><span class="bx-strip">targets</span><h3>Reads the screen as text</h3><p>Every line of text, email, key, card number, phone number and face, with its box, as JSON. An agent can find what to mark without image tokens. Secret values never appear in it.</p></article>
+      <article class="bx-card"><span class="bx-strip">Exit codes</span><h3>Fails out loud</h3><p>A selector that matches nothing is a non-zero exit naming it. Several matches for one circle is an error that lists them, unless you ask for all or the nth.</p></article>
+      <article class="bx-card"><span class="bx-strip">exhibit mcp</span><h3>MCP over the same commands</h3><p>A stdio MCP server with tools for targets, marks, a batch of marks, plain words, captures and handing a capture back to you. Add it as command <code>exhibit</code>, argument <code>mcp</code>.</p></article>
+    </div>
+    <p class="fine">Agent captures are visible: the menu bar icon blinks, history tags the capture “by agent”, and detected secrets are blurred before the agent gets the image. Text read from the screen is labelled as data, not instructions.</p>
+  </div>
+</section>
+
+<section class="bx-section bx-band" id="privacy" aria-labelledby="privacy-title">
+  <div class="bx-wrap">
+    <span class="bx-eyebrow">Privacy</span>
+    <h2 id="privacy-title">Your screen stays on your Mac.</h2>
+    <p class="bx-intro">No account, no analytics, no server of ours. Captures live in your Library for 30 days by default, outside Time Machine, and one click purges them.</p>
+    <div class="bx-grid">
+      <article class="bx-card"><h3>Blur that can’t be undone</h3><p>Exported files are flat pixels with no layers and no copy of the original. A blur is filled from pixels outside it, so what was under it isn’t in the file.</p></article>
+      <article class="bx-card"><h3>Never-capture list</h3><p>Password managers and Keychain Access are never captured, by you or an agent. In a wider capture their windows turn black with a label saying why.</p></article>
+      <article class="bx-card"><h3>Nothing leaves without you</h3><p>The update check is the app’s only request of its own; macOS may fetch its speech model once. A model endpoint must be on this Mac.</p></article>
+    </div>
+    <p class="band-link"><a href="/privacy/">Read the full privacy details <span aria-hidden="true">→</span></a></p>
+  </div>
+</section>
+
+<section class="bx-section" id="why">
+  <div class="bx-wrap">
+    <div class="bx-maker">
+      <img src="/corey-152.webp" srcset="/corey-76.webp 1x, /corey-152.webp 2x, /corey-228.webp 3x" alt="Corey Haines" width="76" height="76">
+      <div>
+        <span class="bx-strip">Why it exists</span>
+        <p>I share marked-up screenshots all day, and so do the agents working on my Mac. Every time it was the same routine: take the shot, open Markup, hunt for the arrow, and still no quick way to hide an email. When an agent wanted to show me something, it couldn’t point at all. So I built the app I wanted: one key per mark, a sentence when that’s faster, and a command an agent can run. And it’s free.</p>
+        <cite>Corey Haines, maker of Exhibit A and <a href="#apps">more free Mac apps</a></cite>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="bx-section" id="faq" aria-labelledby="faq-title">
+  <div class="bx-wrap">
+    <span class="bx-eyebrow">Questions</span>
+    <h2 id="faq-title">Before it ships.</h2>
+    <div class="bx-faq faq-list">
+      <details><summary>When can I get it?</summary><p>Exhibit A isn’t released yet. It’s built and unit tested, and still needs checking on a real Mac before the first release. The download will be on this page when it ships.</p></details>
+      <details><summary>What permissions does it need?</summary><p>Screen Recording, once, to take captures. The microphone and speech recognition only the first time you hold D. The <code>exhibit</code> command never has or asks for a permission; live captures come from the app.</p></details>
+      <details><summary>Can someone recover what I blurred?</summary><p>Not from an exported file. It’s flat pixels, and the blur is built only from pixels outside the blurred area. In the editor, marks stay editable until you export, so you can still move or remove a blur.</p></details>
+      <details><summary>Does voice need the internet?</summary><p>No. Speech is turned into text on your Mac, never on a server. The first time, macOS may need to download its speech model.</p></details>
+      <details><summary>Do I need an AI model?</summary><p>No. The built-in grammar handles plain commands like “blur the emails” or “circle Pricing”. Free-form requests need a model server you run on this Mac, set up in Settings. Exhibit A only accepts an address on this Mac.</p></details>
+      <details><summary>What does an agent get to see?</summary><p>The capture with detected secrets already blurred (a Settings switch), and text read from the screen marked as data, not instructions. Detection is pattern matching, so it can miss things. Never-capture apps are never in the image.</p></details>
+      <details><summary>How long are captures kept?</summary><p>30 days by default, so marks stay editable. Retention is a setting, including deleting a capture once you export it, and you can purge history at any time.</p></details>
+      <details><summary>What does it cost?</summary><p>Nothing. Exhibit A is free with no account. The source is available under the Functional Source License (FSL-1.1-MIT), and each version becomes MIT two years after release.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="bx-section get" id="install" aria-labelledby="install-title">
+  <div class="bx-wrap get-grid">
+    <div>
+      <span class="bx-eyebrow">Get Exhibit A</span>
+      <h2 id="install-title">Coming soon.</h2>
+      <p class="bx-intro">Free, with no account and no subscription. It needs macOS 14 Sonoma or later. The download and a Homebrew cask arrive with the first release.</p>
+      <div class="bx-cta">
+        <span class="bx-btn soon-btn">Coming soon</span>
+      </div>
+    </div>
+    <div class="bx-mount get-mount" aria-hidden="true">
+      <span class="bx-screw"></span><span class="bx-screw"></span><span class="bx-screw"></span><span class="bx-screw"></span>
+      <img src="/family/exhibit.webp" alt="" width="104" height="104">
+      <span class="bx-badge"><i></i>Exhibit A</span>
+    </div>
+  </div>
+</section>
+
+<section class="bx-section" id="apps" aria-labelledby="apps-title">
+  <div class="bx-wrap">
+    <span class="bx-eyebrow">From the same bench</span>
+    <h2 id="apps-title">More free Mac apps</h2>
+    <p class="bx-intro">Small, free menu bar apps that each answer one question about your Mac. Same look, same rules: nothing leaves your Mac, no account, no subscription.</p>
+    <div class="bx-apps">
+      <a href="https://fuelgauge.app"><img src="/family/fuel.webp" alt="" width="56" height="56"><div><b>Fuel Gauge</b><span>Know if you'll make it to reset</span></div></a>
+      <a href="https://spareformac.com"><img src="/family/spare.webp" alt="" width="56" height="56"><div><b>Spare</b><span>See what's using your Mac</span></div></a>
+      <a href="https://diskforecast.com"><img src="/family/disk.webp" alt="" width="56" height="56"><div><b>Disk Forecast</b><span>Know before your Mac runs out of space</span></div></a>
+      <a href="https://midnightoil.app"><img src="/family/oil.webp" alt="" width="56" height="56"><div><b>Midnight Oil</b><span>Keep your Mac awake</span></div></a>
+      <a href="https://wifiorisp.com"><img src="/family/wifi.webp" alt="" width="56" height="56"><div><b>WiFi or ISP</b><span>Is slow internet your Wi-Fi or your ISP?</span></div></a>
+      <a href="https://greenroomformac.com"><img src="/family/green.webp" alt="" width="56" height="56"><div><b>Green Room</b><span>Check your camera, mic, and speakers</span></div></a>
+      <a href="https://onhandformac.com"><img src="/family/hand.webp" alt="" width="56" height="56"><div><b>On Hand</b><span>Copy it once. Find it again.</span></div></a>
+      <a href="https://coatcheckformac.com"><img src="/family/coat.webp" alt="" width="56" height="56"><div><b>Coat Check</b><span>Reach the menu bar icons the notch hides</span></div></a>
+      <a href="https://killcord.app"><img src="/family/kill.webp" alt="" width="56" height="56"><div><b>Kill Cord</b><span>See your API spend before the bill does</span></div></a>
+    </div>
+  </div>
+</section>
