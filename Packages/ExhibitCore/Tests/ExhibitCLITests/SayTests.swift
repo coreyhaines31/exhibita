@@ -109,6 +109,28 @@ final class CannedModel: ModelTransport, @unchecked Sendable {
         #expect(try marks(result).count == 1)
     }
 
+    @Test func anUnknownNameWithoutAModelIsReportedBesideWhatWasDone() throws {
+        let bundle = try makeBundle()
+        let result = CLI.run(arguments: ["say", bundle.path, "blur the emails and circle the logout button"],
+                             environment: Self.noModel)
+        #expect(result.status == .success, "\(result.stderr)")
+        let body = try json(result.stdout)
+        #expect(body["interpreter"] as? String == "grammar")
+        #expect(body["notFound"] as? [String] == ["logout button"])
+        #expect(body["summary"] as? String == "Blurred 2 emails. Couldn't find: logout button.")
+        #expect(try marks(result).map { $0["kind"] as? String } == ["blur", "blur"])
+    }
+
+    @Test func anUnknownNameGoesToTheModelWhenOneIsSetUp() throws {
+        let bundle = try makeBundle()
+        let model = CannedModel(#"{"parts":[{"words":"the emails","mark":"blur","targets":["t4","t5"]}]}"#)
+        let result = CLI.run(arguments: ["say", bundle.path, "blur the emails and circle the logout button"],
+                             environment: [ModelOptions.modelVariable: "test-model"], transport: model)
+        #expect(result.status == .success, "\(result.stderr)")
+        #expect(model.calls == 1)
+        #expect(try json(result.stdout)["interpreter"] as? String == "model")
+    }
+
     @Test func nothingFoundExitsThreeAndWritesNothing() throws {
         let bundle = try makeBundle()
         let result = CLI.run(arguments: ["say", bundle.path, "blur the faces"], environment: Self.noModel)

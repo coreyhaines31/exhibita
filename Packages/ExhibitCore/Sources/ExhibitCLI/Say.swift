@@ -147,7 +147,9 @@ struct Say: ExhibitCommand {
     static func interpret(_ request: InterpretRequest, endpoint: ModelEndpoint?, transport: any ModelTransport) throws
         -> (Interpretation, String) {
         let reason: String
-        switch GrammarInterpreter.interpret(request) {
+        // With no model to try next, a name the screen does not show is reported as not found beside what was
+        // done, instead of declining the whole instruction.
+        switch GrammarInterpreter.interpret(request, unknownNames: endpoint == nil ? .reportNotFound : .decline) {
         case .understood(let interpretation): return (interpretation, "grammar")
         case .declined(let why): reason = why
         }
