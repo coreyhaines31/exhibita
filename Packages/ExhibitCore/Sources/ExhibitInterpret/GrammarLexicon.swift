@@ -41,6 +41,11 @@ enum GrammarLexicon {
                                        "title", "tab", "tabs", "column", "columns", "section", "icon", "icons",
                                        "menu", "option", "item", "items", "entry", "entries", "label"]
 
+    /// UI nouns that name a control: "the export button" is a short run of text on its own, not the word "export"
+    /// inside a sentence or a line of code.
+    static let controlNouns: Set<String> = ["button", "buttons", "link", "links", "tab", "tabs", "menu", "icon",
+                                            "icons", "option"]
+
     static let deictic: [[String]] = [["this"], ["that"], ["here"], ["it"], ["there"], ["this", "one"],
                                       ["that", "one"], ["this", "bit"], ["this", "part"]]
 

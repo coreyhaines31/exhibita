@@ -36,6 +36,7 @@ struct GrammarMatcher {
         var words = phrase
         var every = false
         var possessive = false
+        var control = false
         while let first = words.first,
               GrammarLexicon.determiners.contains(first) || GrammarLexicon.everyWords.contains(first) {
             every = every || GrammarLexicon.everyWords.contains(first)
@@ -48,10 +49,11 @@ struct GrammarMatcher {
         }
         if let last = words.last, words.count > 1, GrammarLexicon.uiNouns.contains(last) {
             every = every || last.hasSuffix("s")
+            control = GrammarLexicon.controlNouns.contains(last)
             words.removeLast()
         }
         if let reason = qualifiedKind(words, possessive: possessive, for: mark) { return .decline(reason) }
-        let result = lookUp(words, for: mark, every: every || isPlural(words))
+        let result = lookUp(words, for: mark, every: every || isPlural(words), control: control)
         // Named in the person's words, UI noun and all: "pricing button", not "pricing".
         if case .unmatched = result {
             let named = phrase.drop { GrammarLexicon.determiners.contains($0) || GrammarLexicon.everyWords.contains($0) }
@@ -78,7 +80,11 @@ struct GrammarMatcher {
         return "\"\(phrase)\" qualifies a kind, which needs judgement"
     }
 
-    private func lookUp(_ words: [String], for mark: MarkKind, every: Bool) -> ItemResult {
+    /// `control` is set when the phrase ended in a control noun ("the export button"): a mark other than blur then
+    /// takes only lines that read like a control (`readsLikeControl`), so a lone "export" inside a line of code is
+    /// not found rather than marked. A blur is unchanged, because a redaction may cover too much but never too
+    /// little.
+    private func lookUp(_ words: [String], for mark: MarkKind, every: Bool, control: Bool) -> ItemResult {
         let kinds = GrammarLexicon.kinds.first { Words.equal($0.words, words) }?.kinds
         let exact = lines.filter { Words.equal($0.words, words) }.map(\.target)
         // Redaction goes to values, so a kind wins over a label that happens to read "Email".
@@ -86,9 +92,14 @@ struct GrammarMatcher {
             let found = targets.filter { kinds.contains($0.kind) }
             return found.isEmpty ? .notFound(words.joined(separator: " ")) : .kinds(kinds)
         }
-        if mark == .blur || mark == .highlight { return lookUpEvery(words, redacting: mark == .blur) }
+        if mark == .blur || mark == .highlight {
+            return lookUpEvery(words, redacting: mark == .blur, control: control && mark != .blur)
+        }
         if let result = choose(exact, for: mark, every: every, phrase: words) { return result }
-        let containing = lines.filter { Words.contains($0.words, words) }.map(\.target)
+        let containing = lines.filter { line in
+            Words.contains(line.words, words) && (!control || Self.readsLikeControl(line.target, words: line.words,
+                                                                                    phrase: words))
+        }.map(\.target)
         if let result = choose(containing, for: mark, every: every, phrase: words) { return result }
         if let near = closeMatch(words) { return .targets([near]) }
         return unplaced(words)
@@ -98,10 +109,12 @@ struct GrammarMatcher {
     /// watanabe" must hide the message headers that start with the name too. A blur also takes lines where the
     /// phrase is part of a longer word, and every line with a close mis-hearing of it, because a redaction may
     /// cover too much but must never cover too little.
-    private func lookUpEvery(_ words: [String], redacting: Bool) -> ItemResult {
+    private func lookUpEvery(_ words: [String], redacting: Bool, control: Bool) -> ItemResult {
         let phrase = words.joined(separator: " ")
         let found = lines.filter { line in
-            if Words.contains(line.words, words) { return true }
+            if Words.contains(line.words, words) {
+                return !control || Self.readsLikeControl(line.target, words: line.words, phrase: words)
+            }
             return redacting && phrase.count >= 3 && line.words.joined(separator: " ").contains(phrase)
         }.map(\.target)
         let wrapped = wrappedLines(words)
@@ -145,6 +158,20 @@ struct GrammarMatcher {
         guard starts.count == 1, let start = starts.first else { return .id(target.id) }
         let first = ranges[start], last = ranges[start + phrase.count - 1]
         return .part(target.id, start: first.location, length: NSMaxRange(last) - first.location)
+    }
+
+    /// Whether a line holding `phrase` reads like a control's label: a short run of text, with at most three words
+    /// besides the phrase ("Export", "Export CSV", "Pricing · Docs · Sign out"), that does not look like code.
+    static func readsLikeControl(_ line: Target, words: [String], phrase: [String]) -> Bool {
+        words.count <= phrase.count + 3 && !looksLikeCode(line.text ?? "")
+    }
+
+    /// Text that reads as code or a shell line: an assignment, braces, a prompt, a path from home, or an
+    /// identifier with underscores. "export API_TOKEN=..." is a command, not an Export button.
+    static func looksLikeCode(_ text: String) -> Bool {
+        let markers = ["=", "{", "}", ";", "()", "~/", "`", "&&", " % ", " $ ", " # "]
+        if markers.contains(where: text.contains) || text.hasPrefix("$ ") { return true }
+        return text.split(separator: " ").contains { $0.contains("_") }
     }
 
     /// A whole line that differs from the phrase by a mis-hearing: "prising" for "Pricing", "in voices" for
