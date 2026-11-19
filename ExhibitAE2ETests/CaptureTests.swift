@@ -193,8 +193,6 @@ final class CaptureTests: XCTestCase {
     /// The overlay shows a still of every display at its own pixel size, Exhibit A's own window is in it, and
     /// what changes after the hotkey is not: the window is gone before the drag, and the capture still holds it.
     func testTheStillHoldsOwnWindowsAndNothingAfterTheHotkey() async throws {
-        let restore = try clearNeverCapture()
-        defer { restore() }
         let screen = LiveCapture.mainScreen
         let scale = Double(screen.backingScaleFactor)
         let window = LiveCapture.solidWindow(at: CGRect(x: screen.frame.minX + 200, y: screen.frame.minY + 200,
@@ -226,8 +224,6 @@ final class CaptureTests: XCTestCase {
 
     /// Space picks Exhibit A's own window too, cut out of the still at the window's frame.
     func testSpacePicksOwnWindowFromTheStill() async throws {
-        let restore = try clearNeverCapture()
-        defer { restore() }
         let screen = LiveCapture.mainScreen
         let scale = Double(screen.backingScaleFactor)
         let frame = CGRect(x: screen.frame.minX + 240, y: screen.frame.minY + 160, width: 400, height: 300)
@@ -250,16 +246,6 @@ final class CaptureTests: XCTestCase {
         XCTAssertGreaterThan(solid, 0.98, "the window's own pixels")
         print("E2E: own window pick \(image.width)x\(image.height) px, \(String(format: "%.3f", solid)) solid, mean "
               + "\(LiveCapture.meanColour(image))")
-    }
-
-    /// Empties the never-capture list until the returned closure puts it back. A listed app's window is blacked
-    /// out over its whole frame even where windows in front cover it (`Blackout`), so a password manager open
-    /// anywhere behind a test window would turn it black; these tests are about the freeze, not the list.
-    private func clearNeverCapture() throws -> () -> Void {
-        let policy = try XCTUnwrap(E2E.app.policy)
-        let listed = policy.policy.neverCapture
-        for app in listed { policy.remove(app) }
-        return { for app in listed { policy.add(app) } }
     }
 
     /// The panel stays open through the hotkey, a click on the overlay and Esc, and closes once a capture is taken.
@@ -349,12 +335,13 @@ final class CaptureTests: XCTestCase {
         let (item, _) = try await LiveCapture.waitForCapture(since: known)
         let image = try E2E.store.load(item.id).original
         let scale = Double(screen.backingScaleFactor)
+        // Only the window's visible part is black (issue 75); near its centre it is frontmost. The label sits on
+        // the centre line, so the patch is just above it.
         let display = LiveCapture.coreGraphicsFrame(of: screen)
-        let local = PixelRect(x: (window.frame.minX - display.minX + 4) * scale,
-                              y: (window.frame.minY - display.minY + 4) * scale,
-                              width: (window.frame.width - 8) * scale, height: (window.frame.height - 8) * scale)
+        let local = PixelRect(x: (point.x - display.minX - 40) * scale, y: (point.y - display.minY - 65) * scale,
+                              width: 80 * scale, height: 40 * scale)
         let black = LiveCapture.blackFraction(image, in: local)
-        XCTAssertGreaterThan(black, 0.95, "the listed app's window is blacked out")
+        XCTAssertGreaterThan(black, 0.95, "the listed app's window is blacked out where it shows")
         print("E2E: never-capture window area \(String(format: "%.3f", black)) black")
 
         known = before
@@ -368,6 +355,63 @@ final class CaptureTests: XCTestCase {
         await E2E.wait("the panel saying why") { E2E.app.statusItem?.isShown == true }
         await E2E.settle(300)
         XCTAssertTrue(LiveCapture.newCaptures(since: known).isEmpty, "the pick was not captured")
+    }
+
+    /// Issue 75: a listed app's window with our window in front of its left part. Ours shows as it was; the
+    /// rest of the listed window is black.
+    func testNeverCaptureBehindAnotherWindowShowsTheFrontOne() async throws {
+        let screen = LiveCapture.screenUnderPointer
+        guard let (listedWindow, point) = LiveCapture.pickableWindow(on: screen),
+              let app = NSRunningApplication(processIdentifier: listedWindow.ownerPID),
+              let bundleIdentifier = app.bundleIdentifier else {
+            throw XCTSkip("No other app's window is wholly on the display under the pointer")
+        }
+        let policy = try XCTUnwrap(E2E.app.policy)
+        let listed = NeverCaptureApp(name: app.localizedName ?? bundleIdentifier, bundleIdentifier: bundleIdentifier)
+        let hadIt = policy.policy.neverCapture.contains(listed)
+        policy.add(listed)
+        defer { if !hadIt { policy.remove(listed) } }
+
+        // Ours covers the listed window from 20 points past its left edge to 10 points short of its centre.
+        let display = LiveCapture.coreGraphicsFrame(of: screen)
+        let front = CGRect(x: listedWindow.frame.minX - 20, y: listedWindow.frame.minY - 20,
+                           width: listedWindow.frame.width / 2 + 10, height: listedWindow.frame.height + 40)
+            .intersection(display)
+        let window = LiveCapture.solidWindow(at: SelectionGeometry.cocoaRect(fromCoreGraphics: front,
+                                                                             mainDisplayHeight: LiveCapture.mainDisplayHeight))
+        defer { window.orderOut(nil) }
+        await E2E.settle(400)
+
+        let known = before
+        try await LiveCapture.start(.captureToClipboard)
+        LiveCapture.key(Events.returnKey, in: try LiveCapture.panel(on: screen))
+        let (item, _) = try await LiveCapture.waitForCapture(since: known)
+        let image = try E2E.store.load(item.id).original
+        let scale = Double(screen.backingScaleFactor)
+        let ours = CGRect(x: (front.minX - display.minX + 6) * scale, y: (front.minY - display.minY + 6) * scale,
+                          width: (front.width - 12) * scale, height: (front.height - 12) * scale)
+        let solid = LiveCapture.solidFraction(try XCTUnwrap(image.cropping(to: ours)))
+        XCTAssertGreaterThan(solid, 0.98, "our window in front of the listed one shows as it was")
+        // Just right of the centre and above the label's line.
+        let uncovered = PixelRect(x: (point.x - display.minX + 10) * scale, y: (point.y - display.minY - 65) * scale,
+                                  width: 40 * scale, height: 40 * scale)
+        let black = LiveCapture.blackFraction(image, in: uncovered)
+        XCTAssertGreaterThan(black, 0.95, "the uncovered part of the listed window is black")
+        print("E2E: never-capture window behind ours: ours \(String(format: "%.3f", solid)) solid, uncovered part "
+              + "\(String(format: "%.3f", black)) black")
+
+        // An agent's capture leaves Exhibit A's windows out, so ours covers nothing there: black under it too.
+        let number = try XCTUnwrap(NSScreen.screens.firstIndex(of: screen)) + 1
+        let result = try await E2E.exhibit(["capture", "--display", String(number)])
+        XCTAssertEqual(result.status, 0, LiveCapture.summary(result))
+        let path = try XCTUnwrap(result.json["image"] as? String)
+        let agent = try PNG.decode(Data(contentsOf: URL(fileURLWithPath: path)))
+        XCTAssertEqual((result.json["blackedOut"] as? [String])?.count, 1, "named once")
+        let underOurs = PixelRect(x: (listedWindow.frame.minX - display.minX + 10) * scale,
+                                  y: (point.y - display.minY - 65) * scale, width: 40 * scale, height: 40 * scale)
+        let agentBlack = LiveCapture.blackFraction(agent, in: underOurs)
+        XCTAssertGreaterThan(agentBlack, 0.95, "in an agent's capture the part under our window is black")
+        print("E2E: agent capture, listed window under our window \(String(format: "%.3f", agentBlack)) black")
     }
 
     // MARK: - The bridge
