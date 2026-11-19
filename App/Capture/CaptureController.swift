@@ -14,7 +14,7 @@ final class CaptureController {
 
     private let model: AppModel
     private let editors: EditorWindows
-    private let overlay = SelectionOverlay()
+    let overlay = SelectionOverlay()
     /// The never-capture list and auto-blur, read fresh for every capture.
     var policy: () -> CapturePolicy = { CapturePolicy() }
     /// Opens the panel: to explain the permission, or with a new capture selected.
@@ -67,7 +67,7 @@ final class CaptureController {
         await save(captured, action: action)
     }
 
-    private func save(_ captured: CapturedImage, action: HotkeyAction) async {
+    func save(_ captured: CapturedImage, action: HotkeyAction) async {
         let store = model.store
         let id = UUID()
         let item: HistoryItem

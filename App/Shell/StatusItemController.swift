@@ -5,7 +5,7 @@ import SwiftUI
 @MainActor
 final class StatusItemController {
     private static let autosaveName = "ExhibitA"
-    private let item: NSStatusItem
+    let item: NSStatusItem
     private let popover: NSPopover
     private let hosting: NSHostingController<PanelView>
     private let willShow: () -> Void
@@ -16,7 +16,8 @@ final class StatusItemController {
         UserDefaults.standard.register(defaults: ["NSStatusItem Preferred Position \(Self.autosaveName)": 1])
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         self.item = item
-        item.autosaveName = Self.autosaveName
+        // Under the end-to-end tests the item's position would be saved into the real app's settings.
+        if !TestSeam.isActive { item.autosaveName = Self.autosaveName }
         item.button?.image = Glyph.image()
         item.button?.toolTip = Brand.name
 
@@ -47,6 +48,8 @@ final class StatusItemController {
     }
 
     var isShown: Bool { popover.isShown }
+    /// The panel's content, for the end-to-end tests' events and pictures.
+    var panelView: NSView? { popover.contentViewController?.view }
 
     func show() {
         guard let button = item.button else { return }

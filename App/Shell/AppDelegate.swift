@@ -9,20 +9,22 @@ import PanelKit
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private nonisolated static let logger = Logger(subsystem: Brand.bundleIdentifier, category: "App")
 
-    private var model: AppModel?
-    private var statusItem: StatusItemController?
+    private(set) var model: AppModel?
+    private(set) var statusItem: StatusItemController?
     private var settingsWindow: SettingsWindow?
     private var hotkeys: HotkeyCenter?
-    private var capture: CaptureController?
-    private var editors: EditorWindows?
-    private var bridge: BridgeHost?
+    private(set) var capture: CaptureController?
+    private(set) var editors: EditorWindows?
+    private(set) var bridge: BridgeHost?
     private let updater = Updater()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Debug builds under the end-to-end tests: throwaway support directory and settings, before anything reads them.
+        TestSeam.applyDefaults()
         PanelFont.register()
-        LaunchAtLogin.applyDefault()
+        if !TestSeam.isActive { LaunchAtLogin.applyDefault() }
 
-        let store = CaptureStore(directory: (try? CaptureStore.defaultDirectory())
+        let store = CaptureStore(directory: (try? TestSeam.capturesDirectory())
             ?? FileManager.default.temporaryDirectory.appendingPathComponent("Exhibit A Captures"))
         do {
             try store.prepare()
@@ -45,11 +47,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         capture.policy = { [snapshot = policy.snapshot] in snapshot.current }
         self.capture = capture
         let hotkeys = HotkeyCenter { [weak self] action in
-            self?.refreshSystemState()
-            self?.statusItem?.close()
-            self?.capture?.start(action)
+            self?.hotkeyPressed(action)
         }
-        hotkeys.install(model.bindings)
+        // The tests call `hotkeyPressed` themselves: registering would take the keys from the real app.
+        if !TestSeam.isActive { hotkeys.install(model.bindings) }
         model.onBindingsChanged = { [weak hotkeys] in hotkeys?.apply($0) }
         self.hotkeys = hotkeys
 
@@ -79,6 +80,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Marks are saved within 100 ms of every change anyway; this writes the last few.
         editors?.flushAll()
         bridge?.stop()
+    }
+
+    /// What either global hotkey does.
+    func hotkeyPressed(_ action: HotkeyAction) {
+        refreshSystemState()
+        statusItem?.close()
+        capture?.start(action)
     }
 
     /// Live captures for `exhibit capture`, without the overlay and without moving focus.

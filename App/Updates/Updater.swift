@@ -7,7 +7,7 @@ import Sparkle
 final class Updater {
     static var isConfigured: Bool {
         let key = Bundle.main.object(forInfoDictionaryKey: "SUPublicEDKey") as? String ?? ""
-        return !key.isEmpty && !key.hasPrefix("REPLACE_WITH")
+        return !key.isEmpty && !key.hasPrefix("REPLACE_WITH") && !TestSeam.isActive
     }
 
     private let controller = SPUStandardUpdaterController(
