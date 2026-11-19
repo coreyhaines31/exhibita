@@ -15,6 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var hotkeys: HotkeyCenter?
     private var capture: CaptureController?
     private var editors: EditorWindows?
+    private var bridge: BridgeHost?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         PanelFont.register()
@@ -66,6 +67,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.statusItem = statusItem
         capture.showPanel = { [weak statusItem] in statusItem?.show() }
         editors.willOpen = { [weak statusItem] in statusItem?.close() }
+        startBridge(store: store, support: support, policy: policy, model: model)
 
         Task { await model.reload() }
     }
@@ -73,6 +75,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         // Marks are saved within 100 ms of every change anyway; this writes the last few.
         editors?.flushAll()
+        bridge?.stop()
+    }
+
+    /// Live captures for `exhibit capture`, without the overlay and without moving focus.
+    private func startBridge(store: CaptureStore, support: URL, policy: CapturePolicyModel, model: AppModel) {
+        let bridge = BridgeHost(store: store, supportDirectory: support, policy: policy.snapshot,
+                                present: { [weak self] id in
+                                    // `exhibit open`: the one place a capture is handed to the person.
+                                    guard let editors = self?.editors else { return false }
+                                    editors.open(id)
+                                    return true
+                                },
+                                didCapture: { [weak self] _ in
+                                    self?.statusItem?.flash()
+                                    await model.reload()
+                                })
+        bridge.start()
+        self.bridge = bridge
     }
 
     /// Permission and the system shortcuts can change in System Settings at any time. They are read again when

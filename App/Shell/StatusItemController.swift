@@ -61,4 +61,18 @@ final class StatusItemController {
     func close() {
         popover.performClose(nil)
     }
+
+    /// Blinks the glyph twice, so a person sees that an agent just captured the screen. Changes only the
+    /// button's opacity: nothing activates and focus stays where it is.
+    func flash() {
+        guard let button = item.button else { return }
+        Task { @MainActor in
+            for _ in 0..<2 {
+                button.alphaValue = 0.2
+                try? await Task.sleep(for: .milliseconds(160))
+                button.alphaValue = 1
+                try? await Task.sleep(for: .milliseconds(160))
+            }
+        }
+    }
 }
