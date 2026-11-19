@@ -15,6 +15,7 @@ TEST_RUNNER_EXHIBIT_RENDER_DIR="$out" xcodebuild -project ExhibitA.xcodeproj -sc
   -only-testing:ExhibitAViewTests/PanelRenderTests/testRendersThePanel \
   -only-testing:ExhibitAViewTests/PanelRenderTests/testRendersSettings \
   -only-testing:ExhibitAViewTests/PanelRenderTests/testRendersFreeFormSettings \
+  -only-testing:ExhibitAViewTests/PanelRenderTests/testRendersCommandLineAndUpdateSettings \
   -only-testing:ExhibitAViewTests/EditorRenderTests/testRendersTheEditor \
   -only-testing:ExhibitAViewTests/DictationRenderTests/testRendersDictation \
   test -quiet

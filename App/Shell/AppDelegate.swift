@@ -16,6 +16,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var capture: CaptureController?
     private var editors: EditorWindows?
     private var bridge: BridgeHost?
+    private let updater = Updater()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         PanelFont.register()
@@ -56,7 +57,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let policyActions = PolicyActions(runningApps: { AppPicker.runningApps() },
                                           chooseApp: { AppPicker.choose { policy.add($0) } })
         let settingsWindow = SettingsWindow(model: model, actions: actions, policy: policy,
-                                            policyActions: policyActions) { [weak self] in
+                                            policyActions: policyActions,
+                                            updates: updater.settings) { [weak self] in
             self?.refreshSystemState()
         }
         self.settingsWindow = settingsWindow

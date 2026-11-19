@@ -30,5 +30,11 @@
 	<string>Exhibit A listens only while you hold D in the editor, to turn what you say into marks. Audio stays on this Mac and is never saved.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Exhibit A turns what you say while holding D into text, on this Mac only, to mark up your capture. Audio is never sent anywhere or saved.</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://github.com/coreyhaines31/exhibita/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>$(SPARKLE_PUBLIC_ED_KEY)</string>
 </dict>
 </plist>
