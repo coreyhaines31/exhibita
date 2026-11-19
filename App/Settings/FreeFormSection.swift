@@ -27,7 +27,7 @@ struct FreeFormSection: View {
                 menuItems
             } label: {
                 Text("Model")
-                Text("Found on this Mac. Never sent anywhere else.")
+                Text("The models found on this Mac, or none.")
             }
             if model.settings.effectiveChoice == .other { otherFields }
             statusRow

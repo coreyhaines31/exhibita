@@ -19,7 +19,7 @@ import Testing
         #expect(dictation.editor.dictation == .needsModel(transcript: "hide anything that identifies the customer"))
         #expect(dictation.editor.dictation?.link == .modelSettings)
         #expect(dictation.editor.status.text?.contains("blur the emails") == true, "an example the grammar reads")
-        #expect(dictation.editor.status.text?.contains("none is set up. Choose one in Settings") == true)
+        #expect(dictation.editor.status.text?.contains("Needs a local model: choose one in Settings") == true)
         #expect(dictation.editor.marks.isEmpty)
     }
 

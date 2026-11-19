@@ -50,7 +50,7 @@ public enum ModelStatus: Equatable, Sendable {
         case let .using(model, server, _):
             "Using \(model) from \(server.name) on this Mac."
         case let .usingOther(model, endpoint):
-            "Using \(model) at \(endpoint). Test checks that it answers."
+            "Using \(model) at \(endpoint). Press Test to check that it answers."
         case .builtInOnly:
             "Built-in commands only. An instruction they can't read says so in the editor."
         case .noServer:
