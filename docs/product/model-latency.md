@@ -137,8 +137,40 @@ Not changed. Choosing targets or positions by the instruction's words would make
 
 ### Still unmeasured
 
-- Held-out 2 with the new chat shape and warming.
+- Held-out 2 for `gemma4:26b-nvfp4` and for the editor-open warm-up (held-out 2 with warming at D: `heldout2-results.md`).
 - A real dictation: the gap between D going down and the instruction reaching the model, measured in the app rather than assumed as 2 s.
 - OpenAI-compatible servers (LM Studio, llama.cpp's own server) with the new chat shape and the one-token warm-up.
 - A server running more than one request at a time (`OLLAMA_NUM_PARALLEL` above 1): the warm-up and the instruction would then run side by side and the instruction would gain nothing.
-- Models other than the two installed; see the report on issue 28 for candidates.
+- Models other than the three installed (see below for `gemma4:26b-nvfp4`).
+
+## `gemma4:26b-nvfp4` (2026-11-19)
+
+Pulled for issue 28: Gemma 4's 26B mixture-of-experts model (25.2B parameters, 3.8B active per token), in the nvfp4 tag so it runs on the MLX runner like `qwen3.8:27b` (`ollama ps`: `mlx`). 16 GB download. Same dev file, same Mac, the other models stopped first, three runs per mode.
+
+| Mode | Exact | Missed redaction, kind or literal | Missed redaction, semantic | Model step median | Model step p90 | First on screen | Warm-up itself |
+|---|---|---|---|---|---|---|---|
+| cold | 56/62 (90%) every run | 0 | 2 | 1.1 to 1.5 s | 1.7 to 3.1 s | 1.1 to 1.5 s | |
+| warmed 2 s ahead | 56/62 every run | 0 | 3 | 0.8 to 1.1 s | 1.1 to 3.8 s | 0.7 to 1.1 s | 0.7 to 1.0 s |
+| warmed 5 s ahead | 56/62 every run | 0 | 3 | 0.8 to 0.9 s | 1.3 to 1.5 s | 0.8 s | 0.8 s |
+
+- It reads the listing about five times faster than the 27B (about 1000 tokens in 0.6 to 1 s) and loads in 11.7 s. Memory in use (`ollama ps`): 16 GB once loaded, 24 GB after the eval's runs.
+- The warm-up reuse works on its runner: after a 0.7 s warm-up the instruction read 66 tokens (`matched=972 cached=972`).
+- The same five model instructions are wrong in every run (`billing-03`, `table-02`, `editor-03`, `pricing-04`, `team-04`). The semantic misses are all `billing-03`, "hide anything that identifies the customer": it blurs the email, phone and customer id but not the name or the card (warmed, one more).
+- Verdict: faster than `qwen3.8:27b` at every point, but less accurate and with missed semantic redactions, so `RecommendedModels` keeps `qwen3.8:27b` first and does not list it. Settings describes it from these numbers (`ModelGuide`).
+- The eval's model preload (an empty screen) got a prose answer from it, which used to abort the run; the preload's answer is now ignored.
+
+Raw rows: `results/A_then_model_gemma4-26b-nvfp4-all.json`, `..._warmed_2_s_ahead-all.json`, `..._warmed_5_s_ahead-all.json`.
+
+## Warming when an editor opens (2026-11-19)
+
+An editor that opens with its text read warms the screen at once, but only when the model in effect is already in the server's memory (Ollama's `GET /api/ps`; an OpenAI-compatible server has no such list and is never warmed at open), so opening a capture never loads a model. Otherwise the warm-up waits for D or the typed field as before.
+
+On the dev file this is the eval's `--warm 10 --if-loaded` (the model is loaded by the eval's preload, as it would be after an earlier instruction), one run of `qwen3.8:27b`:
+
+| Mode | Exact | Missed redaction, kind or literal | Missed redaction, semantic | Model step median | Model step p90 | First on screen |
+|---|---|---|---|---|---|---|
+| cold | 58/62 | 0 | 0 | 5.4 to 5.5 s | 7.3 s | 5.6 to 5.7 s |
+| warmed at D, 2 s ahead | 58/62 | 0 | 0 | 2.2 s | 4.6 to 4.7 s | 4.0 to 4.1 s |
+| warmed at open, 10 s ahead | 58/62 | 0 | 1 | 2.0 s | 2.9 s | 1.9 s |
+
+The first instruction on a screen goes from about 4 s (warmed at D) to about 2 s. The one semantic miss is `billing-03` leaving the card unblurred this run, an answer this model flips between runs (it was right in the six runs above); it does not come from the warm-up, whose request is the same as at D. Raw rows: `results/A_then_model_qwen3.8-27b_warmed_10_s_ahead_if_loaded-all.json`.
