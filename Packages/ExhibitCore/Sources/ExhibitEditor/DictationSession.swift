@@ -7,7 +7,8 @@ import Observation
 /// Push-to-talk and typed instructions for one open capture: hold D, speak, release; or press / and type.
 ///
 /// The grammar reads the instruction first. Only when it declines, and a local model is set up and turned on, is
-/// the model asked. The result is applied as one undo step through the same planning as `exhibit say`, and the
+/// the model asked. A model that can read the screen ahead is warmed up as soon as D goes down or the typed field
+/// opens. The result is applied as one undo step through the same planning as `exhibit say`, and the
 /// status line says what was done only after the marks exist. One instruction at a time: a second one while the
 /// first is still being worked on is refused with a message, never queued behind it or interleaved with it.
 @MainActor
@@ -72,6 +73,7 @@ public final class DictationSession {
             return
         }
         editor.commitText()
+        warmUpModel()
         isHeld = true
         self.pointer = pointer ?? editor.hoverPoint
         phase = .preparing
@@ -124,6 +126,7 @@ public final class DictationSession {
         guard phase == .idle else { return }
         editor.commitText()
         isTyping = true
+        warmUpModel()
     }
 
     public func endTyping() {
@@ -275,6 +278,15 @@ public final class DictationSession {
                                  byModel: byModel)
         if status.changedMarks, let releasedAt { lastReleaseToMarks = clock.now - releasedAt }
         finish(status)
+    }
+
+    /// The person has started an instruction: when a model is in effect and can read a screen ahead
+    /// (`ScreenWarming`), it starts reading this one now, while they speak or type, so its answer comes sooner if
+    /// the grammar declines. It never waits, and the grammar never waits on it; if the grammar answers, the
+    /// warm-up is simply unused. Once per screen (`ModelWarmUps`).
+    private func warmUpModel() {
+        guard editor.targetsLoaded, let warming = model() as? any ScreenWarming else { return }
+        warming.warmUp(editor.document.targets)
     }
 
     private func show(_ status: DictationStatus) {

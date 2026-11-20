@@ -26,6 +26,10 @@ struct Scored: Codable {
     var modelMilliseconds: Double?
     /// What the model server reported about that call: load, prompt and output times and token counts.
     var modelTimings: ModelTimings?
+    /// With `--warm`: the warm-up sent ahead of the model call (nil when the screen was already warm), from sending
+    /// it to its reply, and what the server reported about it.
+    var warmUpMilliseconds: Double?
+    var warmUpTimings: ModelTimings?
     /// Instructions whose answer is "not on the screen": reported as not found, with nothing marked in its place.
     var notFoundCorrect: Bool?
 }

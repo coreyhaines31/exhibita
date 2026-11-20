@@ -1,0 +1,1225 @@
+[
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "billing-01",
+    "instruction" : "Blur the emails",
+    "milliseconds" : 1.027709,
+    "missedRedactions" : 0,
+    "output" : "blur [kind email]",
+    "overRedactions" : 0,
+    "split" : "dev",
+    "tags" : [
+      "kind",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "billing-02",
+    "instruction" : "circle the plan price",
+    "milliseconds" : 4676.64075,
+    "modelMilliseconds" : 4675.374,
+    "modelTimings" : {
+      "loadSeconds" : 0.052868541,
+      "outputSeconds" : 0.697838334,
+      "outputTokens" : 25,
+      "promptSeconds" : 0.753972417,
+      "promptTokens" : 1147,
+      "totalSeconds" : 4.670738708
+    },
+    "output" : "circle [\"Pro plan $49/mo\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "circle"
+    ],
+    "warmUpMilliseconds" : 5223.475291,
+    "warmUpTimings" : {
+      "loadSeconds" : 0.0347945,
+      "outputSeconds" : 0.285713458,
+      "outputTokens" : 1,
+      "promptSeconds" : 4.892422917,
+      "promptTokens" : 1081,
+      "totalSeconds" : 5.218672375
+    }
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : false,
+    "id" : "billing-03",
+    "instruction" : "hide anything that identifies the customer",
+    "milliseconds" : 2904.4635,
+    "missedRedactions" : 0,
+    "modelMilliseconds" : 2904.444917,
+    "modelTimings" : {
+      "loadSeconds" : 0.001762375,
+      "outputSeconds" : 2.081755708,
+      "outputTokens" : 72,
+      "promptSeconds" : 0.809159542,
+      "promptTokens" : 1149,
+      "totalSeconds" : 2.899626666
+    },
+    "output" : "blur [\"Dana Whitfield\", email, phone, \"Customer ID cus_8841207\"]; blur [card, \"Expires 08/28\"]",
+    "overRedactions" : 1,
+    "split" : "dev",
+    "tags" : [
+      "semantic",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "billing-04",
+    "instruction" : "Point at Update plan and circle Cancel plan.",
+    "milliseconds" : 0.420125,
+    "output" : "arrow [\"Update plan\"]; circle [\"Cancel plan\"]",
+    "split" : "heldout",
+    "tags" : [
+      "multi",
+      "text",
+      "arrow",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "billing-05",
+    "instruction" : "highlight the total",
+    "milliseconds" : 0.427083,
+    "output" : "highlight [\"Total\" in a line]",
+    "split" : "dev",
+    "tags" : [
+      "semantic",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "billing-06",
+    "instruction" : "blur this",
+    "milliseconds" : 0.248208,
+    "missedRedactions" : 0,
+    "output" : "blur [\"Customer ID cus_8841207\"]",
+    "overRedactions" : 0,
+    "split" : "heldout",
+    "tags" : [
+      "deictic",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "billing-07",
+    "instruction" : "highlight the discount code",
+    "milliseconds" : 1334.2745839999998,
+    "modelMilliseconds" : 1332.9407919999999,
+    "modelTimings" : {
+      "loadSeconds" : 0.001078166,
+      "outputSeconds" : 0.761315417,
+      "outputTokens" : 23,
+      "promptSeconds" : 0.561931458,
+      "promptTokens" : 1147,
+      "totalSeconds" : 1.329027791
+    },
+    "notFoundCorrect" : true,
+    "output" : "not found: the discount code",
+    "split" : "heldout",
+    "tags" : [
+      "notfound",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "billing-08",
+    "instruction" : "put an arrow here",
+    "milliseconds" : 0.243417,
+    "output" : "arrow [\"Change card\"]",
+    "split" : "heldout",
+    "tags" : [
+      "deictic",
+      "arrow"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "billing-09",
+    "instruction" : "highlight the in voices heading",
+    "milliseconds" : 1.017459,
+    "output" : "highlight [\"Invoices\"]",
+    "split" : "dev",
+    "tags" : [
+      "speech",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "inbox-01",
+    "instruction" : "blur all the email addresses",
+    "milliseconds" : 0.392917,
+    "missedRedactions" : 0,
+    "output" : "blur [kind email]",
+    "overRedactions" : 0,
+    "split" : "dev",
+    "tags" : [
+      "kind",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "inbox-02",
+    "instruction" : "Circle the new annual price",
+    "milliseconds" : 0.540583,
+    "output" : "circle [\"new annual price\" in a line]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "inbox-03",
+    "instruction" : "box the reply button",
+    "milliseconds" : 0.403708,
+    "output" : "box [\"Reply\"]",
+    "split" : "dev",
+    "tags" : [
+      "text",
+      "box"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "inbox-04",
+    "instruction" : "blur the e mails",
+    "milliseconds" : 0.372625,
+    "missedRedactions" : 0,
+    "output" : "blur [kind email]",
+    "overRedactions" : 0,
+    "split" : "heldout",
+    "tags" : [
+      "speech",
+      "kind",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "inbox-05",
+    "instruction" : "number reply forward and archive",
+    "milliseconds" : 4.649958,
+    "output" : "step [\"Reply\", \"Forward\", \"Archive\"]",
+    "split" : "dev",
+    "tags" : [
+      "text",
+      "step"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "inbox-06",
+    "instruction" : "highlight the deadline",
+    "milliseconds" : 5721.4449159999995,
+    "modelMilliseconds" : 5719.991083,
+    "modelTimings" : {
+      "loadSeconds" : 0.050944625,
+      "outputSeconds" : 0.72874925,
+      "outputTokens" : 25,
+      "promptSeconds" : 0.752940959,
+      "promptTokens" : 1260,
+      "totalSeconds" : 5.717732708
+    },
+    "output" : "highlight [\"Please sign by November 30 so we can keep the discount.\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "highlight"
+    ],
+    "warmUpMilliseconds" : 6228.350584,
+    "warmUpTimings" : {
+      "loadSeconds" : 0.032453125,
+      "outputSeconds" : 0.307232875,
+      "outputTokens" : 1,
+      "promptSeconds" : 5.881476958,
+      "promptTokens" : 1195,
+      "totalSeconds" : 6.222816833
+    }
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "chat-01",
+    "instruction" : "blur the token",
+    "milliseconds" : 0.276917,
+    "missedRedactions" : 0,
+    "output" : "blur [kind key]",
+    "overRedactions" : 0,
+    "split" : "dev",
+    "tags" : [
+      "kind",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "chat-02",
+    "instruction" : "Redact the API key and the phone number.",
+    "milliseconds" : 0.391958,
+    "missedRedactions" : 0,
+    "output" : "blur [kind key, kind phone]",
+    "overRedactions" : 0,
+    "split" : "heldout",
+    "tags" : [
+      "kind",
+      "multi",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "chat-03",
+    "instruction" : "circle the message about the failing job",
+    "milliseconds" : 3998.8333340000004,
+    "modelMilliseconds" : 3998.81775,
+    "modelTimings" : {
+      "loadSeconds" : 0.052584875,
+      "outputSeconds" : 0.830968708,
+      "outputTokens" : 29,
+      "promptSeconds" : 0.759945916,
+      "promptTokens" : 1046,
+      "totalSeconds" : 3.995643
+    },
+    "output" : "circle [\"Wait, the payments job is still failing on retries.\"]",
+    "split" : "dev",
+    "tags" : [
+      "semantic",
+      "circle"
+    ],
+    "warmUpMilliseconds" : 4445.4073339999995,
+    "warmUpTimings" : {
+      "loadSeconds" : 0.025733125,
+      "outputSeconds" : 0.2568015,
+      "outputTokens" : 1,
+      "promptSeconds" : 4.157446084,
+      "promptTokens" : 977,
+      "totalSeconds" : 4.442057542
+    }
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "chat-04",
+    "instruction" : "highlight kenji's first message",
+    "milliseconds" : 1665.056208,
+    "modelMilliseconds" : 1663.276833,
+    "modelTimings" : {
+      "loadSeconds" : 0.001284291,
+      "outputSeconds" : 0.850198583,
+      "outputTokens" : 27,
+      "promptSeconds" : 0.801455292,
+      "promptTokens" : 1045,
+      "totalSeconds" : 1.658555166
+    },
+    "output" : "highlight [\"Staging is green. Ready to deploy to production?\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "chat-05",
+    "instruction" : "put an arrow on the deploy window",
+    "milliseconds" : 0.435,
+    "output" : "arrow [\"Deploy window\" in a line]",
+    "split" : "dev",
+    "tags" : [
+      "text",
+      "arrow"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "chat-06",
+    "instruction" : "blur kenji watanabe",
+    "milliseconds" : 0.42075,
+    "missedRedactions" : 0,
+    "output" : "blur [\"Kenji Watanabe 10:02 AM\", \"Kenji Watanabe 10:05 AM\", \"Kenji Watanabe\", \"Kenji Watanabe 10:10 AM\"]",
+    "overRedactions" : 0,
+    "split" : "heldout",
+    "tags" : [
+      "text",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "chat-07",
+    "instruction" : "highlight that",
+    "milliseconds" : 0.2575,
+    "output" : "highlight [\"Fixed in #4821. Deploy window is 2:00 PM today.\"]",
+    "split" : "dev",
+    "tags" : [
+      "deictic",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "table-01",
+    "instruction" : "blur the email column",
+    "milliseconds" : 0.261541,
+    "missedRedactions" : 0,
+    "output" : "blur [kind email]",
+    "overRedactions" : 0,
+    "split" : "dev",
+    "tags" : [
+      "kind",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "table-02",
+    "instruction" : "highlight the customer that is past due",
+    "milliseconds" : 5319.518708,
+    "modelMilliseconds" : 5319.502291,
+    "modelTimings" : {
+      "loadSeconds" : 0.051908125,
+      "outputSeconds" : 0.922426084,
+      "outputTokens" : 29,
+      "promptSeconds" : 0.756904583,
+      "promptTokens" : 1203,
+      "totalSeconds" : 5.314924083
+    },
+    "output" : "highlight [\"Driftwood Media\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "highlight"
+    ],
+    "warmUpMilliseconds" : 5723.580041,
+    "warmUpTimings" : {
+      "loadSeconds" : 0.038333791,
+      "outputSeconds" : 0.284040667,
+      "outputTokens" : 1,
+      "promptSeconds" : 5.393238292,
+      "promptTokens" : 1134,
+      "totalSeconds" : 5.718200333
+    }
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : false,
+    "id" : "table-03",
+    "instruction" : "circle the total",
+    "milliseconds" : 0.274875,
+    "output" : "circle [\"Total\"]",
+    "split" : "dev",
+    "tags" : [
+      "semantic",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "table-04",
+    "instruction" : "blur grace holloway and her email",
+    "milliseconds" : 2185.4255829999997,
+    "missedRedactions" : 0,
+    "modelMilliseconds" : 2184.821458,
+    "modelTimings" : {
+      "loadSeconds" : 0.001100917,
+      "outputSeconds" : 1.371179,
+      "outputTokens" : 49,
+      "promptSeconds" : 0.802293083,
+      "promptTokens" : 1203,
+      "totalSeconds" : 2.179831834
+    },
+    "output" : "blur [\"Grace Holloway\"]; blur [email]",
+    "overRedactions" : 0,
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "multi",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "table-05",
+    "instruction" : "box the cancelled account",
+    "milliseconds" : 1504.022958,
+    "modelMilliseconds" : 1502.5485410000001,
+    "modelTimings" : {
+      "loadSeconds" : 0.000704667,
+      "outputSeconds" : 0.944147416,
+      "outputTokens" : 26,
+      "promptSeconds" : 0.548488042,
+      "promptTokens" : 1200,
+      "totalSeconds" : 1.49943575
+    },
+    "output" : "box [\"Cancelled\"]",
+    "split" : "dev",
+    "tags" : [
+      "semantic",
+      "box"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "table-06",
+    "instruction" : "label the past due customer call them today",
+    "milliseconds" : 4.874875,
+    "output" : "text [\"Past due\"] label \"customer call them today\"",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "text"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "editor-01",
+    "instruction" : "blur all the secrets",
+    "milliseconds" : 0.280166,
+    "missedRedactions" : 0,
+    "output" : "blur [kind key]",
+    "overRedactions" : 0,
+    "split" : "heldout",
+    "tags" : [
+      "kind",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "editor-02",
+    "instruction" : "highlight the database url",
+    "milliseconds" : 0.432417,
+    "output" : "highlight [\"DATABASE_URL\" in a line]",
+    "split" : "dev",
+    "tags" : [
+      "text",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : false,
+    "id" : "editor-03",
+    "instruction" : "circle line 5",
+    "milliseconds" : 3789.161417,
+    "modelMilliseconds" : 3788.483292,
+    "modelTimings" : {
+      "loadSeconds" : 0.050863375,
+      "outputSeconds" : 0.829406792,
+      "outputTokens" : 26,
+      "promptSeconds" : 0.756405709,
+      "promptTokens" : 1026,
+      "totalSeconds" : 3.783938208
+    },
+    "output" : "circle [\"5\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "circle"
+    ],
+    "warmUpMilliseconds" : 4200.842541,
+    "warmUpTimings" : {
+      "loadSeconds" : 0.027184417,
+      "outputSeconds" : 0.23972275,
+      "outputTokens" : 1,
+      "promptSeconds" : 3.929114834,
+      "promptTokens" : 960,
+      "totalSeconds" : 4.197594125
+    }
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "editor-04",
+    "instruction" : "add a label saying rotate this next to the payments key",
+    "milliseconds" : 1740.552083,
+    "modelMilliseconds" : 1740.218791,
+    "modelTimings" : {
+      "loadSeconds" : 0.001947,
+      "outputSeconds" : 0.92883925,
+      "outputTokens" : 33,
+      "promptSeconds" : 0.799504167,
+      "promptTokens" : 1033,
+      "totalSeconds" : 1.734815459
+    },
+    "output" : "text [key] label \"rotate this\"",
+    "split" : "dev",
+    "tags" : [
+      "semantic",
+      "text"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : false,
+    "id" : "editor-05",
+    "instruction" : "Point to the SMTP password.",
+    "milliseconds" : 1501.5823750000002,
+    "modelMilliseconds" : 1501.328625,
+    "modelTimings" : {
+      "loadSeconds" : 0.001520042,
+      "outputSeconds" : 0.92744075,
+      "outputTokens" : 31,
+      "promptSeconds" : 0.564351833,
+      "promptTokens" : 1028,
+      "totalSeconds" : 1.498390583
+    },
+    "output" : "arrow [\"SMTP_PASSWORD=•••••••••••••••\", key]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "arrow"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "pricing-01",
+    "instruction" : "Circle Pricing",
+    "milliseconds" : 0.269709,
+    "output" : "circle [\"Pricing\"]",
+    "split" : "dev",
+    "tags" : [
+      "text",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "pricing-02",
+    "instruction" : "circle prising and point at sign up",
+    "milliseconds" : 0.990875,
+    "output" : "circle [\"Pricing\"]; arrow [\"Sign up\"]",
+    "split" : "heldout",
+    "tags" : [
+      "speech",
+      "multi",
+      "circle",
+      "arrow"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "pricing-03",
+    "instruction" : "highlight the most popular plan's price",
+    "milliseconds" : 3259.698874,
+    "modelMilliseconds" : 3259.682208,
+    "modelTimings" : {
+      "loadSeconds" : 0.053445458,
+      "outputSeconds" : 0.823077292,
+      "outputTokens" : 29,
+      "promptSeconds" : 0.760052,
+      "promptTokens" : 971,
+      "totalSeconds" : 3.255708208
+    },
+    "output" : "highlight [\"$49/mo\"]",
+    "split" : "dev",
+    "tags" : [
+      "semantic",
+      "highlight"
+    ],
+    "warmUpMilliseconds" : 3718.92,
+    "warmUpTimings" : {
+      "loadSeconds" : 0.028046958,
+      "outputSeconds" : 0.217571958,
+      "outputTokens" : 1,
+      "promptSeconds" : 3.468098917,
+      "promptTokens" : 902,
+      "totalSeconds" : 3.715281917
+    }
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "pricing-04",
+    "instruction" : "number the three plans",
+    "milliseconds" : 1845.86925,
+    "modelMilliseconds" : 1844.729167,
+    "modelTimings" : {
+      "loadSeconds" : 0.000968167,
+      "outputSeconds" : 1.03579175,
+      "outputTokens" : 36,
+      "promptSeconds" : 0.797250958,
+      "promptTokens" : 968,
+      "totalSeconds" : 1.8396915
+    },
+    "output" : "step [\"Starter\", \"Pro\", \"Enterprise\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "step"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "pricing-05",
+    "instruction" : "box the start free trial buttons",
+    "milliseconds" : 0.297958,
+    "output" : "box [\"Start free trial\", \"Start free trial\"]",
+    "split" : "dev",
+    "tags" : [
+      "text",
+      "box"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "pricing-06",
+    "instruction" : "circle the free trial button on the pro plan",
+    "milliseconds" : 1565.4961250000001,
+    "modelMilliseconds" : 1563.0118750000001,
+    "modelTimings" : {
+      "loadSeconds" : 0.00078625,
+      "outputSeconds" : 0.994126375,
+      "outputTokens" : 31,
+      "promptSeconds" : 0.561412834,
+      "promptTokens" : 973,
+      "totalSeconds" : 1.559314334
+    },
+    "output" : "circle [\"Start free trial\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "pricing-07",
+    "instruction" : "circle this",
+    "milliseconds" : 0.264416,
+    "output" : "circle [\"Contact sales\"]",
+    "split" : "dev",
+    "tags" : [
+      "deictic",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "pricing-08",
+    "instruction" : "circle sign op",
+    "milliseconds" : 0.798917,
+    "output" : "circle [\"Sign up\"]",
+    "split" : "heldout",
+    "tags" : [
+      "speech",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "dashboard-01",
+    "instruction" : "circle the churn rate",
+    "milliseconds" : 0.252792,
+    "output" : "circle [\"Churn rate\"]",
+    "split" : "dev",
+    "tags" : [
+      "semantic",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "dashboard-02",
+    "instruction" : "highlight the biggest customer",
+    "milliseconds" : 4078.488333,
+    "modelMilliseconds" : 4077.34275,
+    "modelTimings" : {
+      "loadSeconds" : 0.052706167,
+      "outputSeconds" : 0.953813333,
+      "outputTokens" : 31,
+      "promptSeconds" : 0.756150667,
+      "promptTokens" : 1043,
+      "totalSeconds" : 4.073013
+    },
+    "output" : "highlight [\"Bluefin Analytics\", \"$9,900\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "highlight"
+    ],
+    "warmUpMilliseconds" : 4452.05275,
+    "warmUpTimings" : {
+      "loadSeconds" : 0.031143292,
+      "outputSeconds" : 0.252946084,
+      "outputTokens" : 1,
+      "promptSeconds" : 4.1610445,
+      "promptTokens" : 977,
+      "totalSeconds" : 4.447443042
+    }
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "dashboard-03",
+    "instruction" : "point at open tickets and label it needs triage",
+    "milliseconds" : 0.276834,
+    "output" : "arrow [\"Open tickets\"] label \"needs triage\"",
+    "split" : "dev",
+    "tags" : [
+      "text",
+      "arrow"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "dashboard-04",
+    "instruction" : "highlight november",
+    "milliseconds" : 1442.0072499999999,
+    "modelMilliseconds" : 1441.274583,
+    "modelTimings" : {
+      "loadSeconds" : 0.001099125,
+      "outputSeconds" : 0.86930325,
+      "outputTokens" : 25,
+      "promptSeconds" : 0.558533708,
+      "promptTokens" : 1041,
+      "totalSeconds" : 1.438264208
+    },
+    "output" : "highlight [\"Nov\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "dashboard-05",
+    "instruction" : "circle the export button",
+    "milliseconds" : 1542.3385,
+    "modelMilliseconds" : 1541.6942920000001,
+    "modelTimings" : {
+      "loadSeconds" : 0.0008375,
+      "outputSeconds" : 0.719528708,
+      "outputTokens" : 23,
+      "promptSeconds" : 0.81213975,
+      "promptTokens" : 1043,
+      "totalSeconds" : 1.537125208
+    },
+    "notFoundCorrect" : true,
+    "output" : "not found: the export button",
+    "split" : "dev",
+    "tags" : [
+      "notfound",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "login-01",
+    "instruction" : "blur the e mail",
+    "milliseconds" : 0.08875,
+    "missedRedactions" : 0,
+    "output" : "blur [kind email]",
+    "overRedactions" : 0,
+    "split" : "dev",
+    "tags" : [
+      "speech",
+      "kind",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "login-02",
+    "instruction" : "arrow to forgot password",
+    "milliseconds" : 0.130958,
+    "output" : "arrow [\"Forgot password?\"]",
+    "split" : "heldout",
+    "tags" : [
+      "text",
+      "arrow"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "login-03",
+    "instruction" : "Box Sign in",
+    "milliseconds" : 0.124958,
+    "output" : "box [\"Sign in\"]",
+    "split" : "dev",
+    "tags" : [
+      "text",
+      "box"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "login-04",
+    "instruction" : "step one email step two password step three sign in",
+    "milliseconds" : 0.233292,
+    "output" : "step [\"Email\", \"Password\", \"Sign in\"]",
+    "split" : "heldout",
+    "tags" : [
+      "speech",
+      "step"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "login-05",
+    "instruction" : "box create account and circle the logout link",
+    "milliseconds" : 1745.056833,
+    "modelMilliseconds" : 1744.678625,
+    "modelTimings" : {
+      "loadSeconds" : 0.0008445,
+      "outputSeconds" : 0.932348417,
+      "outputTokens" : 33,
+      "promptSeconds" : 0.796868084,
+      "promptTokens" : 683,
+      "totalSeconds" : 1.739604959
+    },
+    "notFoundCorrect" : true,
+    "output" : "box [\"New here? Create account\"]; not found: the logout link",
+    "split" : "dev",
+    "tags" : [
+      "notfound",
+      "multi",
+      "box",
+      "circle"
+    ],
+    "warmUpMilliseconds" : 1471.924875,
+    "warmUpTimings" : {
+      "loadSeconds" : 0.043370666,
+      "outputSeconds" : 0.132815167,
+      "outputTokens" : 1,
+      "promptSeconds" : 1.291132167,
+      "promptTokens" : 613,
+      "totalSeconds" : 1.468833166
+    }
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "terminal-01",
+    "instruction" : "highlight the error",
+    "milliseconds" : 0.350917,
+    "output" : "highlight [\"Error\" in a line]",
+    "split" : "dev",
+    "tags" : [
+      "semantic",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "terminal-02",
+    "instruction" : "highlight the failed migration",
+    "milliseconds" : 3648.3067069999997,
+    "modelMilliseconds" : 3646.8412909999997,
+    "modelTimings" : {
+      "loadSeconds" : 0.052810292,
+      "outputSeconds" : 0.992414334,
+      "outputTokens" : 26,
+      "promptSeconds" : 0.758666458,
+      "promptTokens" : 980,
+      "totalSeconds" : 3.642454084
+    },
+    "output" : "highlight [\"Migration failed after 3 attempts\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "highlight"
+    ],
+    "warmUpMilliseconds" : 3948.138625,
+    "warmUpTimings" : {
+      "loadSeconds" : 0.031607375,
+      "outputSeconds" : 0.243621833,
+      "outputTokens" : 1,
+      "promptSeconds" : 3.667454625,
+      "promptTokens" : 914,
+      "totalSeconds" : 3.944446958
+    }
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "terminal-03",
+    "instruction" : "box the commit that fixed the retry backoff",
+    "milliseconds" : 1630.684958,
+    "modelMilliseconds" : 1630.66425,
+    "modelTimings" : {
+      "loadSeconds" : 0.001314209,
+      "outputSeconds" : 0.821561791,
+      "outputTokens" : 30,
+      "promptSeconds" : 0.791363625,
+      "promptTokens" : 985,
+      "totalSeconds" : 1.625352875
+    },
+    "output" : "box [\"a91f3c2 Fix retry backoff in payments job\"]",
+    "split" : "dev",
+    "tags" : [
+      "semantic",
+      "box"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "terminal-04",
+    "instruction" : "blur this",
+    "milliseconds" : 0.226125,
+    "missedRedactions" : 0,
+    "output" : "blur [key]",
+    "overRedactions" : 0,
+    "split" : "heldout",
+    "tags" : [
+      "deictic",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "team-01",
+    "instruction" : "blur the faces",
+    "milliseconds" : 0.249792,
+    "notFoundCorrect" : true,
+    "output" : "not found: faces",
+    "split" : "dev",
+    "tags" : [
+      "notfound",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "team-02",
+    "instruction" : "circle the remove button for mei",
+    "milliseconds" : 4016.806834,
+    "modelMilliseconds" : 4015.490459,
+    "modelTimings" : {
+      "loadSeconds" : 0.052755041,
+      "outputSeconds" : 0.824102209,
+      "outputTokens" : 28,
+      "promptSeconds" : 0.762178958,
+      "promptTokens" : 1050,
+      "totalSeconds" : 4.01289925
+    },
+    "output" : "circle [\"Remove\"]",
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "circle"
+    ],
+    "warmUpMilliseconds" : 4460.786292,
+    "warmUpTimings" : {
+      "loadSeconds" : 0.028715833,
+      "outputSeconds" : 0.258422042,
+      "outputTokens" : 1,
+      "promptSeconds" : 4.168374209,
+      "promptTokens" : 982,
+      "totalSeconds" : 4.457421542
+    }
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "team-03",
+    "instruction" : "highlight the owner",
+    "milliseconds" : 0.28625,
+    "output" : "highlight [\"Owner\"]",
+    "split" : "dev",
+    "tags" : [
+      "semantic",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "team-04",
+    "instruction" : "blur everybody's emails except the pending invite",
+    "milliseconds" : 2082.9089169999997,
+    "missedRedactions" : 0,
+    "modelMilliseconds" : 2082.657542,
+    "modelTimings" : {
+      "loadSeconds" : 0.001068,
+      "outputSeconds" : 1.272123666,
+      "outputTokens" : 46,
+      "promptSeconds" : 0.8012145,
+      "promptTokens" : 1052,
+      "totalSeconds" : 2.079479959
+    },
+    "output" : "blur [email, email, email, email]",
+    "overRedactions" : 0,
+    "split" : "heldout",
+    "tags" : [
+      "semantic",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "team-05",
+    "instruction" : "point at invite member",
+    "milliseconds" : 0.242584,
+    "output" : "arrow [\"Invite member\"]",
+    "split" : "dev",
+    "tags" : [
+      "text",
+      "arrow"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "team-06",
+    "instruction" : "blur the credit card",
+    "milliseconds" : 0.213625,
+    "notFoundCorrect" : true,
+    "output" : "not found: credit card",
+    "split" : "heldout",
+    "tags" : [
+      "notfound",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "team-07",
+    "instruction" : "blur the emails and circle the log out button",
+    "milliseconds" : 2414.2654159999997,
+    "missedRedactions" : 0,
+    "modelMilliseconds" : 2413.558333,
+    "modelTimings" : {
+      "loadSeconds" : 0.000865083,
+      "outputSeconds" : 1.837182667,
+      "outputTokens" : 66,
+      "promptSeconds" : 0.569140875,
+      "promptTokens" : 1053,
+      "totalSeconds" : 2.410341958
+    },
+    "notFoundCorrect" : true,
+    "output" : "blur [email, email, email, email, email]; not found: the log out button",
+    "overRedactions" : 0,
+    "split" : "heldout",
+    "tags" : [
+      "notfound",
+      "multi",
+      "kind",
+      "blur",
+      "circle"
+    ]
+  }
+]
