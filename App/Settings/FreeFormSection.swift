@@ -135,6 +135,9 @@ struct FreeFormSection: View {
             Text("\(Image(systemName: Self.symbol(for: status))) \(status.message)")
                 .foregroundStyle(status.isProblem ? Color.orange : Color.primary)
                 .fixedSize(horizontal: false, vertical: true)
+            if let description = model.modelDescription {
+                Text(description).fixedSize(horizontal: false, vertical: true)
+            }
             if let command = status.command {
                 HStack(spacing: 6) {
                     Text(command).font(.system(size: 12).monospaced()).textSelection(.enabled)

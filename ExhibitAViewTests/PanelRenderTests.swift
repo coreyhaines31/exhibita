@@ -192,12 +192,13 @@ final class PanelRenderTests: XCTestCase {
     }
 
     /// Each state of "Instructions in your own words", on its own: the default in use with no click, no server,
-    /// a server with no models, a chosen model no longer installed, and Other.
+    /// a server with no models, a chosen model no longer installed, a model the eval never measured, and Other.
     func testRendersFreeFormSettings() throws {
         let ollama = URL(string: "http://127.0.0.1:11434")!
         let lmStudio = URL(string: "http://127.0.0.1:1234/v1")!
         let installed = Discovery(probes: [
-            .found(ModelServer(kind: .ollama, url: ollama, models: ["ornith-1.5:9b", "qwen3.8:27b"])),
+            .found(ModelServer(kind: .ollama, url: ollama, models: ["granite4.2:8b", "ornith-1.5:9b", "qwen3.8:27b"],
+                               details: ["granite4.2:8b": InstalledModel(parameterSize: "8.0B", bytes: 5_300_000_000)])),
             .notRunning(.openAICompatible, lmStudio)
         ])
         let nothing = Discovery(probes: [.notRunning(.ollama, ollama), .notRunning(.openAICompatible, lmStudio)])
@@ -210,6 +211,9 @@ final class PanelRenderTests: XCTestCase {
             ("settings-free-form-missing", FreeFormSettings(
                 settings: ModelSettings(choice: .installed(server: .ollama, url: ollama.absoluteString,
                                                            model: "llama3.2:3b")), discovery: installed)),
+            ("settings-free-form-unmeasured", FreeFormSettings(
+                settings: ModelSettings(choice: .installed(server: .ollama, url: ollama.absoluteString,
+                                                           model: "granite4.2:8b")), discovery: installed)),
             ("settings-free-form-other", FreeFormSettings(
                 settings: ModelSettings(endpoint: "http://127.0.0.1:8080/v1", model: "my-model", choice: .other),
                 discovery: installed))

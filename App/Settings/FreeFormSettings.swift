@@ -58,6 +58,9 @@ final class FreeFormSettings {
     /// The line under the picker.
     var status: ModelStatus { settings.status(discovery: discovery) }
 
+    /// What the model in use is good at, under the status line.
+    var modelDescription: String? { settings.modelDescription(discovery: discovery) }
+
     /// Looks for model servers on this Mac, off the main thread, and keeps what it finds. A look already under
     /// way is joined, not repeated. Runs when Settings opens, on Check Again, once at launch, and when an
     /// instruction needs a model and none was found.
