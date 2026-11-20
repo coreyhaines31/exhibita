@@ -1,6 +1,21 @@
 import ExhibitCore
 import Foundation
 
+/// One chat message for a model endpoint.
+public struct ModelMessage: Sendable, Equatable {
+    public enum Role: String, Sendable {
+        case system, user, assistant
+    }
+
+    public var role: Role
+    public var content: String
+
+    public init(role: Role, content: String) {
+        self.role = role
+        self.content = content
+    }
+}
+
 /// The prompt and answer format shared by every model-backed interpreter, so models are compared on equal terms.
 /// The model sees the target listing (refs, kinds, masked text, boxes) and the instruction; never the image.
 ///
@@ -45,8 +60,46 @@ public enum ModelPrompt {
     "mark": ..., "targets": [refs], "label": optional}]}.
     """
 
+    /// The whole prompt as one text, for a model that takes a single prompt (Apple's, in the eval).
     public static func prompt(for request: InterpretRequest, listing: TargetListing) -> String {
-        var lines = ["Screen:", listing.text]
+        [screen(listing), instruction(for: request, listing: listing)].joined(separator: "\n")
+    }
+
+    /// The chat a model endpoint is sent: the screen in one turn, a fixed reply, then the instruction (with the
+    /// pointer, and the answer format repeated) in its own turn. `warmUpMessages` are the first two of these, sent
+    /// when the person starts an instruction.
+    ///
+    /// The screen ends its turn so that a runner that resumes only from checkpoints (Ollama's MLX runner saves one
+    /// a few tokens before the end of each prompt) can resume after it: the warm-up's prompt ends inside the reply
+    /// turn's header, which this chat repeats, so the instruction is read on top of the screen
+    /// (`docs/product/model-latency.md`). With the instruction in the screen's turn, no warm-up could be reused.
+    public static func messages(for request: InterpretRequest, listing: TargetListing) -> [ModelMessage] {
+        warmUpMessages(listing) + [
+            ModelMessage(role: .assistant, content: readyReply),
+            ModelMessage(role: .user, content: instruction(for: request, listing: listing) + answerReminder)
+        ]
+    }
+
+    /// What is sent ahead of an instruction to have the model read the screen: the system prompt and the screen,
+    /// exactly as the instruction's own request begins. Nothing the request would not send.
+    public static func warmUpMessages(_ listing: TargetListing) -> [ModelMessage] {
+        [ModelMessage(role: .system, content: instructions + answerFormat),
+         ModelMessage(role: .user, content: screen(listing))]
+    }
+
+    static let readyReply = "Ready for the instruction."
+
+    /// The answer format again, right after the instruction. With the instruction in its own turn, a 9B model
+    /// (`ornith-1.5:9b`) lost the format or the "only what was asked" rule on three dev instructions; repeating
+    /// the format there brought it back to its one-turn accuracy, and the 27B model gained one.
+    static let answerReminder = "\n" + answerFormat.trimmingCharacters(in: .whitespacesAndNewlines)
+
+    static func screen(_ listing: TargetListing) -> String {
+        "Screen:\n" + listing.text
+    }
+
+    static func instruction(for request: InterpretRequest, listing: TargetListing) -> String {
+        var lines: [String] = []
         if let pointer = listing.pointerText(request.pointer) { lines.append(pointer) }
         lines.append("Instruction: \(request.instruction)")
         return lines.joined(separator: "\n")
@@ -57,6 +110,8 @@ public enum ModelPrompt {
     public static let maxParts = 4
     public static let maxTargets = 12
     public static let maxResponseTokens = 400
+    /// A warm-up only needs the screen read; one token is the least every server accepts.
+    public static let warmUpResponseTokens = 1
 
     /// Reads a model's JSON answer. Refs that are not in the listing are dropped, never guessed at; a part left
     /// with no known refs is reported as not found. Marks that do not exist are dropped, and so is a text part
