@@ -40,7 +40,9 @@ struct Runner {
     /// With `warmLead`, the editor's warm-up is sent first (`ModelInterpreter.warmUpNow`, at most once per screen as
     /// in the app) and the instruction follows that many seconds later, as if the person spoke for that long; the
     /// model step is timed from then, and the warm-up on its own.
-    func runChain(grammar: [Scored], model: ModelInterpreter, warmLead: Double? = nil) async -> [Scored] {
+    /// `ifLoaded` sends it only when the server already holds the model, as the editor does when it opens.
+    func runChain(grammar: [Scored], model: ModelInterpreter, warmLead: Double? = nil,
+                  ifLoaded: Bool = false) async -> [Scored] {
         var results: [Scored] = []
         let declined = grammar.filter { !$0.answered }.count
         var asked = 0
@@ -56,7 +58,7 @@ struct Runner {
             if let warmLead {
                 warmUp = Task.detached {
                     let start = clock.now
-                    let timings = try? model.warmUpNow(request.targets)
+                    let timings = !ifLoaded || model.isLoaded() ? try? model.warmUpNow(request.targets) : nil
                     return (Self.milliseconds(clock.now - start), timings ?? nil)
                 }
                 try? await Task.sleep(for: .seconds(warmLead))
