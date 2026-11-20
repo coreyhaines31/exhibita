@@ -16,6 +16,14 @@ public struct ModelHTTPResponse: Sendable, Equatable {
 /// synchronous code; tests inject a fake one so no real model runs in unit tests.
 public protocol ModelTransport: Sendable {
     func post(_ url: URL, body: Data, timeout: TimeInterval) throws -> ModelHTTPResponse
+    /// A `GET`, for asking a server what it has loaded. A transport that cannot throws `ModelError.unreachable`.
+    func get(_ url: URL, timeout: TimeInterval) throws -> ModelHTTPResponse
+}
+
+extension ModelTransport {
+    public func get(_ url: URL, timeout: TimeInterval) throws -> ModelHTTPResponse {
+        throw ModelError.unreachable("\(url.absoluteString) (GET is not supported)")
+    }
 }
 
 /// Loopback HTTP with URLSession: no proxy, no cache, no cookies, and no redirects, so a reply can never send the
@@ -111,12 +119,15 @@ public struct ModelInterpreter: Interpreter {
     public let transport: any ModelTransport
     /// Which screen was last warmed up; shared by every interpreter of the app unless a test passes its own.
     public let warmUps: ModelWarmUps
+    /// When this app last asked a model an instruction; shared likewise.
+    public let use: ModelUse
 
     public init(endpoint: ModelEndpoint, transport: any ModelTransport = URLSessionModelTransport(),
-                warmUps: ModelWarmUps = .shared) {
+                warmUps: ModelWarmUps = .shared, use: ModelUse = .shared) {
         self.endpoint = endpoint
         self.transport = transport
         self.warmUps = warmUps
+        self.use = use
     }
 
     public var name: String { "model" }
@@ -144,6 +155,7 @@ public struct ModelInterpreter: Interpreter {
     /// `interpretNow`, plus what the server reported about the call.
     public func interpretTimed(_ request: InterpretRequest) throws
         -> (outcome: InterpretOutcome, timings: ModelTimings?) {
+        use.record()
         let listing = TargetListing(request)
         let reply = try send(ModelPrompt.messages(for: request, listing: listing),
                              maxTokens: ModelPrompt.maxResponseTokens)
@@ -175,6 +187,9 @@ public struct ModelInterpreter: Interpreter {
 public protocol ScreenWarming: Sendable {
     /// Starts reading the screen in the background and returns at once. Never throws and never waits.
     func warmUp(_ targets: [Target])
+    /// The same, but only if this app used the model recently and it is still loaded in its server, so nothing new
+    /// is loaded into memory and a model loaded for other work is left alone. Returns at once.
+    func warmUpIfLoaded(_ targets: [Target])
 }
 
 extension ModelInterpreter: ScreenWarming {
@@ -188,6 +203,33 @@ extension ModelInterpreter: ScreenWarming {
     public func warmUp(_ targets: [Target]) {
         DispatchQueue.global(qos: .utility).async {
             _ = try? warmUpNow(targets)
+        }
+    }
+
+    /// `warmUp` for when an editor opens, only when this app asked the model an instruction in the last
+    /// `ModelUse.recentWindow` and the server still has it in memory (`isLoaded`). So the screen is read before the
+    /// person starts an instruction without loading a model, and someone who loaded the model for other work and
+    /// does not use it here gets no GPU work from Exhibit A and no keep-alive reset. Without recent use the server
+    /// is not even asked.
+    public func warmUpIfLoaded(_ targets: [Target]) {
+        guard use.isRecent() else { return }
+        DispatchQueue.global(qos: .utility).async {
+            guard isLoaded() else { return }
+            _ = try? warmUpNow(targets)
+        }
+    }
+
+    /// Whether the server has this model loaded now: Ollama's `GET /api/ps`, on this Mac only, with a one-second
+    /// timeout. False for an OpenAI-compatible server, which has no such list, and when anything fails.
+    public func isLoaded() -> Bool {
+        guard endpoint.api == .ollama else { return false }
+        let base = endpoint.chatURL.deletingLastPathComponent().deletingLastPathComponent()
+        guard let reply = try? transport.get(base.appendingPathComponent("api/ps"), timeout: 1), reply.status == 200,
+              let object = try? JSONSerialization.jsonObject(with: reply.body) as? [String: Any],
+              let models = object["models"] as? [[String: Any]] else { return false }
+        let wanted = endpoint.model.contains(":") ? [endpoint.model] : [endpoint.model, endpoint.model + ":latest"]
+        return models.contains { entry in
+            [entry["name"], entry["model"]].contains { ($0 as? String).map(wanted.contains) == true }
         }
     }
 
@@ -206,6 +248,35 @@ extension ModelInterpreter: ScreenWarming {
         } catch {
             warmUps.release(key)
             throw error
+        }
+    }
+}
+
+/// When this app run last asked a model an instruction (one the built-in commands declined; answered or not), so
+/// an editor opening warms the screen only for someone using the model here now.
+public final class ModelUse: @unchecked Sendable {
+    /// The one the app's interpreters share.
+    public static let shared = ModelUse()
+    public static let recentWindow: Duration = .seconds(600)
+
+    private let lock = NSLock()
+    private let now: @Sendable () -> ContinuousClock.Instant
+    private var last: ContinuousClock.Instant?
+
+    public init(now: @escaping @Sendable () -> ContinuousClock.Instant = { ContinuousClock.now }) {
+        self.now = now
+    }
+
+    /// The model step is running now.
+    public func record() {
+        lock.withLock { last = now() }
+    }
+
+    /// Whether the model was asked within `window`.
+    public func isRecent(within window: Duration = recentWindow) -> Bool {
+        lock.withLock {
+            guard let last else { return false }
+            return now() - last <= window
         }
     }
 }

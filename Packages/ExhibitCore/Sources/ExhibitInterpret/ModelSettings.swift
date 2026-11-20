@@ -92,6 +92,19 @@ public struct ModelSettings: Codable, Equatable, Sendable {
         }
     }
 
+    /// What the model in use is good at (`ModelGuide`), for the line under the status; nil when no model is in use.
+    public func modelDescription(discovery: Discovery?) -> String? {
+        switch status(discovery: discovery) {
+        case let .using(model, kind, _):
+            let installed = discovery?.servers.first { $0.kind == kind && $0.models.contains(model) }?.details[model]
+            return ModelGuide.description(of: model, installed: installed)
+        case let .usingOther(model, _):
+            return ModelGuide.description(of: model, installed: nil)
+        default:
+            return nil
+        }
+    }
+
     private func otherStatus() -> ModelStatus {
         guard !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return .otherIncomplete }
         do {

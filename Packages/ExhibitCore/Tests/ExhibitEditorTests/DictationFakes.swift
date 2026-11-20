@@ -122,10 +122,16 @@ class FakeModel: Interpreter, @unchecked Sendable {
 final class WarmingFakeModel: FakeModel, ScreenWarming, @unchecked Sendable {
     private let warmLock = NSLock()
     private var warmed: [[Target]] = []
+    private var warmedIfLoaded: [[Target]] = []
 
     var warmUps: [[Target]] { warmLock.withLock { warmed } }
+    var warmUpsIfLoaded: [[Target]] { warmLock.withLock { warmedIfLoaded } }
 
     func warmUp(_ targets: [Target]) {
         warmLock.withLock { warmed.append(targets) }
+    }
+
+    func warmUpIfLoaded(_ targets: [Target]) {
+        warmLock.withLock { warmedIfLoaded.append(targets) }
     }
 }

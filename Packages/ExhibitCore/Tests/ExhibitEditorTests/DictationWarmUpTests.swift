@@ -94,4 +94,45 @@ import Testing
         #expect(model.calls == 0, "the warm-up was left unused")
         #expect(dictation.editor.marks.count == 1)
     }
+
+    // MARK: - When the editor opens
+
+    @Test func openingAnEditorAsksForAWarmUpOnlyIfTheModelIsLoaded() {
+        let model = WarmingFakeModel(.success(.understood(Self.answer)))
+        let dictation = session(model)
+        dictation.editorOpened()
+        #expect(model.warmUpsIfLoaded == [dictation.editor.document.targets])
+        #expect(model.warmUps.isEmpty, "opening never loads a model")
+    }
+
+    @Test func openingWaitsForTheTextToBeRead() async {
+        let model = WarmingFakeModel(.success(.understood(Self.answer)))
+        let dictation = session(model, targetsLoaded: false)
+        dictation.editorOpened()
+        #expect(model.warmUpsIfLoaded.isEmpty)
+        dictation.editor.owner.mergeTargets(fixture.document.targets)
+        await until { model.warmUpsIfLoaded.count == 1 }
+        #expect(model.warmUpsIfLoaded.first == fixture.document.targets)
+    }
+
+    @Test func aClosedEditorWarmsNothingWhenItsTextArrives() async throws {
+        let model = WarmingFakeModel(.success(.understood(Self.answer)))
+        let dictation = session(model, targetsLoaded: false)
+        dictation.editorOpened()
+        dictation.close()
+        dictation.editor.owner.mergeTargets(fixture.document.targets)
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(model.warmUpsIfLoaded.isEmpty)
+    }
+
+    @Test func openingWithNoWarmableModelDoesNothing() async {
+        let lookups = Counter()
+        let lazy = LazyModelInterpreter {
+            await lookups.increment()
+            return nil
+        }
+        session(lazy).editorOpened()
+        session(nil).editorOpened()
+        #expect(await lookups.value == 0)
+    }
 }
