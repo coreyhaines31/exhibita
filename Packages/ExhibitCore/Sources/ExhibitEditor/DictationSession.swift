@@ -150,6 +150,23 @@ public final class DictationSession {
         interpret(text, pointer: pointer ?? editor.hoverPoint)
     }
 
+    // MARK: - Opening
+
+    /// The editor has opened. Once its text is read, a model in effect that the server already holds in memory
+    /// reads the screen (`ScreenWarming.warmUpIfLoaded`), so even the first instruction finds it read; a model
+    /// that is not loaded waits for D or the typed field, so opening a capture never loads one.
+    public func editorOpened() {
+        guard !closed else { return }
+        guard editor.targetsLoaded else {
+            withObservationTracking { _ = editor.targetsLoaded } onChange: { [weak self] in
+                Task { @MainActor in self?.editorOpened() }
+            }
+            return
+        }
+        guard let warming = model() as? any ScreenWarming else { return }
+        warming.warmUpIfLoaded(editor.document.targets)
+    }
+
     // MARK: - Closing and tests
 
     /// The window is closing: stop listening, drop any answer still coming, change nothing more.
