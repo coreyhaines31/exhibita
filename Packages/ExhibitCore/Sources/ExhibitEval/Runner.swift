@@ -36,7 +36,11 @@ struct Runner {
 
     /// What ships: the grammar's answers where it answered, and the model asked only where the grammar declined,
     /// as `exhibit say` does. The model step is timed on its own as well.
-    func runChain(grammar: [Scored], model: ModelInterpreter) async -> [Scored] {
+    ///
+    /// With `warmLead`, the editor's warm-up is sent first (`ModelInterpreter.warmUpNow`, at most once per screen as
+    /// in the app) and the instruction follows that many seconds later, as if the person spoke for that long; the
+    /// model step is timed from then, and the warm-up on its own.
+    func runChain(grammar: [Scored], model: ModelInterpreter, warmLead: Double? = nil) async -> [Scored] {
         var results: [Scored] = []
         let declined = grammar.filter { !$0.answered }.count
         var asked = 0
@@ -48,6 +52,15 @@ struct Runner {
             asked += 1
             let request = set.request(for: instruction)
             let clock = ContinuousClock()
+            var warmUp: Task<(Double, ModelTimings?), Never>?
+            if let warmLead {
+                warmUp = Task.detached {
+                    let start = clock.now
+                    let timings = try? model.warmUpNow(request.targets)
+                    return (Self.milliseconds(clock.now - start), timings ?? nil)
+                }
+                try? await Task.sleep(for: .seconds(warmLead))
+            }
             let start = clock.now
             let outcome: Result<InterpretOutcome, Error>
             var timings: ModelTimings?
@@ -64,9 +77,15 @@ struct Runner {
             scored.answeredBy = scored.answered ? "model" : nil
             scored.modelMilliseconds = milliseconds
             scored.modelTimings = timings
+            if let (warmMilliseconds, warmTimings) = await warmUp?.value, let warmTimings {
+                scored.warmUpMilliseconds = warmMilliseconds
+                scored.warmUpTimings = warmTimings
+            }
             log("grammar then model \(asked)/\(declined) \(instruction.id) "
                 + "\(scored.exact ? "ok" : scored.answered ? "WRONG" : "failed") \(Int(milliseconds)) ms"
-                + "\(timings.map { " (\(Report.timings($0)))" } ?? ""): \(scored.output)")
+                + "\(timings.map { " (\(Report.timings($0)))" } ?? "")"
+                + "\(scored.warmUpTimings.map { Report.warmUp(scored.warmUpMilliseconds, $0) } ?? "")"
+                + ": \(scored.output)")
             results.append(scored)
         }
         return results
@@ -180,6 +199,21 @@ enum Report {
             + "\(median(timings.compactMap(\.promptSeconds))) s, output "
             + "\(median(timings.compactMap(\.outputTokens).map(Double.init))) tokens in "
             + "\(median(timings.compactMap(\.outputSeconds))) s; \(reasoned) reasoned."
+            + warmUpBreakdown(rows)
+    }
+
+    /// " after warm-up 4452 ms (prompt 977 tokens 4.4 s, ...)", for the progress log.
+    static func warmUp(_ milliseconds: Double?, _ timings: ModelTimings) -> String {
+        " after warm-up \(Int(milliseconds ?? 0)) ms (\(Report.timings(timings)))"
+    }
+
+    /// The warm-ups' own cost, when any were sent.
+    static func warmUpBreakdown(_ rows: [Scored]) -> String {
+        let sent = rows.compactMap(\.warmUpMilliseconds).sorted()
+        guard !sent.isEmpty else { return "" }
+        let prompts = rows.compactMap { $0.warmUpTimings?.promptTokens }.map(Double.init).sorted()
+        return " \(sent.count) warm-ups, median \(format(percentile(sent, 0.5))) ms, max \(format(sent.last ?? 0)) ms, "
+            + "median prompt \(prompts.isEmpty ? "n/a" : format(percentile(prompts, 0.5))) tokens."
     }
 
     /// Missed targets over the answered instructions, and how many such instructions there were.
