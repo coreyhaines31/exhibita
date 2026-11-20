@@ -37,7 +37,8 @@ struct FreeFormSection: View {
             Label("Exhibit A looks for a model server only on this Mac (127.0.0.1). The model gets your words and the "
                   + "text read from the capture, with secrets masked; never the image. Nothing leaves this Mac. The "
                   + "text is sent when you start an instruction (press D or open the typed field), or when you open a "
-                  + "capture while the model is already loaded, even if a built-in command then answers. Timings "
+                  + "capture soon after using the model, while it is still loaded, even if a built-in command then "
+                  + "answers. Timings "
                   + "measured on an M4 Pro.",
                   systemImage: "lock.fill")
                 .font(.caption).foregroundStyle(.secondary)
