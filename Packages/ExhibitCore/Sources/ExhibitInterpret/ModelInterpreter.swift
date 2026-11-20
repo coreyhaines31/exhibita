@@ -16,6 +16,14 @@ public struct ModelHTTPResponse: Sendable, Equatable {
 /// synchronous code; tests inject a fake one so no real model runs in unit tests.
 public protocol ModelTransport: Sendable {
     func post(_ url: URL, body: Data, timeout: TimeInterval) throws -> ModelHTTPResponse
+    /// A `GET`, for asking a server what it has loaded. A transport that cannot throws `ModelError.unreachable`.
+    func get(_ url: URL, timeout: TimeInterval) throws -> ModelHTTPResponse
+}
+
+extension ModelTransport {
+    public func get(_ url: URL, timeout: TimeInterval) throws -> ModelHTTPResponse {
+        throw ModelError.unreachable("\(url.absoluteString) (GET is not supported)")
+    }
 }
 
 /// Loopback HTTP with URLSession: no proxy, no cache, no cookies, and no redirects, so a reply can never send the
@@ -175,6 +183,9 @@ public struct ModelInterpreter: Interpreter {
 public protocol ScreenWarming: Sendable {
     /// Starts reading the screen in the background and returns at once. Never throws and never waits.
     func warmUp(_ targets: [Target])
+    /// The same, but only if the model is already loaded in its server, so nothing new is loaded into memory.
+    /// Returns at once.
+    func warmUpIfLoaded(_ targets: [Target])
 }
 
 extension ModelInterpreter: ScreenWarming {
@@ -188,6 +199,29 @@ extension ModelInterpreter: ScreenWarming {
     public func warmUp(_ targets: [Target]) {
         DispatchQueue.global(qos: .utility).async {
             _ = try? warmUpNow(targets)
+        }
+    }
+
+    /// `warmUp` when the server already has this model in memory (`isLoaded`), for when an editor opens: the
+    /// screen is read before the person even starts an instruction, without loading a model they may not need.
+    public func warmUpIfLoaded(_ targets: [Target]) {
+        DispatchQueue.global(qos: .utility).async {
+            guard isLoaded() else { return }
+            _ = try? warmUpNow(targets)
+        }
+    }
+
+    /// Whether the server has this model loaded now: Ollama's `GET /api/ps`, on this Mac only, with a one-second
+    /// timeout. False for an OpenAI-compatible server, which has no such list, and when anything fails.
+    public func isLoaded() -> Bool {
+        guard endpoint.api == .ollama else { return false }
+        let base = endpoint.chatURL.deletingLastPathComponent().deletingLastPathComponent()
+        guard let reply = try? transport.get(base.appendingPathComponent("api/ps"), timeout: 1), reply.status == 200,
+              let object = try? JSONSerialization.jsonObject(with: reply.body) as? [String: Any],
+              let models = object["models"] as? [[String: Any]] else { return false }
+        let wanted = endpoint.model.contains(":") ? [endpoint.model] : [endpoint.model, endpoint.model + ":latest"]
+        return models.contains { entry in
+            [entry["name"], entry["model"]].contains { ($0 as? String).map(wanted.contains) == true }
         }
     }
 

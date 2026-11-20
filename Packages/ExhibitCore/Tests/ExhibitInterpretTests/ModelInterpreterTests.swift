@@ -7,10 +7,23 @@ import Testing
 final class FakeTransport: ModelTransport, @unchecked Sendable {
     private let lock = NSLock()
     private var sent: [(url: URL, body: Data)] = []
+    private var asked: [URL] = []
     private let answer: @Sendable (URL, Data) throws -> ModelHTTPResponse
+    private let getAnswer: (@Sendable (URL, TimeInterval) throws -> ModelHTTPResponse)?
 
-    init(answer: @escaping @Sendable (URL, Data) throws -> ModelHTTPResponse) {
+    init(answer: @escaping @Sendable (URL, Data) throws -> ModelHTTPResponse,
+         get: (@Sendable (URL, TimeInterval) throws -> ModelHTTPResponse)? = nil) {
         self.answer = answer
+        getAnswer = get
+    }
+
+    /// Every `GET` asked.
+    var gets: [URL] { lock.withLock { asked } }
+
+    func get(_ url: URL, timeout: TimeInterval) throws -> ModelHTTPResponse {
+        lock.withLock { asked.append(url) }
+        guard let getAnswer else { throw ModelError.unreachable(url.absoluteString) }
+        return try getAnswer(url, timeout)
     }
 
     /// Replies like Ollama's `/api/chat` with `content` as the model's message.

@@ -126,6 +126,68 @@ import Testing
     }
 }
 
+/// Which models the server holds in memory: Ollama's `/api/ps`, asked only of a loopback server.
+@Suite(.timeLimit(.minutes(1))) struct ModelLoadedTests {
+    /// Answers `GET /api/ps` with these model names, and chats like Ollama.
+    static func server(loaded: [String]?) -> FakeTransport {
+        FakeTransport(answer: { _, _ in
+            ModelHTTPResponse(status: 200, body: Data(#"{"message":{"content":"{"}}"#.utf8))
+        }, get: { url, _ in
+            guard url.absoluteString == "http://127.0.0.1:11434/api/ps", let loaded else {
+                throw ModelError.unreachable(url.absoluteString)
+            }
+            let models = loaded.map { ["name": $0, "model": $0] }
+            return ModelHTTPResponse(status: 200, body: try JSONSerialization.data(withJSONObject: ["models": models]))
+        })
+    }
+
+    @Test func aLoadedModelIsSeenAsLoaded() throws {
+        let model = try ModelWarmUpTests.interpreter(Self.server(loaded: ["ornith-1.5:9b", "test-model"]))
+        #expect(model.isLoaded())
+    }
+
+    @Test func anotherLoadedModelOrNoneIsNotLoaded() throws {
+        #expect(!(try ModelWarmUpTests.interpreter(Self.server(loaded: ["qwen3.8:27b"])).isLoaded()))
+        #expect(!(try ModelWarmUpTests.interpreter(Self.server(loaded: [])).isLoaded()))
+        #expect(!(try ModelWarmUpTests.interpreter(Self.server(loaded: nil)).isLoaded()), "a failed ask is no")
+    }
+
+    @Test func anUntaggedNameMatchesLatest() throws {
+        let transport = Self.server(loaded: ["test-model:latest"])
+        let model = ModelInterpreter(endpoint: try ModelEndpoint(url: ModelEndpoint.defaultURL, model: "test-model"),
+                                     transport: transport, warmUps: ModelWarmUps())
+        #expect(model.isLoaded())
+    }
+
+    @Test func anOpenAICompatibleServerIsNeverAskedAndNeverWarmedAtOpen() async throws {
+        let transport = Self.server(loaded: ["test-model"])
+        let model = try ModelWarmUpTests.interpreter(transport, url: "http://localhost:1234/v1")
+        #expect(!model.isLoaded())
+        model.warmUpIfLoaded(Screen.targets)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(transport.requests.isEmpty)
+        #expect(transport.gets.isEmpty)
+    }
+
+    @Test func warmsUpOnlyWhenLoaded() async throws {
+        let loaded = Self.server(loaded: ["test-model"])
+        try ModelWarmUpTests.interpreter(loaded).warmUpIfLoaded(Screen.targets)
+        for _ in 0..<500 where loaded.requests.isEmpty {
+            try await Task.sleep(for: .milliseconds(2))
+        }
+        #expect(loaded.requests.count == 1)
+
+        let unloaded = Self.server(loaded: [])
+        try ModelWarmUpTests.interpreter(unloaded).warmUpIfLoaded(Screen.targets)
+        for _ in 0..<100 where unloaded.gets.isEmpty {
+            try await Task.sleep(for: .milliseconds(2))
+        }
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(unloaded.gets.count == 1)
+        #expect(unloaded.requests.isEmpty, "nothing loaded, nothing sent")
+    }
+}
+
 /// A clock the test moves by hand.
 final class TestClock: @unchecked Sendable {
     private let lock = NSLock()
