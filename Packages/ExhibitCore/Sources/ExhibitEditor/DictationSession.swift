@@ -152,9 +152,9 @@ public final class DictationSession {
 
     // MARK: - Opening
 
-    /// The editor has opened. Once its text is read, a model in effect that the server already holds in memory
-    /// reads the screen (`ScreenWarming.warmUpIfLoaded`), so even the first instruction finds it read; a model
-    /// that is not loaded waits for D or the typed field, so opening a capture never loads one.
+    /// The editor has opened. Once its text is read, a model in effect that was used here in the last 10 minutes
+    /// and is still loaded reads the screen (`ScreenWarming.warmUpIfLoaded`), so even the first instruction finds
+    /// it read; otherwise the warm-up waits for D or the typed field, so opening a capture never loads a model.
     public func editorOpened() {
         guard !closed else { return }
         guard editor.targetsLoaded else {

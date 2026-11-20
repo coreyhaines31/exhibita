@@ -7,8 +7,10 @@ import Testing
 /// (once per screen and model, again after another screen or once the server has likely unloaded the model).
 @Suite(.timeLimit(.minutes(1))) struct ModelWarmUpTests {
     static func interpreter(_ transport: FakeTransport, _ warmUps: ModelWarmUps = ModelWarmUps(),
-                            url: String = "http://127.0.0.1:11434") throws -> ModelInterpreter {
-        ModelInterpreter(endpoint: try ModelInterpreterTests.endpoint(url), transport: transport, warmUps: warmUps)
+                            url: String = "http://127.0.0.1:11434", use: ModelUse = ModelUse()) throws
+        -> ModelInterpreter {
+        ModelInterpreter(endpoint: try ModelInterpreterTests.endpoint(url), transport: transport, warmUps: warmUps,
+                         use: use)
     }
 
     static func messages(_ body: Data) throws -> [[String: String]] {
@@ -159,9 +161,24 @@ import Testing
         #expect(model.isLoaded())
     }
 
+    /// A `ModelUse` that saw the model asked just now, on a clock the test moves.
+    static func recentUse(_ clock: TestClock = TestClock()) -> ModelUse {
+        let use = ModelUse(now: clock.now)
+        use.record()
+        return use
+    }
+
+    /// Waits for the background warm-up to ask and, maybe, to send.
+    static func settle(_ transport: FakeTransport) async throws {
+        for _ in 0..<100 where transport.gets.isEmpty {
+            try await Task.sleep(for: .milliseconds(2))
+        }
+        try await Task.sleep(for: .milliseconds(50))
+    }
+
     @Test func anOpenAICompatibleServerIsNeverAskedAndNeverWarmedAtOpen() async throws {
         let transport = Self.server(loaded: ["test-model"])
-        let model = try ModelWarmUpTests.interpreter(transport, url: "http://localhost:1234/v1")
+        let model = try ModelWarmUpTests.interpreter(transport, url: "http://localhost:1234/v1", use: Self.recentUse())
         #expect(!model.isLoaded())
         model.warmUpIfLoaded(Screen.targets)
         try await Task.sleep(for: .milliseconds(100))
@@ -169,22 +186,59 @@ import Testing
         #expect(transport.gets.isEmpty)
     }
 
-    @Test func warmsUpOnlyWhenLoaded() async throws {
+    @Test func noRecentUseMeansTheServerIsNotEvenAsked() async throws {
         let loaded = Self.server(loaded: ["test-model"])
-        try ModelWarmUpTests.interpreter(loaded).warmUpIfLoaded(Screen.targets)
+        try ModelWarmUpTests.interpreter(loaded, use: ModelUse()).warmUpIfLoaded(Screen.targets)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(loaded.gets.isEmpty, "no /api/ps without recent use")
+        #expect(loaded.requests.isEmpty)
+    }
+
+    @Test func recentUseAndLoadedWarmsUp() async throws {
+        let loaded = Self.server(loaded: ["test-model"])
+        try ModelWarmUpTests.interpreter(loaded, use: Self.recentUse()).warmUpIfLoaded(Screen.targets)
         for _ in 0..<500 where loaded.requests.isEmpty {
             try await Task.sleep(for: .milliseconds(2))
         }
+        #expect(loaded.gets.count == 1)
         #expect(loaded.requests.count == 1)
+    }
 
+    @Test func recentUseButNotLoadedSendsNothing() async throws {
         let unloaded = Self.server(loaded: [])
-        try ModelWarmUpTests.interpreter(unloaded).warmUpIfLoaded(Screen.targets)
-        for _ in 0..<100 where unloaded.gets.isEmpty {
-            try await Task.sleep(for: .milliseconds(2))
-        }
-        try await Task.sleep(for: .milliseconds(50))
+        try ModelWarmUpTests.interpreter(unloaded, use: Self.recentUse()).warmUpIfLoaded(Screen.targets)
+        try await Self.settle(unloaded)
         #expect(unloaded.gets.count == 1)
         #expect(unloaded.requests.isEmpty, "nothing loaded, nothing sent")
+    }
+
+    @Test func useOlderThanTenMinutesDoesNotCount() async throws {
+        let clock = TestClock()
+        let use = Self.recentUse(clock)
+        clock.advance(.seconds(600))
+        #expect(use.isRecent(), "ten minutes is still recent")
+        clock.advance(.seconds(1))
+        #expect(!use.isRecent())
+        let loaded = Self.server(loaded: ["test-model"])
+        try ModelWarmUpTests.interpreter(loaded, use: use).warmUpIfLoaded(Screen.targets)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(loaded.gets.isEmpty)
+        #expect(loaded.requests.isEmpty)
+    }
+
+    @Test func askingTheModelAnInstructionCountsAsUse() throws {
+        let use = ModelUse()
+        let failing = FakeTransport { _, _ in throw ModelError.unreachable("connection refused") }
+        let model = try ModelWarmUpTests.interpreter(failing, use: use)
+        #expect(!use.isRecent())
+        _ = try? model.interpretNow(InterpretRequest(instruction: "box the cheapest plan", targets: Screen.targets))
+        #expect(use.isRecent(), "tried counts, answered or not")
+    }
+
+    @Test func aWarmUpIsNotUse() throws {
+        let use = ModelUse()
+        try ModelWarmUpTests.interpreter(FakeTransport.ollama("{"), use: use).warmUpNow(Screen.targets)
+        #expect(!use.isRecent())
     }
 }
 
