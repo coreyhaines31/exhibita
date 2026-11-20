@@ -1,0 +1,758 @@
+[
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "h2-calendar-01",
+    "instruction" : "blur talia brooks",
+    "milliseconds" : 0.548792,
+    "missedRedactions" : 0,
+    "output" : "blur [\"Interview Talia Brooks\", \"Interview Talia\", \"Brooks\", \"Talia Brooks\"]",
+    "overRedactions" : 0,
+    "split" : "heldout2",
+    "tags" : [
+      "text",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "h2-calendar-02",
+    "instruction" : "Blur the phone number and the meeting ID.",
+    "milliseconds" : 0.812916,
+    "missedRedactions" : 0,
+    "output" : "blur [kind phone, \"Meeting ID 482 991 0375\"]",
+    "overRedactions" : 0,
+    "split" : "heldout2",
+    "tags" : [
+      "kind",
+      "text",
+      "multi",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "h2-calendar-03",
+    "instruction" : "circle re schedule",
+    "milliseconds" : 1.312875,
+    "output" : "circle [\"Reschedule\"]",
+    "split" : "heldout2",
+    "tags" : [
+      "speech",
+      "text",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "h2-calendar-04",
+    "instruction" : "Circle Join call and box Cancel event.",
+    "milliseconds" : 0.433625,
+    "output" : "circle [\"Join call\"]; box [\"Cancel event\"]",
+    "split" : "heldout2",
+    "tags" : [
+      "multi",
+      "text",
+      "circle",
+      "box"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "h2-calendar-05",
+    "instruction" : "highlight my one on ones",
+    "milliseconds" : 9815.220126,
+    "modelMilliseconds" : 9813.829959,
+    "modelTimings" : {
+      "loadSeconds" : 0.052052792,
+      "outputSeconds" : 0.94801675,
+      "outputTokens" : 32,
+      "promptSeconds" : 0.755451125,
+      "promptTokens" : 1333,
+      "totalSeconds" : 9.810013959
+    },
+    "output" : "highlight [\"1:1 Rafael Ortiz\", \"1:1 Rafael Ortiz\"]",
+    "split" : "heldout2",
+    "tags" : [
+      "semantic",
+      "highlight"
+    ],
+    "warmUpMilliseconds" : 10202.960083,
+    "warmUpTimings" : {
+      "loadSeconds" : 0.000474334,
+      "outputSeconds" : 0.4132175,
+      "outputTokens" : 1,
+      "promptSeconds" : 9.782587625,
+      "promptTokens" : 1266,
+      "totalSeconds" : 10.198405584
+    }
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "h2-calendar-06",
+    "instruction" : "circle the friday standup",
+    "milliseconds" : 1530.1456259999998,
+    "modelMilliseconds" : 1528.5628339999998,
+    "modelTimings" : {
+      "loadSeconds" : 0.0034655,
+      "outputSeconds" : 0.727711208,
+      "outputTokens" : 24,
+      "promptSeconds" : 0.787702291,
+      "promptTokens" : 1333,
+      "totalSeconds" : 1.524761209
+    },
+    "notFoundCorrect" : true,
+    "output" : "not found: the friday standup",
+    "split" : "heldout2",
+    "tags" : [
+      "notfound",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "h2-calendar-07",
+    "instruction" : "hide this",
+    "milliseconds" : 0.307375,
+    "missedRedactions" : 0,
+    "output" : "blur [\"Organizer: Rafael Ortiz\"]",
+    "overRedactions" : 0,
+    "split" : "heldout2",
+    "tags" : [
+      "deictic",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "h2-crm-01",
+    "instruction" : "blur marisol quintero everywhere",
+    "milliseconds" : 6021.9105,
+    "missedRedactions" : 0,
+    "modelMilliseconds" : 6020.274667,
+    "modelTimings" : {
+      "loadSeconds" : 0.053044625,
+      "outputSeconds" : 1.136600209,
+      "outputTokens" : 41,
+      "promptSeconds" : 0.751413833,
+      "promptTokens" : 1262,
+      "totalSeconds" : 6.016141625
+    },
+    "output" : "blur [\"Marisol Quintero\", \"Nov 17 Ben Adeyemi logged a call with Marisol Quintero: asked for revised pricing\", \"Nov 12 Marisol Quintero opened the proposal 4 times\", \"Nov 2 Meeting with Marisol Quintero and Oskar Lind at Halcyon Freight\"]",
+    "overRedactions" : 0,
+    "split" : "heldout2",
+    "tags" : [
+      "text",
+      "blur"
+    ],
+    "warmUpMilliseconds" : 6190.902291,
+    "warmUpTimings" : {
+      "loadSeconds" : 0.015923083,
+      "outputSeconds" : 0.300040792,
+      "outputTokens" : 1,
+      "promptSeconds" : 5.867290417,
+      "promptTokens" : 1194,
+      "totalSeconds" : 6.187439792
+    }
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "h2-crm-02",
+    "instruction" : "Put an arrow on Log call labelled start here.",
+    "milliseconds" : 0.358917,
+    "output" : "arrow [\"Log call\"] label \"start here\"",
+    "split" : "heldout2",
+    "tags" : [
+      "text",
+      "arrow"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : false,
+    "id" : "h2-crm-03",
+    "instruction" : "Blur the email and phone numbers, then highlight the deal value.",
+    "milliseconds" : 1.699583,
+    "missedRedactions" : 0,
+    "output" : "blur [kind email, kind phone]; highlight [\"Deal\", \"Deals\", \"Value\"]",
+    "overRedactions" : 0,
+    "split" : "heldout2",
+    "tags" : [
+      "kind",
+      "semantic",
+      "multi",
+      "blur",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "h2-crm-04",
+    "instruction" : "circle where the lead came from",
+    "milliseconds" : 2027.3331660000001,
+    "modelMilliseconds" : 2024.944541,
+    "modelTimings" : {
+      "loadSeconds" : 0.001825,
+      "outputSeconds" : 1.232221042,
+      "outputTokens" : 33,
+      "promptSeconds" : 0.782884459,
+      "promptTokens" : 1262,
+      "totalSeconds" : 2.021468209
+    },
+    "output" : "circle [\"Lead source\", \"Webinar\"]",
+    "split" : "heldout2",
+    "tags" : [
+      "semantic",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "h2-crm-05",
+    "instruction" : "blur the linkedin url",
+    "milliseconds" : 1249.892084,
+    "modelMilliseconds" : 1248.014709,
+    "modelTimings" : {
+      "loadSeconds" : 0.001401292,
+      "outputSeconds" : 0.681149625,
+      "outputTokens" : 24,
+      "promptSeconds" : 0.553367917,
+      "promptTokens" : 1261,
+      "totalSeconds" : 1.243516542
+    },
+    "notFoundCorrect" : true,
+    "output" : "not found: the linkedin url",
+    "split" : "heldout2",
+    "tags" : [
+      "notfound",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "h2-ticket-01",
+    "instruction" : "Blur her email address and phone number.",
+    "milliseconds" : 6311.880876,
+    "missedRedactions" : 0,
+    "modelMilliseconds" : 6311.424709,
+    "modelTimings" : {
+      "loadSeconds" : 0.052670417,
+      "outputSeconds" : 1.421421417,
+      "outputTokens" : 48,
+      "promptSeconds" : 0.759985916,
+      "promptTokens" : 1280,
+      "totalSeconds" : 6.307799792
+    },
+    "output" : "blur [email]; blur [phone]",
+    "overRedactions" : 0,
+    "split" : "heldout2",
+    "tags" : [
+      "kind",
+      "multi",
+      "blur"
+    ],
+    "warmUpMilliseconds" : 6199.253167,
+    "warmUpTimings" : {
+      "loadSeconds" : 0.021181208,
+      "outputSeconds" : 0.312639042,
+      "outputTokens" : 1,
+      "promptSeconds" : 5.8583285,
+      "promptTokens" : 1210,
+      "totalSeconds" : 6.195905541
+    }
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "h2-ticket-02",
+    "instruction" : "blur priscilla vans",
+    "milliseconds" : 2.301542,
+    "missedRedactions" : 0,
+    "output" : "blur [\"Ticket #58213 opened by Priscilla Vance\", \"Priscilla Vance Nov 17, 8:41 AM\", \"Priscilla Vance\", \"Customer pasted a live key and a card number. Ask Priscilla Vance to rotate the key again.\"]",
+    "overRedactions" : 0,
+    "split" : "heldout2",
+    "tags" : [
+      "speech",
+      "text",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "h2-ticket-03",
+    "instruction" : "highlight reply do in 42 min",
+    "milliseconds" : 2.143584,
+    "output" : "highlight [\"Reply due in 42 min\"]",
+    "split" : "heldout2",
+    "tags" : [
+      "speech",
+      "text",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "h2-ticket-04",
+    "instruction" : "box close ticket",
+    "milliseconds" : 0.381583,
+    "output" : "box [\"Close ticket\"]",
+    "split" : "heldout2",
+    "tags" : [
+      "text",
+      "box"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "h2-ticket-05",
+    "instruction" : "Highlight Urgent and point at the Reply button.",
+    "milliseconds" : 0.516125,
+    "output" : "highlight [\"Urgent\"]; arrow [\"Reply\"]",
+    "split" : "heldout2",
+    "tags" : [
+      "multi",
+      "text",
+      "highlight",
+      "arrow"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : false,
+    "id" : "h2-ticket-06",
+    "instruction" : "blur everything the customer pasted that they shouldn't have",
+    "milliseconds" : 2022.276208,
+    "missedRedactions" : 0,
+    "modelMilliseconds" : 2022.258042,
+    "modelTimings" : {
+      "loadSeconds" : 0.0013715,
+      "outputSeconds" : 1.226521875,
+      "outputTokens" : 48,
+      "promptSeconds" : 0.78361075,
+      "promptTokens" : 1283,
+      "totalSeconds" : 2.018028209
+    },
+    "output" : "blur [key, card, email, phone]",
+    "overRedactions" : 2,
+    "split" : "heldout2",
+    "tags" : [
+      "semantic",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : false,
+    "id" : "h2-ticket-07",
+    "instruction" : "highlight the refund amount and box merch",
+    "milliseconds" : 1687.4275839999998,
+    "modelMilliseconds" : 1685.5662499999999,
+    "modelTimings" : {
+      "loadSeconds" : 0.00112975,
+      "outputSeconds" : 1.122139833,
+      "outputTokens" : 41,
+      "promptSeconds" : 0.552909041,
+      "promptTokens" : 1279,
+      "totalSeconds" : 1.680169833
+    },
+    "notFoundCorrect" : true,
+    "output" : "not found: the refund amount, merch",
+    "split" : "heldout2",
+    "tags" : [
+      "notfound",
+      "speech",
+      "multi",
+      "highlight",
+      "box"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "h2-ticket-08",
+    "instruction" : "circle that",
+    "milliseconds" : 0.330209,
+    "output" : "circle [\"Larkspur Outfitters\"]",
+    "split" : "heldout2",
+    "tags" : [
+      "deictic",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "h2-billing-01",
+    "instruction" : "Redact the card and the customer ID.",
+    "milliseconds" : 0.597334,
+    "missedRedactions" : 0,
+    "output" : "blur [kind card, \"Customer ID cus_8841207\"]",
+    "overRedactions" : 0,
+    "split" : "heldout2",
+    "tags" : [
+      "kind",
+      "text",
+      "multi",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "h2-billing-02",
+    "instruction" : "Box Change card and highlight Expires 08/28.",
+    "milliseconds" : 0.407375,
+    "output" : "box [\"Change card\"]; highlight [\"Expires 08/28\"]",
+    "split" : "heldout2",
+    "tags" : [
+      "multi",
+      "text",
+      "box",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "h2-inbox-01",
+    "instruction" : "Blur Priya Raman.",
+    "milliseconds" : 0.514375,
+    "missedRedactions" : 0,
+    "output" : "blur [\"Priya Raman\", \"From: Priya Raman <•••••••••••••••••••••••>\", \"Priya Raman\"]",
+    "overRedactions" : 0,
+    "split" : "heldout2",
+    "tags" : [
+      "text",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "h2-inbox-02",
+    "instruction" : "blur the phone number and box for word",
+    "milliseconds" : 1.248291,
+    "missedRedactions" : 0,
+    "output" : "blur [kind phone]; box [\"Forward\"]",
+    "overRedactions" : 0,
+    "split" : "heldout2",
+    "tags" : [
+      "speech",
+      "kind",
+      "text",
+      "multi",
+      "blur",
+      "box"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "h2-terminal-01",
+    "instruction" : "blur build 01",
+    "milliseconds" : 0.352708,
+    "missedRedactions" : 0,
+    "output" : "blur [\"jules@build-01 ~/orders % git log --oneline -3\", \"jules@build-01 ~/orders % export API_TOKEN=••••••••••••••••••••••••\", \"jules@build-01 ~/orders % npm run migrate\", \"jules@build-01 ~/orders % ssh •••••••••••••••••••••\"]",
+    "overRedactions" : 0,
+    "split" : "heldout2",
+    "tags" : [
+      "speech",
+      "text",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "h2-terminal-02",
+    "instruction" : "circle the command that failed",
+    "milliseconds" : 3354.946958,
+    "modelMilliseconds" : 3354.9345,
+    "modelTimings" : {
+      "loadSeconds" : 0.05307125,
+      "outputSeconds" : 0.78470425,
+      "outputTokens" : 26,
+      "promptSeconds" : 0.747856583,
+      "promptTokens" : 981,
+      "totalSeconds" : 3.352123125
+    },
+    "output" : "circle [\"jules@build-01 ~/orders % npm run migrate\"]",
+    "split" : "heldout2",
+    "tags" : [
+      "semantic",
+      "circle"
+    ],
+    "warmUpMilliseconds" : 3919.825833,
+    "warmUpTimings" : {
+      "loadSeconds" : 0.015175416,
+      "outputSeconds" : 0.2408475,
+      "outputTokens" : 1,
+      "promptSeconds" : 3.656432625,
+      "promptTokens" : 914,
+      "totalSeconds" : 3.915965041
+    }
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "h2-editor-01",
+    "instruction" : "blur smtp.example.com",
+    "milliseconds" : 0.28425,
+    "missedRedactions" : 0,
+    "output" : "blur [\"SMTP_HOST=smtp.example.com\"]",
+    "overRedactions" : 0,
+    "split" : "heldout2",
+    "tags" : [
+      "text",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "h2-chat-01",
+    "instruction" : "blur lucia marino",
+    "milliseconds" : 1.949125,
+    "missedRedactions" : 0,
+    "output" : "blur [\"Lucia Moreno 10:04 AM\", \"Lucia Moreno\", \"Lucia Moreno 10:09 AM\"]",
+    "overRedactions" : 0,
+    "split" : "heldout2",
+    "tags" : [
+      "speech",
+      "text",
+      "blur"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "h2-chat-02",
+    "instruction" : "arrow hear",
+    "milliseconds" : 3900.4970829999997,
+    "modelMilliseconds" : 3900.133708,
+    "modelTimings" : {
+      "loadSeconds" : 0.05148825,
+      "outputSeconds" : 0.724571792,
+      "outputTokens" : 24,
+      "promptSeconds" : 0.758377459,
+      "promptTokens" : 1058,
+      "totalSeconds" : 3.894173875
+    },
+    "output" : "arrow [\"Thanks! Shipping it.\"]",
+    "split" : "heldout2",
+    "tags" : [
+      "speech",
+      "deictic",
+      "arrow"
+    ],
+    "warmUpMilliseconds" : 4418.726958,
+    "warmUpTimings" : {
+      "loadSeconds" : 0.008789959,
+      "outputSeconds" : 0.260684084,
+      "outputTokens" : 1,
+      "promptSeconds" : 4.143377417,
+      "promptTokens" : 977,
+      "totalSeconds" : 4.414784959
+    }
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "h2-dashboard-01",
+    "instruction" : "circle active uses",
+    "milliseconds" : 0.763667,
+    "output" : "circle [\"Active users\"]",
+    "split" : "heldout2",
+    "tags" : [
+      "speech",
+      "text",
+      "circle"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "h2-dashboard-02",
+    "instruction" : "blur the customer emails",
+    "milliseconds" : 3889.466042,
+    "modelMilliseconds" : 3889.248584,
+    "modelTimings" : {
+      "loadSeconds" : 0.051669208,
+      "outputSeconds" : 0.727590417,
+      "outputTokens" : 23,
+      "promptSeconds" : 0.748449875,
+      "promptTokens" : 1043,
+      "totalSeconds" : 3.88581575
+    },
+    "notFoundCorrect" : true,
+    "output" : "not found: the customer emails",
+    "split" : "heldout2",
+    "tags" : [
+      "notfound",
+      "kind",
+      "blur"
+    ],
+    "warmUpMilliseconds" : 4409.45875,
+    "warmUpTimings" : {
+      "loadSeconds" : 0.002899,
+      "outputSeconds" : 0.258371167,
+      "outputTokens" : 1,
+      "promptSeconds" : 4.142512166,
+      "promptTokens" : 977,
+      "totalSeconds" : 4.405924041
+    }
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "h2-pricing-01",
+    "instruction" : "highlight 99.99% uptime SLA",
+    "milliseconds" : 0.360834,
+    "output" : "highlight [\"99.99% uptime SLA\"]",
+    "split" : "heldout2",
+    "tags" : [
+      "text",
+      "highlight"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "h2-login-01",
+    "instruction" : "box continue with google",
+    "milliseconds" : 0.12325,
+    "output" : "box [\"Continue with Google\"]",
+    "split" : "heldout2",
+    "tags" : [
+      "text",
+      "box"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "grammar",
+    "exact" : true,
+    "id" : "h2-team-01",
+    "instruction" : "number the remove buttons",
+    "milliseconds" : 0.209416,
+    "output" : "step [\"Remove\", \"Remove\", \"Remove\"]",
+    "split" : "heldout2",
+    "tags" : [
+      "text",
+      "step"
+    ]
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : true,
+    "id" : "h2-team-02",
+    "instruction" : "Circle Owner, then point at Delete team with the label careful.",
+    "milliseconds" : 4568.674459,
+    "modelMilliseconds" : 4566.93875,
+    "modelTimings" : {
+      "loadSeconds" : 0.053745666,
+      "outputSeconds" : 1.467797209,
+      "outputTokens" : 53,
+      "promptSeconds" : 0.7577555,
+      "promptTokens" : 1057,
+      "totalSeconds" : 4.5613515
+    },
+    "output" : "circle [\"Owner\"]; arrow [\"Delete team\"] label \"careful\"",
+    "split" : "heldout2",
+    "tags" : [
+      "multi",
+      "text",
+      "circle",
+      "arrow"
+    ],
+    "warmUpMilliseconds" : 4439.838041,
+    "warmUpTimings" : {
+      "loadSeconds" : 0.004072459,
+      "outputSeconds" : 0.241558916,
+      "outputTokens" : 1,
+      "promptSeconds" : 4.189928667,
+      "promptTokens" : 982,
+      "totalSeconds" : 4.437333542
+    }
+  },
+  {
+    "answered" : true,
+    "answeredBy" : "model",
+    "exact" : false,
+    "id" : "h2-table-01",
+    "instruction" : "box the biggest account",
+    "milliseconds" : 8946.551666,
+    "modelMilliseconds" : 8945.411082999999,
+    "modelTimings" : {
+      "loadSeconds" : 0.052705167,
+      "outputSeconds" : 3.900740416,
+      "outputTokens" : 141,
+      "promptSeconds" : 0.754596667,
+      "promptTokens" : 1200,
+      "totalSeconds" : 8.298017375
+    },
+    "output" : "box [\"$5,130\"]; box [\"Granite Labs\"]; box [\"Peter Nwosu\"]; box [email]; box [\"Team\"]; box [\"Active\"]",
+    "split" : "heldout2",
+    "tags" : [
+      "semantic",
+      "box"
+    ],
+    "warmUpMilliseconds" : 5725.736666,
+    "warmUpTimings" : {
+      "loadSeconds" : 0.058415917,
+      "outputSeconds" : 0.297218792,
+      "outputTokens" : 1,
+      "promptSeconds" : 5.363900459,
+      "promptTokens" : 1134,
+      "totalSeconds" : 5.721589584
+    }
+  }
+]
