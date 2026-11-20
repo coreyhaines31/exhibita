@@ -14,15 +14,31 @@ public struct ModelServer: Equatable, Sendable {
     public var url: URL
     /// The models as the server names them, in its order.
     public var models: [String]
+    /// What the server says about each model, when it says (Ollama's `/api/tags`); keyed by name.
+    public var details: [String: InstalledModel]
 
-    public init(kind: Kind, url: URL, models: [String]) {
+    public init(kind: Kind, url: URL, models: [String], details: [String: InstalledModel] = [:]) {
         self.kind = kind
         self.url = url
         self.models = models
+        self.details = details
     }
 
     /// What a person calls it.
     public var name: String { kind.name }
+}
+
+/// What a model server reports about one of its models.
+public struct InstalledModel: Equatable, Sendable {
+    /// As the server writes it: "27.8B".
+    public var parameterSize: String?
+    /// Size on disk.
+    public var bytes: Int64?
+
+    public init(parameterSize: String? = nil, bytes: Int64? = nil) {
+        self.parameterSize = parameterSize
+        self.bytes = bytes
+    }
 }
 
 extension ModelServer.Kind {
@@ -161,7 +177,8 @@ public enum ModelDiscovery {
         guard let models = models(kind, in: reply.body) else {
             return .badAnswer(kind, url, "not a model list")
         }
-        let server = ModelServer(kind: kind, url: url, models: models)
+        let server = ModelServer(kind: kind, url: url, models: models,
+                                 details: kind == .ollama ? details(in: reply.body) : [:])
         return models.isEmpty ? .noModels(server) : .found(server)
     }
 
@@ -172,5 +189,19 @@ public enum ModelDiscovery {
         let (key, field) = kind == .ollama ? ("models", "name") : ("data", "id")
         guard let entries = object[key] as? [[String: Any]] else { return nil }
         return entries.compactMap { $0[field] as? String }.filter { !$0.isEmpty }
+    }
+
+    /// Ollama's `size` and `details.parameter_size` for each model in a `/api/tags` reply.
+    static func details(in data: Data) -> [String: InstalledModel] {
+        let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        var details: [String: InstalledModel] = [:]
+        for entry in object?["models"] as? [[String: Any]] ?? [] {
+            guard let name = entry["name"] as? String, !name.isEmpty else { continue }
+            let parameters = (entry["details"] as? [String: Any])?["parameter_size"] as? String
+            let model = InstalledModel(parameterSize: parameters.flatMap { $0.isEmpty ? nil : $0 },
+                                       bytes: (entry["size"] as? NSNumber)?.int64Value)
+            if model != InstalledModel() { details[name] = model }
+        }
+        return details
     }
 }

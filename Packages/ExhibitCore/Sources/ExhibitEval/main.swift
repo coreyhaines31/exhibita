@@ -6,10 +6,13 @@ import Foundation
 //   swift run exhibit-eval interpret [--file instructions.json] [--split dev|heldout|all|<any split in the file>]
 //                                    [--only grammar,model,apple,model-alone]
 //                                    [--model qwen3.8:27b] [--model-endpoint http://127.0.0.1:11434]
+//                                    [--warm <seconds> [--if-loaded]]
 //   swift run exhibit-eval speech
 //
 // "grammar" is the shipping grammar. "model" is the shipping chain, as `exhibit say` runs it: the grammar first, then
 // the shipping model interpreter only where the grammar declined. "model-alone" asks the model every instruction.
+// --warm sends the editor's warm-up that many seconds before each model instruction (once per screen);
+// --if-loaded only when the server already holds the model, as when an editor opens.
 // "apple" is Apple's on-device model (not shipped). Results go to eval/interpreter/results/, named after the split.
 // Progress goes to stderr.
 
@@ -20,6 +23,10 @@ struct Options {
     var only: Set<String> = ["grammar", "model"]
     var model = "qwen3.8:27b"
     var endpoint = ModelEndpoint.defaultURL
+    /// Send the editor's warm-up this many seconds before each model instruction.
+    var warmLead: Double?
+    /// Only when the server already holds the model, as an editor opening does.
+    var warmIfLoaded = false
 
     init(_ arguments: [String]) throws {
         var arguments = arguments[...]
@@ -31,14 +38,24 @@ struct Options {
             case "--only":
                 only = Set((arguments.popFirst() ?? "").split(separator: ",").map { $0 == "ollama" ? "model" : String($0) })
             case "--model", "--ollama-model": model = arguments.popFirst() ?? model
-            case "--model-endpoint":
-                guard let url = arguments.popFirst().flatMap(URL.init(string:)) else {
-                    throw EvalError("--model-endpoint needs a URL")
-                }
-                endpoint = url
+            case "--warm": warmLead = try Self.seconds(arguments.popFirst(), for: argument)
+            case "--if-loaded": warmIfLoaded = true
+            case "--model-endpoint": endpoint = try Self.url(arguments.popFirst(), for: argument)
             default: throw EvalError("unknown argument \(argument)")
             }
         }
+    }
+
+    static func url(_ value: String?, for argument: String) throws -> URL {
+        guard let url = value.flatMap(URL.init(string:)) else { throw EvalError("\(argument) needs a URL") }
+        return url
+    }
+
+    static func seconds(_ value: String?, for argument: String) throws -> Double {
+        guard let seconds = value.flatMap(Double.init), seconds >= 0 else {
+            throw EvalError("\(argument) needs a number of seconds")
+        }
+        return seconds
     }
 }
 
@@ -67,10 +84,16 @@ func runInterpreters(_ options: Options) async throws {
     if !options.only.isDisjoint(with: ["model", "model-alone"]) {
         let model = ModelInterpreter(endpoint: try ModelEndpoint(url: options.endpoint, model: options.model,
                                                                  timeout: 300))
-        // Loads the model, so the first measured instruction does not pay for it.
-        _ = try await model.interpret(InterpretRequest(instruction: "circle ok", targets: []))
+        // Loads the model, so the first measured instruction does not pay for it. Its answer does not matter: some
+        // models answer an empty screen in prose.
+        _ = try? await model.interpret(InterpretRequest(instruction: "circle ok", targets: []))
         if options.only.contains("model") {
-            runs.append(("A then model (\(options.model))", await runner.runChain(grammar: grammar, model: model)))
+            let warm = options.warmLead.map {
+                " warmed \(String(format: "%g", $0)) s ahead\(options.warmIfLoaded ? " if loaded" : "")"
+            } ?? ""
+            let name = "A then model (\(options.model))\(warm)"
+            runs.append((name, await runner.runChain(grammar: grammar, model: model, warmLead: options.warmLead,
+                                                      ifLoaded: options.warmIfLoaded)))
         }
         if options.only.contains("model-alone") {
             runs.append(("C model alone (\(options.model))", await runner.run(model)))
@@ -109,9 +132,32 @@ do {
     switch options.command {
     case "interpret": try await runInterpreters(options)
     case "speech": try await runSpeech()
+    case "prompts": try await writePrompts(options)
     default: throw EvalError("unknown command \(options.command); use interpret or speech")
     }
 } catch {
     log("exhibit-eval: \(error)")
     exit(1)
+}
+
+/// The chat the model step would send for each instruction the grammar declines, and its warm-up, one JSON object
+/// per line on stdout, for timing direct calls to a model server: `swift run exhibit-eval prompts --split all`.
+func writePrompts(_ options: Options) async throws {
+    let set = try EvalSet.load(file: options.file)
+    let runner = Runner(set: set, split: options.split)
+    let grammar = await runner.run(GrammarInterpreter(unknownNames: .decline))
+    for (instruction, first) in zip(runner.selected, grammar) where !first.answered {
+        let request = set.request(for: instruction)
+        let listing = TargetListing(request)
+        func chat(_ messages: [ModelMessage]) -> [[String: String]] {
+            messages.map { ["role": $0.role.rawValue, "content": $0.content] }
+        }
+        let object: [String: Any] = [
+            "id": instruction.id, "fixture": instruction.fixture,
+            "messages": chat(ModelPrompt.messages(for: request, listing: listing)),
+            "warmUp": chat(ModelPrompt.warmUpMessages(listing))
+        ]
+        let data = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+        print(String(bytes: data, encoding: .utf8) ?? "")
+    }
 }

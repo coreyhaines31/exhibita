@@ -127,6 +127,7 @@ final class EditorWindowController: NSObject, NSWindowDelegate {
                                      model: { FreeFormSettings.shared.interpreter() })
         canvas = EditorCanvasModel(original: capture.original, scale: capture.owner.document.scale)
         super.init()
+        dictation.editorOpened()
         // The first frame is already the renderer's output, so a reopened capture never flashes what its
         // blurs hide.
         canvas.renderNow(editor.marks)

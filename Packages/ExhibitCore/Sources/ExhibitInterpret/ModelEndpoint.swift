@@ -79,17 +79,24 @@ public struct ModelEndpoint: Sendable, Equatable {
     /// servers take `reasoning_effort: "none"` (Ollama, OpenAI) or `chat_template_kwargs.enable_thinking: false`
     /// (llama.cpp, vLLM). `noReasoning: false` leaves the last two out, for a server that refuses them.
     func body(system: String, user: String, noReasoning: Bool = true) throws -> Data {
-        let messages = [["role": "system", "content": system], ["role": "user", "content": user]]
+        try body(messages: [ModelMessage(role: .system, content: system), ModelMessage(role: .user, content: user)],
+                 noReasoning: noReasoning)
+    }
+
+    /// `maxTokens` is the answer's cap: `ModelPrompt.maxResponseTokens`, or one token for a warm-up.
+    func body(messages: [ModelMessage], maxTokens: Int = ModelPrompt.maxResponseTokens,
+              noReasoning: Bool = true) throws -> Data {
+        let messages = messages.map { ["role": $0.role.rawValue, "content": $0.content] }
         let object: [String: Any] = switch api {
         case .ollama:
             [
                 "model": model, "stream": false, "think": false, "messages": messages,
-                "options": ["temperature": 0, "seed": 1, "num_predict": ModelPrompt.maxResponseTokens]
+                "options": ["temperature": 0, "seed": 1, "num_predict": maxTokens]
             ]
         case .openai:
             [
                 "model": model, "stream": false, "messages": messages, "temperature": 0, "seed": 1,
-                "max_tokens": ModelPrompt.maxResponseTokens
+                "max_tokens": maxTokens
             ].merging(noReasoning ? Self.openAINoReasoning : [:]) { $1 }
         }
         return try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])

@@ -35,8 +35,11 @@ struct FreeFormSection: View {
             Text("Instructions in your own words")
         } footer: {
             Label("Exhibit A looks for a model server only on this Mac (127.0.0.1). The model gets your words and the "
-                  + "text read from the capture, with secrets masked; never the image. Nothing leaves this Mac. Expect "
-                  + "several seconds per instruction on a new screen: a 27B model took 5 to 8 s on an M4 Pro.",
+                  + "text read from the capture, with secrets masked; never the image. Nothing leaves this Mac. The "
+                  + "text is sent when you start an instruction (press D or open the typed field), or when you open a "
+                  + "capture soon after using the model, while it is still loaded, even if a built-in command then "
+                  + "answers. Timings "
+                  + "measured on an M4 Pro.",
                   systemImage: "lock.fill")
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -135,6 +138,9 @@ struct FreeFormSection: View {
             Text("\(Image(systemName: Self.symbol(for: status))) \(status.message)")
                 .foregroundStyle(status.isProblem ? Color.orange : Color.primary)
                 .fixedSize(horizontal: false, vertical: true)
+            if let description = model.modelDescription {
+                Text(description).fixedSize(horizontal: false, vertical: true)
+            }
             if let command = status.command {
                 HStack(spacing: 6) {
                     Text(command).font(.system(size: 12).monospaced()).textSelection(.enabled)

@@ -92,7 +92,7 @@ final class FakeTranscriber: SpeechTranscribing {
 }
 
 /// A model that answers with a fixed outcome, optionally only once its gate opens, and counts its calls.
-final class FakeModel: Interpreter, @unchecked Sendable {
+class FakeModel: Interpreter, @unchecked Sendable {
     let outcome: Result<InterpretOutcome, ModelError>
     let gate: Gate
     private let lock = NSLock()
@@ -115,5 +115,23 @@ final class FakeModel: Interpreter, @unchecked Sendable {
         lock.withLock { count += 1 }
         await gate.wait()
         return try outcome.get()
+    }
+}
+
+/// A fake model that can also be warmed up, recording each screen it was asked to read ahead.
+final class WarmingFakeModel: FakeModel, ScreenWarming, @unchecked Sendable {
+    private let warmLock = NSLock()
+    private var warmed: [[Target]] = []
+    private var warmedIfLoaded: [[Target]] = []
+
+    var warmUps: [[Target]] { warmLock.withLock { warmed } }
+    var warmUpsIfLoaded: [[Target]] { warmLock.withLock { warmedIfLoaded } }
+
+    func warmUp(_ targets: [Target]) {
+        warmLock.withLock { warmed.append(targets) }
+    }
+
+    func warmUpIfLoaded(_ targets: [Target]) {
+        warmLock.withLock { warmedIfLoaded.append(targets) }
     }
 }
