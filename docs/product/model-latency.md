@@ -163,9 +163,9 @@ Raw rows: `results/A_then_model_gemma4-26b-nvfp4-all.json`, `..._warmed_2_s_ahea
 
 ## Warming when an editor opens (2026-11-19)
 
-An editor that opens with its text read warms the screen at once, but only when the model in effect is already in the server's memory (Ollama's `GET /api/ps`; an OpenAI-compatible server has no such list and is never warmed at open), so opening a capture never loads a model. Otherwise the warm-up waits for D or the typed field as before.
+An editor that opens with its text read warms the screen at once, but only when both hold: this app run asked the model an instruction (one the built-in commands declined, answered or not) in the last 10 minutes (`ModelUse`), and the model in effect is still in the server's memory (Ollama's `GET /api/ps`, not asked at all without recent use; an OpenAI-compatible server has no such list and is never warmed at open). So opening a capture never loads a model, and someone who has the model loaded for other work but does not use it here gets no GPU work from Exhibit A and no reset of Ollama's keep-alive. Otherwise the warm-up waits for D or the typed field as before.
 
-On the dev file this is the eval's `--warm 10 --if-loaded` (the model is loaded by the eval's preload, as it would be after an earlier instruction), one run of `qwen3.8:27b`:
+On the dev file this is the eval's `--warm 10 --if-loaded` (the eval's preload is a model instruction, so it counts as recent use and loads the model, as an earlier instruction in the app would), one run of `qwen3.8:27b`:
 
 | Mode | Exact | Missed redaction, kind or literal | Missed redaction, semantic | Model step median | Model step p90 | First on screen |
 |---|---|---|---|---|---|---|
