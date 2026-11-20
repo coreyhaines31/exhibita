@@ -109,10 +109,14 @@ public struct URLSessionModelTransport: ModelTransport {
 public struct ModelInterpreter: Interpreter {
     public let endpoint: ModelEndpoint
     public let transport: any ModelTransport
+    /// Which screen was last warmed up; shared by every interpreter of the app unless a test passes its own.
+    public let warmUps: ModelWarmUps
 
-    public init(endpoint: ModelEndpoint, transport: any ModelTransport = URLSessionModelTransport()) {
+    public init(endpoint: ModelEndpoint, transport: any ModelTransport = URLSessionModelTransport(),
+                warmUps: ModelWarmUps = .shared) {
         self.endpoint = endpoint
         self.transport = transport
+        self.warmUps = warmUps
     }
 
     public var name: String { "model" }
@@ -162,5 +166,88 @@ public struct ModelInterpreter: Interpreter {
             throw ModelError.httpStatus(reply.status, ModelEndpoint.preview(reply.body))
         }
         return reply
+    }
+}
+
+// MARK: - Warming up
+
+/// An interpreter that can read a screen before the instruction for it arrives.
+public protocol ScreenWarming: Sendable {
+    /// Starts reading the screen in the background and returns at once. Never throws and never waits.
+    func warmUp(_ targets: [Target])
+}
+
+extension ModelInterpreter: ScreenWarming {
+    /// Has the model read the system prompt and the screen while the person is still speaking or typing, so the
+    /// instruction's request only reads the instruction (`docs/product/model-latency.md`). It sends exactly the
+    /// start of the request `interpret` will send, with a one-token answer, and loads the model if it was unloaded.
+    ///
+    /// At most once per screen and model (`ModelWarmUps`). Its answer is dropped, and a failure is ignored: the
+    /// instruction's own request reports any problem. An instruction the built-in commands answer simply leaves
+    /// the warm-up unused.
+    public func warmUp(_ targets: [Target]) {
+        DispatchQueue.global(qos: .utility).async {
+            _ = try? warmUpNow(targets)
+        }
+    }
+
+    /// Sends the warm-up on the calling thread. Returns the server's timings, or nil when nothing was sent because
+    /// there is nothing to read or this screen was the last one read recently.
+    @discardableResult
+    public func warmUpNow(_ targets: [Target]) throws -> ModelTimings? {
+        let listing = TargetListing(InterpretRequest(instruction: "", targets: targets))
+        guard !listing.entries.isEmpty else { return nil }
+        let messages = ModelPrompt.warmUpMessages(listing)
+        let key = ModelWarmUps.Key(url: endpoint.chatURL, model: endpoint.model, screen: messages.last?.content ?? "")
+        guard warmUps.claim(key) else { return nil }
+        do {
+            let reply = try send(messages, maxTokens: ModelPrompt.warmUpResponseTokens)
+            return endpoint.timings(of: reply.body) ?? ModelTimings()
+        } catch {
+            warmUps.release(key)
+            throw error
+        }
+    }
+}
+
+/// Which screen a model server last read ahead of an instruction. Runners keep the cache of about one screen,
+/// so a screen is warmed again once another was warmed after it, or once the server has likely unloaded the model
+/// (Ollama's `keep_alive` is five minutes by default); otherwise not.
+public final class ModelWarmUps: @unchecked Sendable {
+    public struct Key: Hashable, Sendable {
+        var url: URL
+        var model: String
+        var screen: String
+    }
+
+    /// The one the app's editors share.
+    public static let shared = ModelWarmUps()
+
+    private let lock = NSLock()
+    private let staleAfter: Duration
+    private let now: @Sendable () -> ContinuousClock.Instant
+    private var last: (key: Key, at: ContinuousClock.Instant)?
+
+    public init(staleAfter: Duration = .seconds(240),
+                now: @escaping @Sendable () -> ContinuousClock.Instant = { ContinuousClock.now }) {
+        self.staleAfter = staleAfter
+        self.now = now
+    }
+
+    /// Whether to warm this screen now; if so, it counts as the last one warmed.
+    func claim(_ key: Key) -> Bool {
+        lock.withLock {
+            let time = now()
+            if let last, last.key == key, time - last.at < staleAfter { return false }
+            last = (key, time)
+            return true
+        }
+    }
+
+    /// A warm-up that failed, so the next one is tried.
+    func release(_ key: Key) {
+        lock.withLock {
+            if last?.key == key { last = nil }
+        }
     }
 }
