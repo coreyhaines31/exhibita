@@ -10,7 +10,7 @@ import Testing
         let defaults = EditorCommand.remappable.compactMap(\.defaultShortcut)
         #expect(defaults.count == EditorCommand.remappable.count)
         #expect(Set(defaults).count == defaults.count)
-        #expect(EditorCommand.remappable.count == 18)
+        #expect(EditorCommand.remappable.count == 20)
         for command in EditorCommand.fixed {
             #expect(command.defaultShortcut == nil)
             #expect(!command.isRemappable)

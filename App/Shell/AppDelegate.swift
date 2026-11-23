@@ -74,6 +74,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         wire(capture, to: statusItem)
         editors.willOpen = { [weak statusItem] in statusItem?.close() }
         editors.openSettings = { [weak settingsWindow] in settingsWindow?.show() }
+        editors.showNote = { [weak capture] text, screen in capture?.copiedNote.show(on: screen, text: text) }
         model.onKeymapChanged = { [weak editors] in editors?.apply($0) }
         startBridge(store: store, support: support, policy: policy, model: model, captures: editors.captures)
 
@@ -153,6 +154,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             openKeyboardSettings: { SystemShortcuts.openKeyboardSettings() },
             open: { [weak self] in self?.editors?.open($0) },
             copy: { [weak self] in self?.capture?.copyCapture($0) },
+            copyPath: { [weak self] id in Task { await self?.editors?.copyPath(id) } },
+            copyAndDelete: { [weak self] id in Task { await self?.editors?.copyAndDelete(id) } },
             reveal: { id in NSWorkspace.shared.activateFileViewerSelecting([model.store.url(for: id)]) },
             delete: { id in Task { await model.delete(id) } }
         )

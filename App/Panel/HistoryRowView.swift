@@ -38,16 +38,28 @@ struct HistoryRowView: View {
                 Spacer(minLength: 0)
             }
             if row.isSelected {
-                HStack(spacing: 8) {
-                    Button("Open") { actions.open(row.id) }
-                        .buttonStyle(PanelButtonStyle(.primary, size: .compact))
-                        .reportingFrame("open \(row.id)", to: actions)
-                    Button("Copy") { actions.copy(row.id) }
-                    Button("Show in Finder") { actions.reveal(row.id) }
-                    Spacer()
-                    Button("Delete") { actions.delete(row.id) }
-                        .buttonStyle(PanelButtonStyle(.destructive, size: .compact))
-                        .reportingFrame("delete \(row.id)", to: actions)
+                // Two lines: what keeps the capture, then what takes it away, so the two deletes sit apart from
+                // the everyday actions and every label stays whole at the panel's width.
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 8) {
+                        Button("Open") { actions.open(row.id) }
+                            .buttonStyle(PanelButtonStyle(.primary, size: .compact))
+                            .reportingFrame("open \(row.id)", to: actions)
+                        Button("Copy") { actions.copy(row.id) }
+                        Button("Copy Path") { actions.copyPath(row.id) }
+                            .reportingFrame("copy path \(row.id)", to: actions)
+                        Button("Show in Finder") { actions.reveal(row.id) }
+                        Spacer(minLength: 0)
+                    }
+                    HStack(spacing: 8) {
+                        Spacer(minLength: 0)
+                        Button("Copy and Delete") { actions.copyAndDelete(row.id) }
+                            .help("Copy the marked-up image, then delete the capture for good")
+                            .reportingFrame("copy and delete \(row.id)", to: actions)
+                        Button("Delete") { actions.delete(row.id) }
+                            .buttonStyle(PanelButtonStyle(.destructive, size: .compact))
+                            .reportingFrame("delete \(row.id)", to: actions)
+                    }
                 }
                 .buttonStyle(.panelCompact)
             }
@@ -63,6 +75,8 @@ struct HistoryRowView: View {
         .accessibilityLabel([row.title, row.tag, row.subtitle, row.expiry].compactMap { $0 }.joined(separator: ", "))
         .accessibilityAddTraits(row.isSelected ? [.isButton, .isSelected] : .isButton)
         .accessibilityAction(named: "Open") { actions.open(row.id) }
+        .accessibilityAction(named: "Copy Path") { actions.copyPath(row.id) }
+        .accessibilityAction(named: "Copy and Delete") { actions.copyAndDelete(row.id) }
     }
 }
 

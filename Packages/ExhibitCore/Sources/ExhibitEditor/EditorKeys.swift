@@ -28,8 +28,13 @@ public enum EditorCommand: Hashable, Sendable {
     case undo
     case redo
     case deleteSelection
+    /// ⌘C: copy the flattened image; the editor stays open.
+    case copy
     /// ↩: copy the flattened image and close.
     case copyAndClose
+    /// ⇧↩: copy the flattened image, close, and delete the capture from history for good (issue 109). Nothing is
+    /// deleted unless the copy worked.
+    case copyAndDelete
     /// ⌘S: save a file.
     case save
     /// ⌘⇧C: export to a file and copy its path.
@@ -44,7 +49,7 @@ public enum EditorCommand: Hashable, Sendable {
     /// Commands the app carries out (clipboard, files, windows). The editor handles the rest itself.
     public var isAppCommand: Bool {
         switch self {
-        case .copyAndClose, .save, .copyPath, .close, .dictate, .typeInstruction: true
+        case .copy, .copyAndClose, .copyAndDelete, .save, .copyPath, .close, .dictate, .typeInstruction: true
         default: false
         }
     }
@@ -54,7 +59,7 @@ public enum EditorCommand: Hashable, Sendable {
     /// cancelled.
     public static let remappable: [EditorCommand] = EditorTool.toolbarOrder.map { .tool($0) }
         + MarkColor.allCases.map { .color($0) }
-        + [.blurAllSensitive, .dictate, .typeInstruction, .copyAndClose, .save, .copyPath]
+        + [.blurAllSensitive, .dictate, .typeInstruction, .copy, .copyAndClose, .copyAndDelete, .save, .copyPath]
 
     /// The commands whose key never changes.
     public static let fixed: [EditorCommand] = [.undo, .redo, .deleteSelection, .close]
@@ -70,7 +75,9 @@ public enum EditorCommand: Hashable, Sendable {
         case .undo: "undo"
         case .redo: "redo"
         case .deleteSelection: "deleteSelection"
+        case .copy: "copy"
         case .copyAndClose: "copyAndClose"
+        case .copyAndDelete: "copyAndDelete"
         case .save: "save"
         case .copyPath: "copyPath"
         case .close: "close"
@@ -93,7 +100,9 @@ public enum EditorCommand: Hashable, Sendable {
         case .undo: "Undo"
         case .redo: "Redo"
         case .deleteSelection: "Delete mark"
+        case .copy: "Copy"
         case .copyAndClose: "Copy and close"
+        case .copyAndDelete: "Copy and delete"
         case .save: "Save"
         case .copyPath: "Copy path"
         case .close: "Close"
@@ -117,7 +126,9 @@ public enum EditorCommand: Hashable, Sendable {
         case .blurAllSensitive: "Blur every email, key, card and phone number found."
         case .dictate: "Hold and say what to change; let go to apply."
         case .typeInstruction: "Type what to change instead of saying it."
-        case .copyAndClose: "Copy the marked-up image and close the editor."
+        case .copy: "Copy the marked-up image. The editor stays open."
+        case .copyAndClose: "Copy the marked-up image and close the editor. The capture stays in history."
+        case .copyAndDelete: "Copy the marked-up image, close the editor and delete the capture for good."
         case .save: "Save the marked-up image as a file."
         case .copyPath: "Write the image to a file and copy its path."
         case .undo, .redo, .deleteSelection, .close: ""
@@ -132,73 +143,12 @@ public enum EditorCommand: Hashable, Sendable {
         case .blurAllSensitive: EditorShortcut("b", [.shift])
         case .dictate: EditorShortcut("d")
         case .typeInstruction: EditorShortcut("/")
+        case .copy: EditorShortcut("c", [.command])
         case .copyAndClose: .returnKey
+        case .copyAndDelete: EditorShortcut(EditorShortcut.returnName, [.shift])
         case .save: EditorShortcut("s", [.command])
         case .copyPath: EditorShortcut("c", [.command, .shift])
         case .undo, .redo, .deleteSelection, .close: nil
-        }
-    }
-}
-
-/// One key with its modifiers, as the editor matches it. Letters ignore case and keep ⇧ (⇧B is not B); other
-/// characters drop ⇧, because on some layouts it is part of typing them (/ is ⇧7 on a German keyboard).
-public struct EditorShortcut: Hashable, Sendable, Codable {
-    /// One character, lowercased, or `returnName` for ↩.
-    public let key: String
-    public let modifiers: KeyModifiers
-
-    public static let returnName = "return"
-    public static let returnKey = EditorShortcut(returnName)
-
-    public init(_ key: String, _ modifiers: KeyModifiers = []) {
-        let key = key == Self.returnName ? key : key.lowercased()
-        var modifiers = modifiers.intersection(.all)
-        if !Self.isLetter(key) { modifiers.remove(.shift) }
-        self.key = key
-        self.modifiers = modifiers
-    }
-
-    /// A key press as a shortcut, or nil for keys that can't be one: Esc, ⌫, Tab, arrows and function keys.
-    public init?(key: EditorKey, modifiers: KeyModifiers) {
-        switch key {
-        case .returnKey: self.init(Self.returnName, modifiers)
-        case .escape, .delete: return nil
-        case .character(let typed):
-            guard typed.count == 1, let scalar = typed.unicodeScalars.first,
-                  !scalar.properties.generalCategory.isControlOrPrivate else { return nil }
-            self.init(typed, modifiers)
-        }
-    }
-
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.init(try container.decode(String.self, forKey: .key),
-                  try container.decode(KeyModifiers.self, forKey: .modifiers))
-    }
-
-    public var isLetter: Bool { Self.isLetter(key) }
-
-    /// "A", "⇧B", "⌘S", "↩", "Space".
-    public var display: String {
-        let name = switch key {
-        case Self.returnName: "↩"
-        case " ": "Space"
-        default: key.uppercased()
-        }
-        return modifiers.symbols + name
-    }
-
-    private static func isLetter(_ key: String) -> Bool {
-        key.count == 1 && key.lowercased() != key.uppercased()
-    }
-}
-
-private extension Unicode.GeneralCategory {
-    /// Tab, other control characters and the private-use characters AppKit gives arrows and function keys.
-    var isControlOrPrivate: Bool {
-        switch self {
-        case .control, .privateUse, .format, .unassigned, .surrogate: true
-        default: false
         }
     }
 }

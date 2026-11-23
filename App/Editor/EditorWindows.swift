@@ -14,13 +14,15 @@ import UniformTypeIdentifiers
 final class EditorWindows {
     private nonisolated static let logger = Logger(subsystem: Brand.bundleIdentifier, category: "Editor")
 
-    private let model: AppModel
+    let model: AppModel
     let captures: OpenCaptures
     private(set) var windows: [UUID: EditorWindowController] = [:]
     /// Runs before an editor opens, e.g. to close the panel.
     var willOpen: () -> Void = {}
     /// Opens Settings, for the "needs a model" link.
     var openSettings: () -> Void = {}
+    /// Says what happened where no window is left to say it (`CopiedNote`), on the given display.
+    var showNote: (String, NSScreen?) -> Void = { _, _ in }
 
     init(model: AppModel, captures: OpenCaptures) {
         self.model = model
@@ -51,6 +53,11 @@ final class EditorWindows {
         }
     }
 
+    /// Forgets an editor without the usual close bookkeeping, for copy and delete.
+    func takeWindow(_ id: UUID) -> EditorWindowController? {
+        windows.removeValue(forKey: id)
+    }
+
     /// Keys changed in Settings reach editors already open.
     func apply(_ keymap: EditorKeymap) {
         for controller in windows.values { controller.editor.keymap = keymap }
@@ -73,6 +80,9 @@ final class EditorWindows {
         controller.editor.keymap = model.keymap
         controller.onClose = { [weak self] exported in self?.closed(id, exported: exported) }
         controller.openSettings = { [weak self] in self?.openSettings() }
+        controller.onCopyAndDelete = { [weak self, weak controller] png in
+            Task { await self?.copyAndDelete(id, png: png, on: controller?.window?.screen) }
+        }
         windows[id] = controller
         controller.focus()
     }
@@ -112,7 +122,11 @@ final class EditorWindowController: NSObject, NSWindowDelegate {
     private let exportsFolder: URL
     private(set) var window: EditorWindow?
     private var exported = false
+    /// Set once copy and delete took the capture away: closing then reports nothing and writes nothing back.
+    private var deleted = false
     var onClose: (Bool) -> Void = { _ in }
+    /// ⇧↩: the PNG to copy before the capture is deleted. `EditorWindows` copies, closes and deletes.
+    var onCopyAndDelete: (Data) -> Void = { _ in }
     var openSettings: () -> Void = {}
     /// Makes each editor's transcriber. The end-to-end tests swap in a fake so D never reaches the microphone.
     static var makeTranscriber: @MainActor () -> (any SpeechTranscribing)? = { SpeechTranscription.make() }
@@ -170,7 +184,9 @@ final class EditorWindowController: NSObject, NSWindowDelegate {
         window.editor = editor
         window.dictation = dictation
         window.onAppCommand = { [weak self] in self?.perform($0) }
-        let actions = EditorActions(copyAndClose: { [weak self] in self?.perform(.copyAndClose) },
+        let actions = EditorActions(copy: { [weak self] in self?.perform(.copy) },
+                                    copyAndClose: { [weak self] in self?.perform(.copyAndClose) },
+                                    copyAndDelete: { [weak self] in self?.perform(.copyAndDelete) },
                                     save: { [weak self] in self?.perform(.save) },
                                     copyPath: { [weak self] in self?.perform(.copyPath) },
                                     close: { [weak self] in self?.perform(.close) },
@@ -200,34 +216,50 @@ final class EditorWindowController: NSObject, NSWindowDelegate {
     private func perform(_ command: EditorCommand) {
         editor.perform(command)
         switch command {
+        case .copy:
+            copyImage()
         case .copyAndClose:
+            if copyImage() { window?.close() }
+        case .copyAndDelete:
             guard let png = exportPNG() else { return }
-            let pasteboard = NSPasteboard.general
-            pasteboard.clearContents()
-            pasteboard.setData(png, forType: .png)
-            exported = true
-            editor.show("Copied")
-            window?.close()
+            onCopyAndDelete(png)
         case .save:
             save()
         case .copyPath:
-            guard let png = exportPNG() else { return }
-            do {
-                let url = try EditorExport.write(png, named: EditorExport.fileName(for: editor.document),
-                                                 in: exportsFolder)
-                let pasteboard = NSPasteboard.general
-                pasteboard.clearContents()
-                pasteboard.setString(url.path, forType: .string)
-                exported = true
-                editor.show("Path copied")
-            } catch {
-                fail("Writing the file failed", error)
-            }
+            copyPath()
         case .close:
             window?.close()
         default:
             break
         }
+    }
+
+    /// ⇧⌘C: the flattened image written to the exports folder, its path on the clipboard.
+    private func copyPath() {
+        guard let png = exportPNG() else { return }
+        do {
+            let url = try EditorExport.write(png, named: EditorExport.fileName(for: editor.document), in: exportsFolder)
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents()
+            pasteboard.setString(url.path, forType: .string)
+            exported = true
+            editor.show("Path copied")
+        } catch {
+            fail("Writing the file failed", error)
+        }
+    }
+
+    /// ⌘C, and the copy in ↩: the flattened image on the clipboard. Returns whether it got there.
+    @discardableResult
+    private func copyImage() -> Bool {
+        guard let png = exportPNG() else { return false }
+        guard EditorWindows.copyToClipboard(png) else {
+            fail("Copying failed")
+            return false
+        }
+        exported = true
+        editor.show("Copied")
+        return true
     }
 
     private func save() {
@@ -250,6 +282,18 @@ final class EditorWindowController: NSObject, NSWindowDelegate {
         }
     }
 
+    /// The flattened PNG of the document as it is now, for the panel's actions on an open capture.
+    func markedPNG() -> Data? {
+        try? EditorExport.png(editor.document, original: capture.original)
+    }
+
+    /// Copy and delete took the capture: close without reporting a close, so nothing writes it back or deletes
+    /// it a second time.
+    func closeDeleted() {
+        deleted = true
+        window?.close()
+    }
+
     /// The flattened PNG: `Renderer` then `PNG.encode`, the same bytes the CLI writes.
     private func exportPNG() -> Data? {
         do {
@@ -268,8 +312,8 @@ final class EditorWindowController: NSObject, NSWindowDelegate {
         }
     }
 
-    private func fail(_ message: String, _ error: Error) {
-        Self.logger.error("\(message): \(error.localizedDescription)")
+    private func fail(_ message: String, _ error: Error? = nil) {
+        Self.logger.error("\(message): \(error?.localizedDescription ?? "the pasteboard refused it")")
         editor.show(message)
         NSSound.beep()
     }
@@ -281,67 +325,13 @@ final class EditorWindowController: NSObject, NSWindowDelegate {
         editor.commitText()
         window?.editor = nil
         window?.dictation = nil
+        guard !deleted else { return }
         onClose(exported)
     }
 
     /// Letting go of D in another window must not leave the microphone on.
     func windowDidResignKey(_ notification: Notification) {
         dictation.release()
-    }
-}
-
-/// Routes keys to the editor first. Only keys the editor ignores reach AppKit.
-final class EditorWindow: NSWindow {
-    weak var editor: CaptureEditor?
-    weak var dictation: DictationSession?
-    var onAppCommand: (EditorCommand) -> Void = { _ in }
-
-    override var canBecomeKey: Bool { true }
-    override var canBecomeMain: Bool { true }
-
-    override func keyDown(with event: NSEvent) {
-        if !route(event) { super.keyDown(with: event) }
-    }
-
-    /// The dictate key (D unless changed) coming up stops listening.
-    override func keyUp(with event: NSEvent) {
-        if let key = EditorKey(event), editor?.keymap.releasesDictation(key) == true { dictation?.release() }
-        super.keyUp(with: event)
-    }
-
-    /// ⌘ keys arrive here before `keyDown`; the editor's take precedence over the (absent) menus.
-    override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        if event.type == .keyDown, event.modifierFlags.contains(.command), route(event) { return true }
-        return super.performKeyEquivalent(with: event)
-    }
-
-    private func route(_ event: NSEvent) -> Bool {
-        guard let editor, let key = EditorKey(event) else { return false }
-        // Esc while listening cancels dictation instead of closing.
-        if let dictation, dictation.intercept(key) { return true }
-        let modifiers = KeyModifiers(event)
-        let typed: EditorKey
-        // Labels take what was typed, shifted letters and all; tool keys read the unmodified key.
-        if editor.editingTextID != nil, case .character = key, let characters = event.characters, !characters.isEmpty,
-           modifiers.isSubset(of: [.shift]) {
-            typed = .character(characters)
-        } else {
-            typed = key
-        }
-        switch editor.handle(typed, modifiers: modifiers) {
-        case .handled: return true
-        case .app(.dictate):
-            // Held keys repeat; only the first press starts listening.
-            if !event.isARepeat { dictation?.press() }
-            return true
-        case .app(.typeInstruction):
-            dictation?.beginTyping()
-            return true
-        case .app(let command):
-            onAppCommand(command)
-            return true
-        case .ignored: return false
-        }
     }
 }
 
