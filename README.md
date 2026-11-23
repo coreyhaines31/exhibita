@@ -16,7 +16,7 @@ Or download `ExhibitA.dmg` from the [latest release](https://github.com/coreyhai
 
 - **Capture and edit:** ⌥⇧4, drag a region (Space picks a window, ↩ takes the screen). The editor opens in place.
 - **Capture to clipboard:** ⌃⌥⇧4. No window opens; the capture still lands in history.
-- **Mark up with one key each:** A arrow, C circle, B blur, H highlight, T text, R box, N numbered step, ⇧B blur every detected secret. ↩ copies and closes. Those are the defaults: change any of them in Settings, Shortcuts.
+- **Mark up with one key each:** A arrow, C circle, B blur, H highlight, T text, R box, N numbered step, ⇧B blur every detected secret. ⌘C copies, ↩ copies and closes, ⇧↩ copies and deletes the capture. Those are the defaults: change any of them in Settings, Shortcuts.
 - **Say it:** hold D and speak, for example "blur the emails and circle pricing".
 
 Both hotkeys can be changed in Settings. Once macOS's own screenshot shortcuts are turned off, they become ⇧⌘4 and ⌃⇧⌘4.
