@@ -6,7 +6,9 @@ import SwiftUI
 /// What the editor's buttons do beyond the editor itself: the app's copy, save, path and close. Renders pass
 /// no-ops.
 struct EditorActions {
+    var copy: () -> Void = {}
     var copyAndClose: () -> Void = {}
+    var copyAndDelete: () -> Void = {}
     var save: () -> Void = {}
     var copyPath: () -> Void = {}
     var close: () -> Void = {}
@@ -15,7 +17,9 @@ struct EditorActions {
 
     func perform(_ command: EditorCommand) {
         switch command {
+        case .copy: copy()
         case .copyAndClose: copyAndClose()
+        case .copyAndDelete: copyAndDelete()
         case .save: save()
         case .copyPath: copyPath()
         case .close: close()

@@ -23,6 +23,8 @@ final class EditorWindow: NSWindow {
 
     /// ⌘ keys arrive here before `keyDown`; the editor's take precedence over the (absent) menus.
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        // While an instruction is being typed, ⌘C, ⌘V, ⌘A and ⌘Z are the text field's.
+        if dictation?.isTyping == true { return super.performKeyEquivalent(with: event) }
         if event.type == .keyDown, event.modifierFlags.contains(.command), route(event) { return true }
         return super.performKeyEquivalent(with: event)
     }
