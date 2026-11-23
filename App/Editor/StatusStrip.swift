@@ -29,11 +29,19 @@ struct StatusStrip: View {
                 // A message that asks for something takes the room of the less used finishing keys; ⌘S and ⇧⌘C
                 // still work, and the keys come back with the next action.
                 FinishKey(keys: "\u{2192}", title: link.title) { actions.openLink(link) }
-                FinishKey(keys: keys.display(for: .copyAndClose), icon: "doc.on.doc", title: "Copy",
+                FinishKey(keys: keys.display(for: .copyAndClose), icon: "checkmark", title: "Copy & close",
+                          action: actions.copyAndClose)
+            } else if case .dictation(let said) = status, said.transcript != nil {
+                // What was heard and done needs the room; the less used keys come back with the next action.
+                FinishKey(keys: keys.display(for: .copy), icon: "doc.on.doc", title: "Copy", action: actions.copy)
+                FinishKey(keys: keys.display(for: .copyAndClose), icon: "checkmark", title: "Copy & close",
                           action: actions.copyAndClose)
             } else {
-                FinishKey(keys: keys.display(for: .copyAndClose), icon: "doc.on.doc", title: "Copy",
+                FinishKey(keys: keys.display(for: .copy), icon: "doc.on.doc", title: "Copy", action: actions.copy)
+                FinishKey(keys: keys.display(for: .copyAndClose), icon: "checkmark", title: "Copy & close",
                           action: actions.copyAndClose)
+                FinishKey(keys: keys.display(for: .copyAndDelete), icon: "trash", title: "Copy & delete",
+                          action: actions.copyAndDelete)
                 FinishKey(keys: keys.display(for: .save), icon: "square.and.arrow.down", title: "Save",
                           action: actions.save)
                 FinishKey(keys: keys.display(for: .copyPath), icon: "link", title: "Path", action: actions.copyPath)
