@@ -1,6 +1,7 @@
 import AppKit
 @testable import ExhibitA
 import ExhibitCore
+import ExhibitEditor
 import XCTest
 
 /// 7. The menu bar panel's history: newest first, select and delete, double-click and Open.
@@ -129,5 +130,43 @@ final class PanelTests: XCTestCase {
         try await again.click("open \(newest)")
         await E2E.wait("the editor from Open") { E2E.editors.windows[newest]?.window?.isVisible == true }
         await E2E.wait("opening an editor to close the panel", timeout: 3) { !again.controller.isShown }
+    }
+
+    /// Issue 109: Copy and Delete in a row copies the marked-up image, then the capture is gone from disk and
+    /// history, with no confirmation; the note says what happened.
+    func testCopyAndDeleteFromARow() async throws {
+        let ids = try seedThree()
+        await E2E.model.reload()
+        let target = ids[1]
+        let loaded = try E2E.store.load(target)
+        let expected = try EditorExport.png(loaded.document, original: loaded.original)
+        let panel = try await showPanel()
+        try await select(target, in: panel)
+        let notes = try XCTUnwrap(E2E.app.capture).copiedNote.shown
+        try await panel.click("copy and delete \(target)")
+        await E2E.wait("the delete") { !E2E.model.items.contains { $0.id == target } }
+        XCTAssertEqual(NSPasteboard.general.data(forType: .png), expected, "the marked-up image is on the clipboard")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: E2E.store.url(for: target).path), "its bundle is gone")
+        XCTAssertEqual(E2E.model.items.map(\.id), [ids[2], ids[0]], "the others stay")
+        let note = try XCTUnwrap(E2E.app.capture).copiedNote
+        XCTAssertEqual(note.shown, notes + 1)
+        XCTAssertEqual(note.lastText, "Copied and deleted")
+    }
+
+    /// The panel's Copy and Delete on a capture open in an editor closes the editor cleanly and nothing writes the
+    /// capture back.
+    func testCopyAndDeleteClosesAnOpenEditor() async throws {
+        let ids = try seedThree()
+        await E2E.model.reload()
+        let target = ids[0]
+        E2E.editors.open(target)
+        await E2E.wait("the editor") { E2E.editors.windows[target]?.window?.isVisible == true }
+        await E2E.editors.copyAndDelete(target)
+        XCTAssertNil(E2E.editors.windows[target], "the editor closed")
+        XCTAssertNil(E2E.editors.captures.capture(target), "and forgot the capture")
+        try await Task.sleep(for: .milliseconds(400))
+        E2E.editors.flushAll()
+        XCTAssertFalse(FileManager.default.fileExists(atPath: E2E.store.url(for: target).path), "nothing wrote it back")
+        XCTAssertFalse(E2E.model.items.contains { $0.id == target })
     }
 }
