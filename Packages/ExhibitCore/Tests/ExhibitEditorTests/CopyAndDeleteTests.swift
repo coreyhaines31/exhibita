@@ -5,10 +5,34 @@ import ExhibitStore
 import Foundation
 import Testing
 
-/// Issue 109: the copy and copy and delete keys.
+/// Issue 109: copy, copy and delete, and deleting an open capture so nothing can write it back.
 @MainActor
 @Suite struct CopyAndDeleteTests {
     let fixture = EditorFixture()
+
+    private struct DeleteFailed: Error {}
+
+    @Test func aFailedCopyDeletesNothing() async {
+        var deleted = 0
+        let outcome = await CopyAndDelete.run(copy: { false }, delete: { deleted += 1 })
+        #expect(outcome == .copyFailed)
+        #expect(deleted == 0)
+        #expect(CopyAndDelete.message(for: outcome) == "Copying failed, nothing deleted")
+    }
+
+    @Test func aGoodCopyThenDeletes() async {
+        var order: [String] = []
+        let outcome = await CopyAndDelete.run(copy: { order.append("copy"); return true },
+                                              delete: { order.append("delete") })
+        #expect(outcome == .copiedAndDeleted)
+        #expect(order == ["copy", "delete"])
+        #expect(CopyAndDelete.message(for: outcome) == "Copied and deleted")
+    }
+
+    @Test func aFailedDeleteSaysSo() async {
+        let outcome = await CopyAndDelete.run(copy: { true }, delete: { throw DeleteFailed() })
+        #expect(outcome == .deleteFailed)
+    }
 
     @Test func keysAndTheirDefaults() {
         let keys = EditorKeymap.standard
@@ -54,5 +78,28 @@ import Testing
         #expect(editor.handle(.character("c"), modifiers: [.command]) == .app(.copy))
         #expect(editor.editingTextID == nil)
         #expect(editor.marks.last?.style.label == "x")
+    }
+
+    @Test func deletingAnOpenCaptureLeavesNothingToWriteBack() async throws {
+        let store = temporaryStore()
+        defer { removeStore(store) }
+        try store.prepare()
+        try CaptureBundle.save(fixture.document, original: fixture.fixture.image, in: store.directory)
+        let captures = OpenCaptures(store: store)
+        let editor = CaptureEditor(owner: try await captures.open(fixture.document.id).owner)
+        editor.press("b")
+        editor.click(fixture.point(in: fixture["email"]))
+        // A write is pending (100 ms debounce) when the delete is asked for.
+        try await captures.delete(fixture.document.id)
+        #expect(captures.capture(fixture.document.id) == nil)
+        #expect(!FileManager.default.fileExists(atPath: store.url(for: fixture.document.id).path))
+        // A late edit from the closing editor and a late target result must not bring it back.
+        editor.press("r")
+        editor.drag(from: PixelPoint(x: 10, y: 10), to: PixelPoint(x: 80, y: 60))
+        captures.targetsFound(fixture.document.targets, for: fixture.document.id)
+        try await Task.sleep(for: .milliseconds(400))
+        captures.flushAll()
+        #expect(!FileManager.default.fileExists(atPath: store.url(for: fixture.document.id).path))
+        #expect(store.list().isEmpty)
     }
 }

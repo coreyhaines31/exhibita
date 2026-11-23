@@ -131,6 +131,18 @@ public final class OpenCaptures {
         capture.owner.flush()
     }
 
+    /// Deletes a capture for good, open or not (issue 109's copy and delete). The capture is forgotten without a
+    /// flush, and the delete runs on the writer's queue after anything already queued, so no pending or late write
+    /// can recreate the bundle: a write after the delete finds no `original.png` and fails, and later target
+    /// results for the id fail to load and are dropped.
+    public func delete(_ id: UUID) async throws {
+        captures.removeValue(forKey: id)
+        heldResults[id] = nil
+        heldMarks[id] = nil
+        let store = store
+        try await writer.perform { try store.delete(id) }
+    }
+
     /// Writes every open capture's pending changes, for quitting.
     public func flushAll() {
         writer.flush()
