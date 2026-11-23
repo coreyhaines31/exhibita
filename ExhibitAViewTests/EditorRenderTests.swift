@@ -55,6 +55,18 @@ final class EditorRenderTests: XCTestCase {
         }
     }
 
+    /// Issue 109: the strip's Copy, Copy & close and Copy & delete reach their own actions.
+    func testFinishingActionsReachTheirCommands() {
+        var ran: [String] = []
+        let actions = EditorActions(copy: { ran.append("copy") }, copyAndClose: { ran.append("close") },
+                                    copyAndDelete: { ran.append("delete") }, save: { ran.append("save") },
+                                    copyPath: { ran.append("path") }, close: { ran.append("esc") })
+        for command in [EditorCommand.copy, .copyAndClose, .copyAndDelete, .save, .copyPath, .close] {
+            actions.perform(command)
+        }
+        XCTAssertEqual(ran, ["copy", "close", "delete", "save", "path", "esc"])
+    }
+
     private static let longKeys = EditorKeymap(custom: [
         .tool(.arrow): EditorShortcut("q", [.control, .option, .shift]),
         .tool(.highlight): EditorShortcut("j", [.command, .option]),
