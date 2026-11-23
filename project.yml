@@ -133,6 +133,7 @@ targets:
       - App/Editor/EditorCanvas.swift
       - App/Editor/EditorView.swift
       - App/Editor/EditorToolbar.swift
+      - App/Editor/StatusStrip.swift
       - App/Editor/EditorKeyEvent.swift
       - App/Editor/KeyIcon.swift
       - ExhibitAViewTests

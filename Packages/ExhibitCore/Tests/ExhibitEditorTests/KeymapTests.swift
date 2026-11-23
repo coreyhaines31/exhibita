@@ -48,7 +48,7 @@ import Testing
         #expect(EditorKeymap.standard.command(for: .character("C"), modifiers: [.command, .shift]) == .copyPath)
         #expect(EditorKeymap.standard.command(for: .character("a"), modifiers: [.option]) == nil)
         #expect(EditorKeymap.standard.command(for: .character("a"), modifiers: [.shift]) == nil)
-        #expect(EditorKeymap.standard.command(for: .character("c"), modifiers: [.command]) == nil)
+        #expect(EditorKeymap.standard.command(for: .character("c"), modifiers: [.command]) == .copy)
     }
 
     @Test func specialKeys() {

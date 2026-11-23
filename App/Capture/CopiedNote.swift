@@ -1,8 +1,9 @@
 import AppKit
 
 /// Says "Copied to clipboard" after a capture that opens no window, so a capture that worked doesn't look like one
-/// that failed. A small panel low on the display the capture came from, gone after a moment. It never activates
-/// the app, takes key focus or catches a click.
+/// that failed, and what copy and delete or Copy Path did where no window is left to say it (issue 109). A small
+/// panel low on the display the capture came from, gone after a moment. It never activates the app, takes key focus
+/// or catches a click.
 @MainActor
 final class CopiedNote {
     static let text = "Copied to clipboard"
@@ -10,16 +11,19 @@ final class CopiedNote {
 
     /// How many times the note has been shown, for the end-to-end tests.
     private(set) var shown = 0
+    /// The last thing it said, for the end-to-end tests.
+    private(set) var lastText: String?
     private var panel: NSPanel?
     private var dismissal: Task<Void, Never>?
 
-    func show(on screen: NSScreen?) {
+    func show(on screen: NSScreen?, text: String = CopiedNote.text) {
         guard let screen = screen ?? NSScreen.main else { return }
         shown += 1
+        lastText = text
         dismissal?.cancel()
         panel?.orderOut(nil)
 
-        let content = Self.makeContent()
+        let content = Self.makeContent(text)
         let size = content.fittingSize
         let panel = NSPanel(contentRect: NSRect(origin: .zero, size: size),
                             styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
@@ -61,7 +65,7 @@ final class CopiedNote {
         panel = nil
     }
 
-    private static func makeContent() -> NSView {
+    private static func makeContent(_ text: String) -> NSView {
         let effect = NSVisualEffectView()
         effect.material = .hudWindow
         effect.state = .active
