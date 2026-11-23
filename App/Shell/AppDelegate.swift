@@ -154,6 +154,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             openKeyboardSettings: { SystemShortcuts.openKeyboardSettings() },
             open: { [weak self] in self?.editors?.open($0) },
             copy: { [weak self] in self?.capture?.copyCapture($0) },
+            copyPath: { [weak self] id in Task { await self?.editors?.copyPath(id) } },
+            copyAndDelete: { [weak self] id in Task { await self?.editors?.copyAndDelete(id) } },
             reveal: { id in NSWorkspace.shared.activateFileViewerSelecting([model.store.url(for: id)]) },
             delete: { id in Task { await model.delete(id) } }
         )

@@ -14,6 +14,10 @@ struct PanelActions {
     /// Opens the capture in the editor.
     var open: (UUID) -> Void = { _ in }
     var copy: (UUID) -> Void = { _ in }
+    /// Writes the marked-up image to a file and copies its path.
+    var copyPath: (UUID) -> Void = { _ in }
+    /// Copies the marked-up image, then deletes the capture for good. No confirmation: the copy is the safety.
+    var copyAndDelete: (UUID) -> Void = { _ in }
     var reveal: (UUID) -> Void = { _ in }
     var delete: (UUID) -> Void = { _ in }
     /// Where a row or one of its buttons was laid out, by name ("row <id>", "open <id>", "delete <id>"),
