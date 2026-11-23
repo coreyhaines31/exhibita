@@ -212,7 +212,7 @@ public final class CaptureEditor {
         case .undo: undo()
         case .redo: redo()
         case .deleteSelection: deleteSelection()
-        case .copyAndClose, .save, .copyPath, .close, .dictate, .typeInstruction: commitText()
+        case .copy, .copyAndClose, .copyAndDelete, .save, .copyPath, .close, .dictate, .typeInstruction: commitText()
         }
     }
 
@@ -224,7 +224,8 @@ public final class CaptureEditor {
         if editingTextID != nil {
             switch key {
             case .returnKey, .escape:
-                if modifiers.isEmpty {
+                // ⇧↩ as well: a habit from typing line breaks must finish the label, never copy and delete.
+                if modifiers.isSubset(of: [.shift]) {
                     commitText()
                     return .handled
                 }
