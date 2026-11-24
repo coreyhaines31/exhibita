@@ -16,7 +16,7 @@ img {max-width: 100%; height: auto}
 .fine {font-size: 14px; color: var(--bx-muted); line-height: 1.55; margin-top: 16px}
 .bx-btn span {line-height: 1}
 /* Not released yet: the primary button is a label, not a link. */
-.brew-label {margin-top: 18px; font: 600 12px/1 var(--bx-display); letter-spacing: .2em; text-transform: uppercase; color: var(--bx-muted)}
+.brew-label {margin-top: 18px; font: 600 12px/1 var(--bx-display-caps); letter-spacing: .2em; text-transform: uppercase; color: var(--bx-muted)}
 .brew {margin: 8px 0 0; width: fit-content}
 
 /* Header: transparent over the homepage hero, brushed elsewhere */
